@@ -117,6 +117,7 @@ class C2Client:
         for attempt in range(self.retries + 1):
             response = self.transport.get(url, {"Authorization": "Bearer " + self._api_key,
                                                 "Accept": "application/json",
+                                                "Content-Type": "application/json",
                                                 "User-Agent": "trading-intelligence/0.1 read-only"})
             headers = {k.lower(): v for k, v in response.headers.items()}
             if response.status == 200:

@@ -42,6 +42,8 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(urlsplit(url).path, "/Strategies/GetStrategyHistoricalClosedTrades")
         self.assertEqual(parse_qs(urlsplit(url).query), {"StrategyId": ["123"], "CommissionPlan": ["0"]})
         self.assertEqual(headers["Authorization"], "Bearer not-a-real-api-key")
+        self.assertEqual(headers["Accept"], "application/json")
+        self.assertEqual(headers["Content-Type"], "application/json")
         self.assertNotIn("not-a-real", url)
 
     def test_orders_follows_cursor_even_on_short_page(self):
