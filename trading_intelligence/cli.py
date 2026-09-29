@@ -13,7 +13,17 @@ from pathlib import Path
 from . import __version__
 from .collective2 import C2Client, COMMISSION_PLANS
 from .common import DataError, json_bytes, load_json, read_limited
+from .diagnostics import diagnose_access
 from .pipeline import fetch_history, import_csv, import_json, inspect_csv
+
+
+def _read_api_key() -> str:
+    key = os.environ.get("C2_API_KEY")
+    if not key:
+        if not sys.stdin.isatty():
+            raise DataError("API_KEY_REQUIRED_USE_LOCAL_ENV_OR_INTERACTIVE_PROMPT")
+        key = getpass.getpass("Collective2 API4 key (hidden; never send it in chat): ")
+    return key
 
 
 def _summary(report: dict, out: Path) -> dict:
@@ -64,6 +74,11 @@ def parser() -> argparse.ArgumentParser:
                        help="Confirm you may retrieve and store this strategy's data (NOT an ML license)")
     fetch.add_argument("--naive-timezone", help="Only for verified timezone-less trade timestamps")
     fetch.add_argument("--timezone-evidence", help="Non-secret reference to written timezone confirmation")
+    diagnose = sub.add_parser("diagnose", help="Check API4 key and history access without saving data")
+    diagnose.add_argument("--strategy-id", type=int, required=True)
+    diagnose.add_argument("--commission-plan", choices=sorted(COMMISSION_PLANS), default="0")
+    diagnose.add_argument("--acknowledge-authorized-access", action="store_true",
+                          help="Confirm you may request this strategy's history (NOT an ML license)")
     imp = sub.add_parser("import-json", help="Import one saved API4 response, not a guessed JSON format")
     imp.add_argument("file", type=Path)
     imp.add_argument("--kind", choices=["orders", "closed_trades"], required=True)
@@ -90,17 +105,19 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "demo":
             result = _demo(args.out)
+        elif args.command == "diagnose":
+            if not args.acknowledge_authorized_access:
+                raise DataError("AUTHORIZED_ACCESS_ACK_REQUIRED")
+            result = diagnose_access(_read_api_key(), args.strategy_id,
+                                     commission_plan=args.commission_plan)
+            print(json_bytes(result).decode(), end="")
+            return 0 if result["access_checks_passed"] else 2
         elif args.command == "fetch":
             if not args.acknowledge_authorized_access:
                 raise DataError("AUTHORIZED_ACCESS_ACK_REQUIRED")
             if args.naive_timezone and not args.timezone_evidence:
                 raise DataError("TIMEZONE_EVIDENCE_REQUIRED")
-            key = os.environ.get("C2_API_KEY")
-            if not key:
-                if not sys.stdin.isatty():
-                    raise DataError("API_KEY_REQUIRED_USE_LOCAL_ENV_OR_INTERACTIVE_PROMPT")
-                key = getpass.getpass("Collective2 API4 key (hidden; never send it in chat): ")
-            client = C2Client(key, max_pages=args.max_pages)
+            client = C2Client(_read_api_key(), max_pages=args.max_pages)
             report = fetch_history(client, args.out, strategy_id=args.strategy_id,
                                    commission_plan=args.commission_plan,
                                    naive_timezone=args.naive_timezone, timezone_evidence=args.timezone_evidence)

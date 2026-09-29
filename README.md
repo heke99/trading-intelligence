@@ -73,6 +73,37 @@ Do not enable AutoTrade or grant trading permission simply to fix a research imp
 `RETRY_LATER` means the program declined to retry before the server's wait period.
 There are at most two retries per request, and no endless polling.
 
+### Diagnose API4 access
+
+To identify which read is denied, run locally with your own key:
+
+```bash
+python3 -m trading_intelligence diagnose \
+  --strategy-id 134962085 \
+  --acknowledge-authorized-access
+```
+
+The command makes three GET probes: `GetAccessKey`, historical closed trades,
+and one page of historical orders (`Limit=1`). It reports each endpoint separately,
+HTTP status, safe error codes and result counts. It does not traverse the history,
+archive responses, normalize trades, or create a database. All training/history
+gates remain false. Exit code 0 means all three probes returned successful API
+envelopes; exit code 2 means at least one failed. Empty results do not prove complete
+history or even that a strategy never traded.
+
+**Never share the raw GetAccessKey response:** its documented DTO includes the API
+secret and personal fields. The diagnostic prints only a validated key role and
+the documented `DeleteDate` when available; it does not call that field an expiry
+date or infer a role's permissions. The remaining DTO fields are omitted.
+The key remains in memory and is supplied through the same hidden local prompt
+or `C2_API_KEY` mechanism as `fetch`.
+
+Collective2 documents 401 as a wrong key and 403 as denied content access.
+A successful key probe followed by denied history probes narrows the issue to
+those requests; it does not establish the account's subscription requirements or
+prove that every 403 came from Collective2's application rather than an intermediary.
+See the [API4 contract review](docs/SOURCES.md#api4-request-and-403-review--2026-09-29).
+
 ## File imports
 
 An API response may also be imported offline:

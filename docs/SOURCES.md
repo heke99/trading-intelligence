@@ -51,3 +51,39 @@ The included CSV and mapping are synthetic contract examples, not reproductions 
 claimed provider export. The seven manually transcribed trade examples from the previous
 research message were intentionally NOT treated as a full or licensed training dataset.
 No copytrading subscription was purchased. No broker was connected. No orders were placed.
+
+## API4 request and 403 review — 2026-09-29
+
+The current requests were captured using an injected synthetic transport and
+compared with the official General API reference:
+
+| Request detail | Implementation and documented contract |
+| --- | --- |
+| Server | `https://api4-general.collective2.com` |
+| Closed trades | `GET /Strategies/GetStrategyHistoricalClosedTrades`, `StrategyId`, `CommissionPlan=0`; non-paginated |
+| Historical orders | `GET /Strategies/GetStrategyHistoricalOrders`, `StrategyId`, `Limit=500`, `AscendingOrder=true`; cursor-paginated |
+| Authentication | `Authorization: Bearer <local key>` |
+| Required content header | `Content-Type: application/json` |
+| Accept | `application/json` |
+| Cursor handling | Decode once before URL-encoding it into the next query; completion uses the cursor rather than row count |
+
+References additionally checked:
+
+- Required request headers (X-AppId and X-Version are optional):
+  https://api-docs.collective2.com/guides/request-headers
+- Authorization header format:
+  https://api-docs.collective2.com/guides/authorization
+- Error semantics: 401 is a wrong key; 403 means denied access to the content:
+  https://api-docs.collective2.com/guides/error-codes
+- `GET /General/GetAccessKey` and AccessKeyDTO are in the General API reference.
+  Its raw response includes `AccessKey`, personal fields, `Role` and `DeleteDate`.
+  The local diagnostic deliberately exposes only validated role/deletion metadata,
+  status codes and counts. `DeleteDate` is not claimed to be an expiration timestamp.
+  https://api-docs.collective2.com/apis/general/swagger/schemas/searchstrategies
+
+The header requirements are already present in main commit `8c50561`. No documented
+request-format mismatch was found that explains the user's 403. This review does
+not prove access for a real key, establish per-strategy entitlements, or attribute
+the user's response to the application versus a gateway. The diagnostic must be
+run locally to obtain the missing endpoint-level evidence. It does not relax the
+importer's reflected-secret rejection or enable a trading/subscription method.

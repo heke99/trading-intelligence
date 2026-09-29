@@ -1,5 +1,26 @@
 # Verification — v0.1.0
 
+## API4 access diagnostics — local verification 2026-09-29
+
+- Current main `8c50561` requests match the reviewed official General API server,
+  GET methods, Bearer authorization, required JSON content header, query parameters
+  and cursor contract. No request-format defect was found that explains the user's 403.
+- The new `diagnose` command probes `GetAccessKey` and the two history endpoints
+  separately. Orders use `Limit=1`; probes do not follow cursors or save responses.
+- Runtime: Python 3.12.14 on Linux. **77 offline tests passed**, including the
+  existing importer suite and 15 new synthetic diagnostic/CLI/transport tests.
+- Tests cover actual GET request construction, per-endpoint 403 reports without
+  retries, successful/failed CLI exits, explicit access acknowledgement, hidden
+  key input, expected secret-bearing key metadata, case variants, metadata redaction,
+  HTTP-200 provider errors and rejection of unrelated hosts/write paths.
+- No API secret, personal metadata, provider error body or trade row is printed
+  by the diagnostic. The raw `GetAccessKey` response is not retained or passed
+  through ingestion. Existing ingestion secret-reflection rejection is unchanged.
+- `diagnose --help` and `git diff --check` passed.
+- No real key or authenticated provider call was used. Remote CI is reported
+  separately from this local verification. The user's actual access/403 cause
+  and complete historical coverage remain unverified. Training gates stay false.
+
 ## Current publication and CI — 2026-09-29
 
 - PR [#1](https://github.com/heke99/trading-intelligence/pull/1) was merged
