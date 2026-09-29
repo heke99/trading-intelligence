@@ -60,10 +60,10 @@ privat. Lägg inte kontofiler i det offentliga repot.
 
 ## 2. Automatisk import med API4
 
-Collective2s supportinstruktion pekar på kontoinställningarna:
-https://collective2.com/account-info
-
-Välj **Configure APIv4 keys**. Det är utvecklarnyckeln för API4 vi behöver, inte
+Collective2s aktuella API4-sida pekar på https://collective2.com/apikey där du
+loggar in, skapar en nyckel och väljer dess roll. En äldre supportartikel pekar
+också på https://collective2.com/account-info och **Configure APIv4 keys**.
+Det är utvecklarnyckeln för API4 vi behöver, inte
 API3/PlatformTransmit. Be om minsta möjliga läsbehörighet för de två datafunktionerna.
 Det är inte verifierat att ditt standardkonto har rätt till just dessa strategier.
 
@@ -202,16 +202,12 @@ senare, osedda perioder under samma risk- och kostnadsantaganden. Textmotivering
 blir en separat jämförelse om de finns. Därefter följer skuggkörning och demo.
 En modell som bara kopierar historiken övertygande är inte färdig för riktiga pengar.
 
-## 6. Var koden finns och GitHub-begränsningen
+## 6. Var koden finns
 
-Källkod, tester och instruktioner levereras i ZIP-paketet. Försöket att initialisera
-`heke99/trading-intelligence` via anslutningen nekades med HTTP 403. Ingen commit,
-gren eller PR har därför skapats på GitHub i detta arbete. Repot visades som offentligt.
-
-Anslutningen här tillät inte kodskrivning. Använd Codex med åtkomst till repot eller
-din egen Git-klon för att lägga in kodpaketet. OpenAI beskriver Codex som vägen för
-att skriva och pusha kod, till skillnad från den vanliga läsande GitHub-appen:
-https://help.openai.com/en/articles/11145903-connecting-github-to-chatgpt
+Hämta projektets kod från den levererade arbetsgrenen eller det installerbara paket
+som följer med leveransen. Kontrollera den faktiska publiceringsstatusen och
+testresultaten i `docs/VERIFICATION.md` och i slutrapporten; ett lokalt paket
+innebär inte att koden har pushats till GitHub.
 
 Behåll traderfiler och nycklar utanför repot även om det görs privat. Dela endast
 kontofiler här om du har tillstånd för den behandlingen; annars kan vi börja med

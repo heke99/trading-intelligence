@@ -19,6 +19,7 @@ pages were read through the browsing tool, not through a successful live API pro
   https://api-docs.collective2.com/apis/geosite/swagger/schemas/orderdto
 - API4 key setup:
   https://support.collective2.com/hc/en-us/articles/360001154907-Where-can-I-find-my-API-key
+  Current Collective2 API4 page also links to https://collective2.com/apikey
 - API4 quickstart and Bearer authorization:
   https://api-docs.collective2.com/guides/quickstart
 - FOREX VIX-3 page, Trading Record / Download CSV and hypothetical-results warning:

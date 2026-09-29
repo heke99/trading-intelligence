@@ -22,7 +22,8 @@ python3 -m trading_intelligence status --out data/demo
 
 The demo makes up two closed trades and two order snapshots. It never contacts a
 provider. Demo records are labelled `synthetic_fixture`. Repeating an identical
-import adds observations, not duplicate record versions.
+import adds observations, not duplicate record versions. The same saved API response
+also reuses the versions created by a prior API fetch with the same normalization policy.
 
 Optional editable installation: `python3 -m pip install -e .`.
 This is not necessary for any of the commands above.
@@ -58,6 +59,8 @@ Each fetch requests closed trades with explicit `CommissionPlan=0`, then follows
 historical-order cursors. It does not filter to filled orders only. It uses GETs
 to a hardcoded host and two hardcoded paths, refuses redirects, validates TLS,
 bounds response size/page count/retries and never logs provider error bodies.
+Reflected API keys, including JSON-escaped representations, stop acquisition before
+the response can be archived.
 Network access was mocked in tests; account permissions remain to be tested live.
 
 `--commission-plan` accepts the documented values 0, 1, 3, 4 or 5. This is source
@@ -166,7 +169,7 @@ are a research inventory only; no prior headline returns or scraped trade rows a
 used as training examples.
 
 The GitHub Actions workflow only runs offline synthetic tests, without any C2 secret.
-It is included but has not run in the user's repository. The runtime does not depend
+The runtime does not depend
 on Vercel, Supabase, a GPU, a Windows terminal, or a live brokerage account.
 
 Next engineering milestone: run a permitted real export, reconcile source counts,

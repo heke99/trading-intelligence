@@ -56,7 +56,9 @@ def fetch_history(client: C2Client, out: Path, *, strategy_id: int,
                   commission_plan: str = "0", naive_timezone: str | None = None,
                   timezone_evidence: str | None = None) -> dict:
     strategy_id = positive_id(strategy_id)
-    context = dict(naive_timezone=naive_timezone, timezone_evidence=timezone_evidence)
+    # Keep the version identity identical to importing the saved API response.
+    context = dict(synthetic=False, naive_timezone=naive_timezone,
+                   timezone_evidence=timezone_evidence)
     with DatasetStore(out) as store:
         m = store.start_run(strategy_id, "api4")
         m["commission_plan_requested"] = commission_plan

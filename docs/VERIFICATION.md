@@ -44,3 +44,34 @@ Collective2 has granted an account access or that a strategy is profitable.
 All manifests remain `training_ready=false` and `full_history_verified=false`.
 GitHub repository visibility was public when checked. No real trader data or API key
 has been added to the source package.
+
+## Follow-up verification — 2026-09-29
+
+The original ZIP SHA-256 matched
+`c94956f6047d776a6da25bf693837dcaf8bda4843adbac83d9b34f5c12b25ebc`.
+All 22 archive entries were checked for absolute paths, parent traversal, and
+symlinks before extraction. The original package was committed separately from
+the changes below.
+
+- Runtime: Python 3.12.14 on Linux; 3.11 and 3.13 were not installed locally.
+- Before the fixes, two new regression tests reproduced escaped-key reflection
+  and duplicate versions across a live-style fetch and saved-JSON reimport.
+- `python3 -m unittest discover -s tests -v`: **62 tests passed** after the fixes.
+- `python3 -m trading_intelligence --help`: passed.
+- `demo`, `status`, and the repeat demo: four first-run versions, zero second-run
+  versions, eight observations across four completed run manifests.
+- `inspect-csv` on the synthetic example: eleven headers, two rows, no row values.
+- `import-csv` with the synthetic mapping: two versions, zero quarantined rows.
+- Wheel build: `python3 -m pip wheel --no-index --no-deps --no-build-isolation -w dist .`.
+  Wheel installed with `--no-index --no-deps` into a fresh virtual environment;
+  its CLI help and offline demo worked from a directory outside the source tree.
+- `git diff --check`: passed. The GitHub Actions matrix specifies 3.11, 3.12,
+  and 3.13 and uses only synthetic offline data; the remote workflow has not run.
+
+No authenticated Collective2 call, real export, original CSV mapping, license,
+complete historical coverage, brokerage execution, training, or trade was tested.
+`training_ready=false` and `full_history_verified=false` remain fixed.
+The repository was empty and public at the start of this follow-up. GitHub's
+contents write endpoint returned HTTP 403 `Resource not accessible by integration`;
+an HTTPS `git push` also failed because no terminal GitHub credentials were available.
+This local verification must not be presented as a successful remote CI run or PR.

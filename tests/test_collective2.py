@@ -118,6 +118,14 @@ class ClientTests(unittest.TestCase):
         with self.assertRaisesRegex(DataError, "SECRET_IN_RESPONSE"):
             list(c.pages("orders", 123))
 
+    def test_json_escaped_reflected_key_is_rejected_before_page_is_returned(self):
+        # A JSON string may encode the same secret without containing its literal bytes.
+        body = b'{"Results":[{"Info":"not-a-real-api-\\u006bey"}]}'
+        self.assertNotIn(b'not-a-real-api-key', body)
+        c, _ = self.client([Response(200, {"content-type": "application/json"}, body)])
+        with self.assertRaisesRegex(DataError, "SECRET_IN_RESPONSE"):
+            list(c.pages("orders", 123))
+
     def test_missing_results_is_schema_error(self):
         c, _ = self.client([Response(200, {"content-type": "application/json"}, b'{}')])
         with self.assertRaisesRegex(DataError, "RESULTS_SCHEMA"):

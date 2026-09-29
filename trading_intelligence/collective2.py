@@ -126,6 +126,17 @@ class C2Client:
                     raise DataError("SECRET_IN_RESPONSE")
                 if "json" not in headers.get("content-type", "").lower():
                     raise DataError("RESPONSE_NOT_JSON")
+                # JSON escapes can hide a reflected key from a raw byte search.
+                pending = [load_json(response.body)]
+                while pending:
+                    value = pending.pop()
+                    if isinstance(value, str) and self._api_key in value:
+                        raise DataError("SECRET_IN_RESPONSE")
+                    if isinstance(value, dict):
+                        pending.extend(value.keys())
+                        pending.extend(value.values())
+                    elif isinstance(value, list):
+                        pending.extend(value)
                 return response.body
             if response.status not in (429, 500, 502, 503, 504) or attempt == self.retries:
                 raise DataError(f"HTTP_{response.status}")

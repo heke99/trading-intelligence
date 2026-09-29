@@ -20,6 +20,8 @@ Every unique source row + normalization-context fingerprint has its own version.
 All versions are retained. Identical repeated observations do not insert another
 version. No automatically chosen "latest truth" is exported when a source revises
 history. Revisions must be reviewed before building any training dataset.
+An API fetch and a later import of that exact saved API response share the same
+normalization context and business version. Their separate run observations remain.
 
 ## Numeric and instrument semantics
 

@@ -142,6 +142,17 @@ class PipelineTests(unittest.TestCase):
         with DatasetStore(self.out) as s:
             self.assertEqual(s.count_versions(), 2)
 
+    def test_saved_api_response_after_fetch_reuses_same_business_version(self):
+        closed_page = payload([trade()])
+        client = C2Client("test-only-secret", transport=FakeTransport([closed_page, payload([order()])]))
+        fetch_history(client, self.out, strategy_id=123)
+        self.source.write_bytes(closed_page.body)
+        report = self.run_import()
+        self.assertEqual(report["inserted_versions"], 0)
+        self.assertEqual(report["duplicate_observations"], 1)
+        with DatasetStore(self.out) as s:
+            self.assertEqual(s.count_versions(), 2)
+
     def test_malformed_rows_quarantined_and_raw_preserved(self):
         self.write_json([trade(), trade(TradeId=21, OpenSide="bad")])
         result = self.run_import()
