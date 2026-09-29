@@ -204,7 +204,7 @@ En modell som bara kopierar historiken övertygande är inte färdig för riktig
 
 ## 6. Var koden finns
 
-Koden finns på `main` i https://github.com/heke99/trading-intelligence .
+Koden finns på `main` i [GitHub-repot](https://github.com/heke99/trading-intelligence).
 Välj **Code → Download ZIP** på GitHub eller klona repot. Kör kommandona i
 `README.md` från projektets rot. Kontrollera den senaste körningen på
 https://github.com/heke99/trading-intelligence/actions och den daterade
