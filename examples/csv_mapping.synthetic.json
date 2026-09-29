@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "kind": "closed_trades",
+  "delimiter": ",",
+  "fields": {
+    "TradeId": "trade_id",
+    "C2Symbol.FullSymbol": "symbol",
+    "C2Symbol.SymbolType": "type",
+    "OpenDate": "opened",
+    "CloseDate": "closed",
+    "OpenSide": "side",
+    "AvgOpenFillPrice": "entry",
+    "AvgCloseFillPrice": "exit",
+    "OpenedQuantity": "quantity",
+    "ClosedQuantity": "quantity",
+    "ProfitLoss": "pnl",
+    "Commission": "commission"
+  },
+  "side_values": {"LONG": "1", "SHORT": "2"},
+  "naive_timezone": null,
+  "timezone_evidence": null,
+  "datetime_format": null
+}

@@ -1,0 +1,12 @@
+{
+  "purpose": "Candidate identifiers from the prior user research; NOT recommendations or approved datasets",
+  "performance_verified": false,
+  "api_access_verified": false,
+  "training_rights_verified": false,
+  "candidates": [
+    {"strategy_id": 134962085, "name": "FOREX VIX-3", "profile": "https://collective2.com/details/134962085"},
+    {"strategy_id": 146455121, "name": "Calicut Commodities", "profile": "https://collective2.com/details/146455121"},
+    {"strategy_id": 131145247, "name": "ares", "profile": "https://collective2.com/details/131145247"},
+    {"strategy_id": 152221526, "name": "Orange Cat Management", "profile": "https://collective2.com/details/152221526"}
+  ]
+}

@@ -1,2 +1,36 @@
-.env
+# Real exports, credentials and generated datasets MUST NOT enter the repository.
 data/
+private/
+raw/
+runs/
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.sqlite*
+*.db
+*.csv
+*.json
+*.jsonl
+*.xml
+*.html
+*.htm
+*.parquet
+*.log
+*.zip
+*.tar*
+# Only reviewed, synthetic examples and public candidate identifiers are tracked.
+!examples/*.csv
+!examples/*.json
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage*
+htmlcov/
+dist/
+build/
+*.egg-info/
+.DS_Store
