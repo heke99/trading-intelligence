@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trading-intelligence"
+version = "0.1.0"
+description = "Read-only Collective2 history importer with immutable raw data and audit gates"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+trading-intelligence = "trading_intelligence.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["trading_intelligence*"]
