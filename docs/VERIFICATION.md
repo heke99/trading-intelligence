@@ -1,4 +1,21 @@
-# Verification — v0.1.0, 2026-09-28
+# Verification — v0.1.0
+
+## Current publication and CI — 2026-09-29
+
+- PR [#1](https://github.com/heke99/trading-intelligence/pull/1) was merged
+  into `main` as `ebf76f5fb61c8832f5663a81d1d04300ccf7e748`.
+  Its tree `edf75ab888d0f4542601a2db4d46f55bbdb3ead6` matches the
+  locally reviewed final tree.
+- The [main push workflow](https://github.com/heke99/trading-intelligence/actions/runs/36540822830)
+  completed successfully. All three Python jobs (3.11, 3.12, 3.13) passed
+  offline unit/integration tests and the synthetic end-to-end demo. The 3.12 job
+  reported **62 tests passed**.
+- This is an offline integration check. No authenticated Collective2 request,
+  real CSV export, complete historical reconciliation, training, or live trade
+  was executed. `training_ready=false` and `full_history_verified=false`
+  remain the correct dataset gates.
+
+## Original review — 2026-09-28
 
 ## Actually executed
 
@@ -45,7 +62,7 @@ All manifests remain `training_ready=false` and `full_history_verified=false`.
 GitHub repository visibility was public when checked. No real trader data or API key
 has been added to the source package.
 
-## Follow-up verification — 2026-09-29
+## Local follow-up before GitHub access — 2026-09-29
 
 The original ZIP SHA-256 matched
 `c94956f6047d776a6da25bf693837dcaf8bda4843adbac83d9b34f5c12b25ebc`.
