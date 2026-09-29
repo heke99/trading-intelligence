@@ -1,5 +1,28 @@
 # Verification — v0.1.0
 
+## Saved-data review — local verification 2026-09-30 (Europe/Stockholm)
+
+- `review --out` opens the existing database with SQLite `mode=ro` and
+  `query_only`, using one read snapshot. `--run-id` selects a saved run; without
+  it the latest-created run is reviewed, including failed runs.
+- Output projects counts, known quality flags, observed UTC date bounds and
+  safe changed-field names. No trade values, source IDs, symbols, arbitrary
+  source-field names or metadata are printed. No network or API key is used.
+- Version comparisons distinguish stored source changes, changes to normalized
+  output with identical sources, and unresolved pairs where both match.
+  Context is hashed but not fully retained in old records. The command never
+  clears review blockers or enables training/full-history gates.
+- Runtime: Python 3.12.14 on Linux. **97 offline tests passed**, including 11 new
+  synthetic review tests. The tests first failed on the absent review module.
+- Cases include source-field changes, normalization-only and context-only
+  revisions, case-only layouts, unknown metadata redaction, strategy/type/origin
+  matching, repeated versions, failed/missing runs, hidden-key/network refusal,
+  quality/date projections and byte-identical saved files after CLI review.
+- `review --help` and `git diff --check` passed. Original trader data and a real
+  account were not accessed in development or tests. Remote CI is checked
+  separately on the published commit; the user's revision cause remains to be
+  determined from their own local review report.
+
 ## Selected history imports — local verification 2026-09-30 (Europe/Stockholm)
 
 - `fetch --kind closed_trades` saves only the requested closed-trade response;

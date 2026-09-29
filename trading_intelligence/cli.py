@@ -15,6 +15,7 @@ from .collective2 import C2Client, COMMISSION_PLANS
 from .common import DataError, json_bytes, load_json, read_limited
 from .diagnostics import diagnose_access
 from .pipeline import fetch_history, import_csv, import_json, inspect_csv
+from .review import review_dataset
 
 
 def _read_api_key() -> str:
@@ -102,6 +103,9 @@ def parser() -> argparse.ArgumentParser:
     csv_imp.add_argument("--synthetic-fixture", action="store_true", help="Mark local test data as synthetic")
     status = sub.add_parser("status", help="Show the newest manifest, including incomplete/failed runs")
     status.add_argument("--out", type=Path, required=True)
+    review = sub.add_parser("review", help="Review saved quality flags and version changes without writing or network")
+    review.add_argument("--out", type=Path, required=True)
+    review.add_argument("--run-id", help="Saved run to review (default: latest-created run)")
     return p
 
 
@@ -136,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
             result = inspect_csv(args.file)
         elif args.command == "import-csv":
             result = _summary(import_csv(args.file, args.mapping, args.out, strategy_id=args.strategy_id, synthetic=args.synthetic_fixture), args.out)
+        elif args.command == "review":
+            result = review_dataset(args.out, run_id=args.run_id)
         else:
             files = list((args.out / "runs").glob("*/manifest.json"))
             if not files:

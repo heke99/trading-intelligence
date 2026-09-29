@@ -216,6 +216,36 @@ Every manifest has `training_ready=false`. This is a workflow marker, not a lega
 approval system or a security boundary against a person reading the raw database.
 There is no training command, market-data join, model, or execution connection yet.
 
+### Review saved quality and revisions
+
+```bash
+python3 -m trading_intelligence review --out data/forex-vix-3
+```
+
+This opens the existing SQLite database in read-only mode and reviews the
+latest-created run, including failed runs. Use `--run-id` to select the `run_id`
+from a specific manifest. No key or network is used, no records or manifests are
+updated, and no review blocker is cleared.
+
+The output contains import counters, distinct record/symbol counts, known quality
+flag counts, observed UTC date bounds and a version comparison. It prints field
+names and counts rather than trade values, symbols, source IDs or raw metadata.
+Unknown source fields are combined into `other_source_fields`; a case-only
+layout change is labelled `source_field_layout`.
+
+Each version observed in the selected run is compared with the immediately
+previously inserted version of the same strategy, record type, source ID and data
+origin. `source_changed_pairs` means stored source data differs. If sources match,
+the report separates changed normalized output from pairs where both remain the
+same. The latter remain unresolved: the version hash includes import context that
+older records do not fully retain. A source change can coexist with a policy change.
+
+These are comparisons of stored version history, not counts of new revisions in
+this run. Even a duplicate-only rerun can observe versions with older predecessors.
+Use `import_counts.revision_observations` for this run's new revision count.
+Observed date bounds and a successful review do not prove complete historical
+coverage, point-in-time availability or readiness to train.
+
 ## Privacy, repository and operation
 
 Keep originals, credentials, license evidence and runtime data out of Git. The
