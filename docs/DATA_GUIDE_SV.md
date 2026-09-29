@@ -204,10 +204,11 @@ En modell som bara kopierar historiken övertygande är inte färdig för riktig
 
 ## 6. Var koden finns
 
-Hämta projektets kod från den levererade arbetsgrenen eller det installerbara paket
-som följer med leveransen. Kontrollera den faktiska publiceringsstatusen och
-testresultaten i `docs/VERIFICATION.md` och i slutrapporten; ett lokalt paket
-innebär inte att koden har pushats till GitHub.
+Koden finns på `main` i [GitHub-repot](https://github.com/heke99/trading-intelligence).
+Välj **Code → Download ZIP** på GitHub eller klona repot. Kör kommandona i
+`README.md` från projektets rot. Kontrollera den senaste körningen på
+https://github.com/heke99/trading-intelligence/actions och den daterade
+verifieringen i `docs/VERIFICATION.md` om koden ändras efter denna leverans.
 
 Behåll traderfiler och nycklar utanför repot även om det görs privat. Dela endast
 kontofiler här om du har tillstånd för den behandlingen; annars kan vi börja med
