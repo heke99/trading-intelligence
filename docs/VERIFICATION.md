@@ -1,5 +1,24 @@
 # Verification — v0.1.0
 
+## Selected history imports — local verification 2026-09-30 (Europe/Stockholm)
+
+- `fetch --kind closed_trades` saves only the requested closed-trade response;
+  `--kind orders` retains cursor traversal. The default remains both endpoints.
+- The manifest and CLI summary expose `requested_kinds`. An omitted endpoint
+  remains `not_requested`, with an explicit missing-history blocker. Completion
+  of the selected import never enables full-history or training gates.
+- Runtime: Python 3.12.14 on Linux. **86 offline tests passed**, including nine
+  new selected-fetch tests. Tests first failed on the absent selection argument.
+- Synthetic tests cover raw archival, forex/stock normalization, orders pagination,
+  cancelled orders, reuse after an earlier failed two-endpoint fetch, quarantine,
+  local argument rejection, failed selected reads, secret-reflection rejection,
+  hidden CLI input and persistence of scope in the `status` summary.
+- The default fetch still reports failure if orders are denied. There is no
+  automatic omission or fallback that makes a denied selected read successful.
+- `fetch --help` and `git diff --check` passed. No real API key, authenticated
+  provider request or original trader data was used in development or tests.
+  Remote CI is checked separately on the published commit.
+
 ## API4 access diagnostics — local verification 2026-09-29
 
 - Current main `8c50561` requests match the reviewed official General API server,

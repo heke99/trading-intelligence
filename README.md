@@ -6,8 +6,9 @@ broker login or order-placement methods exist in this package.
 
 The importer reads two documented Collective2 API4 endpoints: closed trades and
 historical orders. It also ingests saved API responses and explicitly mapped CSVs.
-An authenticated provider run has **not** yet been verified. A real exported CSV's
-headers have **not** yet been verified. See [the Swedish data guide](docs/DATA_GUIDE_SV.md).
+An end-to-end authenticated import has **not** yet been independently verified.
+A real exported CSV's headers have **not** yet been verified.
+See [the Swedish data guide](docs/DATA_GUIDE_SV.md).
 
 ## Run without installing dependencies
 
@@ -55,7 +56,7 @@ python3 -m trading_intelligence fetch \
   --acknowledge-authorized-access
 ```
 
-Each fetch requests closed trades with explicit `CommissionPlan=0`, then follows
+By default, fetch requests closed trades with explicit `CommissionPlan=0`, then follows
 historical-order cursors. It does not filter to filled orders only. It uses GETs
 to a hardcoded host and two hardcoded paths, refuses redirects, validates TLS,
 bounds response size/page count/retries and never logs provider error bodies.
@@ -72,6 +73,33 @@ If an HTTP 401/403 or `API_RESPONSE_ERROR` occurs, contact C2 about data permiss
 Do not enable AutoTrade or grant trading permission simply to fix a research import.
 `RETRY_LATER` means the program declined to retry before the server's wait period.
 There are at most two retries per request, and no endless polling.
+
+### Save an explicitly selected history
+
+If the diagnostic succeeds for closed trades but reports 403 for historical
+orders, save the available closed-trade response with an explicit scope:
+
+```bash
+env -u C2_API_KEY python3 -m trading_intelligence fetch \
+  --strategy-id 134962085 \
+  --kind closed_trades \
+  --out data/forex-vix-3 \
+  --acknowledge-authorized-access
+```
+
+`--kind` accepts `both` (the default), `closed_trades`, or `orders`. Only selected
+endpoints are requested. An orders-only import still follows all returned cursors.
+The manifest and CLI summary record `requested_kinds`; omitted history is
+`not_requested`, with an explicit `ORDERS_NOT_REQUESTED` or
+`CLOSED_TRADES_NOT_REQUESTED` blocker. `completed` describes the requested import,
+not full strategy coverage. `training_ready` and `full_history_verified` stay false.
+Malformed rows are quarantined and original responses are preserved as usual.
+
+There is no automatic fallback on 403: a failure of any selected endpoint still
+fails its run. The default two-endpoint fetch continues to fail when orders are
+denied, preserving successful raw pages. A subsequent closed-trades-only fetch
+reuses identical record versions instead of duplicating them. Use `status --out`
+to review the newest manifest after any run. The diagnostic itself saves no data.
 
 ### Diagnose API4 access
 

@@ -30,8 +30,11 @@ def _summary(report: dict, out: Path) -> dict:
     keys = ("run_id", "strategy_id", "status", "source_rows", "inserted_versions", "duplicate_observations",
             "revision_observations", "quarantined_rows", "training_ready", "full_history_verified",
             "endpoint_traversal", "errors", "blockers")
-    return {**{k: report[k] for k in keys},
-            "manifest": str(out / "runs" / report["run_id"] / "manifest.json")}
+    result = {**{k: report[k] for k in keys},
+              "manifest": str(out / "runs" / report["run_id"] / "manifest.json")}
+    if "requested_kinds" in report:
+        result["requested_kinds"] = report["requested_kinds"]
+    return result
 
 
 def _demo(out: Path) -> dict:
@@ -65,9 +68,11 @@ def parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
     demo = sub.add_parser("demo", help="Run an offline synthetic import")
     demo.add_argument("--out", type=Path, default=Path("data/demo"))
-    fetch = sub.add_parser("fetch", help="Fetch closed trades + paginated orders, using GET only")
+    fetch = sub.add_parser("fetch", help="Fetch closed trades and/or paginated orders, using GET only")
     fetch.add_argument("--strategy-id", type=int, required=True)
     fetch.add_argument("--out", type=Path, required=True)
+    fetch.add_argument("--kind", choices=("both", "closed_trades", "orders"), default="both",
+                       help="History to request (default: both); omitted history remains unverified")
     fetch.add_argument("--commission-plan", choices=sorted(COMMISSION_PLANS), default="0")
     fetch.add_argument("--max-pages", type=int, default=200)
     fetch.add_argument("--acknowledge-authorized-access", action="store_true",
@@ -119,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise DataError("TIMEZONE_EVIDENCE_REQUIRED")
             client = C2Client(_read_api_key(), max_pages=args.max_pages)
             report = fetch_history(client, args.out, strategy_id=args.strategy_id,
-                                   commission_plan=args.commission_plan,
+                                   kind=args.kind, commission_plan=args.commission_plan,
                                    naive_timezone=args.naive_timezone, timezone_evidence=args.timezone_evidence)
             result = _summary(report, args.out)
         elif args.command == "import-json":
