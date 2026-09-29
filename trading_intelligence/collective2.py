@@ -21,6 +21,8 @@ ENDPOINTS = {
     "orders": "/Strategies/GetStrategyHistoricalOrders",
 }
 COMMISSION_PLANS = {"0", "1", "3", "4", "5"}
+ACCESS_KEY_PATH = "/General/GetAccessKey"
+READ_ONLY_PATHS = (*ENDPOINTS.values(), ACCESS_KEY_PATH)
 
 
 @dataclass(frozen=True)
@@ -46,7 +48,8 @@ class HTTPSGetTransport:
         self.opener = build_opener(ProxyHandler({}), NoRedirects())
 
     def get(self, url: str, headers: dict[str, str]) -> Response:
-        if not any(url.startswith(BASE + path + "?") for path in ENDPOINTS.values()):
+        if not any(url == BASE + path or url.startswith(BASE + path + "?")
+                   for path in READ_ONLY_PATHS):
             raise DataError("URL_NOT_ALLOWED")
         request = Request(url, headers=headers, method="GET")
         try:

@@ -13,15 +13,29 @@ from pathlib import Path
 from . import __version__
 from .collective2 import C2Client, COMMISSION_PLANS
 from .common import DataError, json_bytes, load_json, read_limited
+from .diagnostics import diagnose_access
 from .pipeline import fetch_history, import_csv, import_json, inspect_csv
+from .review import review_dataset
+
+
+def _read_api_key() -> str:
+    key = os.environ.get("C2_API_KEY")
+    if not key:
+        if not sys.stdin.isatty():
+            raise DataError("API_KEY_REQUIRED_USE_LOCAL_ENV_OR_INTERACTIVE_PROMPT")
+        key = getpass.getpass("Collective2 API4 key (hidden; never send it in chat): ")
+    return key
 
 
 def _summary(report: dict, out: Path) -> dict:
     keys = ("run_id", "strategy_id", "status", "source_rows", "inserted_versions", "duplicate_observations",
             "revision_observations", "quarantined_rows", "training_ready", "full_history_verified",
             "endpoint_traversal", "errors", "blockers")
-    return {**{k: report[k] for k in keys},
-            "manifest": str(out / "runs" / report["run_id"] / "manifest.json")}
+    result = {**{k: report[k] for k in keys},
+              "manifest": str(out / "runs" / report["run_id"] / "manifest.json")}
+    if "requested_kinds" in report:
+        result["requested_kinds"] = report["requested_kinds"]
+    return result
 
 
 def _demo(out: Path) -> dict:
@@ -55,15 +69,22 @@ def parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
     demo = sub.add_parser("demo", help="Run an offline synthetic import")
     demo.add_argument("--out", type=Path, default=Path("data/demo"))
-    fetch = sub.add_parser("fetch", help="Fetch closed trades + paginated orders, using GET only")
+    fetch = sub.add_parser("fetch", help="Fetch closed trades and/or paginated orders, using GET only")
     fetch.add_argument("--strategy-id", type=int, required=True)
     fetch.add_argument("--out", type=Path, required=True)
+    fetch.add_argument("--kind", choices=("both", "closed_trades", "orders"), default="both",
+                       help="History to request (default: both); omitted history remains unverified")
     fetch.add_argument("--commission-plan", choices=sorted(COMMISSION_PLANS), default="0")
     fetch.add_argument("--max-pages", type=int, default=200)
     fetch.add_argument("--acknowledge-authorized-access", action="store_true",
                        help="Confirm you may retrieve and store this strategy's data (NOT an ML license)")
     fetch.add_argument("--naive-timezone", help="Only for verified timezone-less trade timestamps")
     fetch.add_argument("--timezone-evidence", help="Non-secret reference to written timezone confirmation")
+    diagnose = sub.add_parser("diagnose", help="Check API4 key and history access without saving data")
+    diagnose.add_argument("--strategy-id", type=int, required=True)
+    diagnose.add_argument("--commission-plan", choices=sorted(COMMISSION_PLANS), default="0")
+    diagnose.add_argument("--acknowledge-authorized-access", action="store_true",
+                          help="Confirm you may request this strategy's history (NOT an ML license)")
     imp = sub.add_parser("import-json", help="Import one saved API4 response, not a guessed JSON format")
     imp.add_argument("file", type=Path)
     imp.add_argument("--kind", choices=["orders", "closed_trades"], required=True)
@@ -82,6 +103,9 @@ def parser() -> argparse.ArgumentParser:
     csv_imp.add_argument("--synthetic-fixture", action="store_true", help="Mark local test data as synthetic")
     status = sub.add_parser("status", help="Show the newest manifest, including incomplete/failed runs")
     status.add_argument("--out", type=Path, required=True)
+    review = sub.add_parser("review", help="Review saved quality flags and version changes without writing or network")
+    review.add_argument("--out", type=Path, required=True)
+    review.add_argument("--run-id", help="Saved run to review (default: latest-created run)")
     return p
 
 
@@ -90,19 +114,21 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "demo":
             result = _demo(args.out)
+        elif args.command == "diagnose":
+            if not args.acknowledge_authorized_access:
+                raise DataError("AUTHORIZED_ACCESS_ACK_REQUIRED")
+            result = diagnose_access(_read_api_key(), args.strategy_id,
+                                     commission_plan=args.commission_plan)
+            print(json_bytes(result).decode(), end="")
+            return 0 if result["access_checks_passed"] else 2
         elif args.command == "fetch":
             if not args.acknowledge_authorized_access:
                 raise DataError("AUTHORIZED_ACCESS_ACK_REQUIRED")
             if args.naive_timezone and not args.timezone_evidence:
                 raise DataError("TIMEZONE_EVIDENCE_REQUIRED")
-            key = os.environ.get("C2_API_KEY")
-            if not key:
-                if not sys.stdin.isatty():
-                    raise DataError("API_KEY_REQUIRED_USE_LOCAL_ENV_OR_INTERACTIVE_PROMPT")
-                key = getpass.getpass("Collective2 API4 key (hidden; never send it in chat): ")
-            client = C2Client(key, max_pages=args.max_pages)
+            client = C2Client(_read_api_key(), max_pages=args.max_pages)
             report = fetch_history(client, args.out, strategy_id=args.strategy_id,
-                                   commission_plan=args.commission_plan,
+                                   kind=args.kind, commission_plan=args.commission_plan,
                                    naive_timezone=args.naive_timezone, timezone_evidence=args.timezone_evidence)
             result = _summary(report, args.out)
         elif args.command == "import-json":
@@ -114,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
             result = inspect_csv(args.file)
         elif args.command == "import-csv":
             result = _summary(import_csv(args.file, args.mapping, args.out, strategy_id=args.strategy_id, synthetic=args.synthetic_fixture), args.out)
+        elif args.command == "review":
+            result = review_dataset(args.out, run_id=args.run_id)
         else:
             files = list((args.out / "runs").glob("*/manifest.json"))
             if not files:

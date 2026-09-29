@@ -6,8 +6,9 @@ broker login or order-placement methods exist in this package.
 
 The importer reads two documented Collective2 API4 endpoints: closed trades and
 historical orders. It also ingests saved API responses and explicitly mapped CSVs.
-An authenticated provider run has **not** yet been verified. A real exported CSV's
-headers have **not** yet been verified. See [the Swedish data guide](docs/DATA_GUIDE_SV.md).
+An end-to-end authenticated import has **not** yet been independently verified.
+A real exported CSV's headers have **not** yet been verified.
+See [the Swedish data guide](docs/DATA_GUIDE_SV.md).
 
 ## Run without installing dependencies
 
@@ -55,7 +56,7 @@ python3 -m trading_intelligence fetch \
   --acknowledge-authorized-access
 ```
 
-Each fetch requests closed trades with explicit `CommissionPlan=0`, then follows
+By default, fetch requests closed trades with explicit `CommissionPlan=0`, then follows
 historical-order cursors. It does not filter to filled orders only. It uses GETs
 to a hardcoded host and two hardcoded paths, refuses redirects, validates TLS,
 bounds response size/page count/retries and never logs provider error bodies.
@@ -72,6 +73,64 @@ If an HTTP 401/403 or `API_RESPONSE_ERROR` occurs, contact C2 about data permiss
 Do not enable AutoTrade or grant trading permission simply to fix a research import.
 `RETRY_LATER` means the program declined to retry before the server's wait period.
 There are at most two retries per request, and no endless polling.
+
+### Save an explicitly selected history
+
+If the diagnostic succeeds for closed trades but reports 403 for historical
+orders, save the available closed-trade response with an explicit scope:
+
+```bash
+env -u C2_API_KEY python3 -m trading_intelligence fetch \
+  --strategy-id 134962085 \
+  --kind closed_trades \
+  --out data/forex-vix-3 \
+  --acknowledge-authorized-access
+```
+
+`--kind` accepts `both` (the default), `closed_trades`, or `orders`. Only selected
+endpoints are requested. An orders-only import still follows all returned cursors.
+The manifest and CLI summary record `requested_kinds`; omitted history is
+`not_requested`, with an explicit `ORDERS_NOT_REQUESTED` or
+`CLOSED_TRADES_NOT_REQUESTED` blocker. `completed` describes the requested import,
+not full strategy coverage. `training_ready` and `full_history_verified` stay false.
+Malformed rows are quarantined and original responses are preserved as usual.
+
+There is no automatic fallback on 403: a failure of any selected endpoint still
+fails its run. The default two-endpoint fetch continues to fail when orders are
+denied, preserving successful raw pages. A subsequent closed-trades-only fetch
+reuses identical record versions instead of duplicating them. Use `status --out`
+to review the newest manifest after any run. The diagnostic itself saves no data.
+
+### Diagnose API4 access
+
+To identify which read is denied, run locally with your own key:
+
+```bash
+python3 -m trading_intelligence diagnose \
+  --strategy-id 134962085 \
+  --acknowledge-authorized-access
+```
+
+The command makes three GET probes: `GetAccessKey`, historical closed trades,
+and one page of historical orders (`Limit=1`). It reports each endpoint separately,
+HTTP status, safe error codes and result counts. It does not traverse the history,
+archive responses, normalize trades, or create a database. All training/history
+gates remain false. Exit code 0 means all three probes returned successful API
+envelopes; exit code 2 means at least one failed. Empty results do not prove complete
+history or even that a strategy never traded.
+
+**Never share the raw GetAccessKey response:** its documented DTO includes the API
+secret and personal fields. The diagnostic prints only a validated key role and
+the documented `DeleteDate` when available; it does not call that field an expiry
+date or infer a role's permissions. The remaining DTO fields are omitted.
+The key remains in memory and is supplied through the same hidden local prompt
+or `C2_API_KEY` mechanism as `fetch`.
+
+Collective2 documents 401 as a wrong key and 403 as denied content access.
+A successful key probe followed by denied history probes narrows the issue to
+those requests; it does not establish the account's subscription requirements or
+prove that every 403 came from Collective2's application rather than an intermediary.
+See the [API4 contract review](docs/SOURCES.md#api4-request-and-403-review--2026-09-29).
 
 ## File imports
 
@@ -156,6 +215,36 @@ counts, access scope and start/end coverage have been independently reconciled.
 Every manifest has `training_ready=false`. This is a workflow marker, not a legal
 approval system or a security boundary against a person reading the raw database.
 There is no training command, market-data join, model, or execution connection yet.
+
+### Review saved quality and revisions
+
+```bash
+python3 -m trading_intelligence review --out data/forex-vix-3
+```
+
+This opens the existing SQLite database in read-only mode and reviews the
+latest-created run, including failed runs. Use `--run-id` to select the `run_id`
+from a specific manifest. No key or network is used, no records or manifests are
+updated, and no review blocker is cleared.
+
+The output contains import counters, distinct record/symbol counts, known quality
+flag counts, observed UTC date bounds and a version comparison. It prints field
+names and counts rather than trade values, symbols, source IDs or raw metadata.
+Unknown source fields are combined into `other_source_fields`; a case-only
+layout change is labelled `source_field_layout`.
+
+Each version observed in the selected run is compared with the immediately
+previously inserted version of the same strategy, record type, source ID and data
+origin. `source_changed_pairs` means stored source data differs. If sources match,
+the report separates changed normalized output from pairs where both remain the
+same. The latter remain unresolved: the version hash includes import context that
+older records do not fully retain. A source change can coexist with a policy change.
+
+These are comparisons of stored version history, not counts of new revisions in
+this run. Even a duplicate-only rerun can observe versions with older predecessors.
+Use `import_counts.revision_observations` for this run's new revision count.
+Observed date bounds and a successful review do not prove complete historical
+coverage, point-in-time availability or readiness to train.
 
 ## Privacy, repository and operation
 

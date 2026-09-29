@@ -1,5 +1,68 @@
 # Verification — v0.1.0
 
+## Saved-data review — local verification 2026-09-30 (Europe/Stockholm)
+
+- `review --out` opens the existing database with SQLite `mode=ro` and
+  `query_only`, using one read snapshot. `--run-id` selects a saved run; without
+  it the latest-created run is reviewed, including failed runs.
+- Output projects counts, known quality flags, observed UTC date bounds and
+  safe changed-field names. No trade values, source IDs, symbols, arbitrary
+  source-field names or metadata are printed. No network or API key is used.
+- Version comparisons distinguish stored source changes, changes to normalized
+  output with identical sources, and unresolved pairs where both match.
+  Context is hashed but not fully retained in old records. The command never
+  clears review blockers or enables training/full-history gates.
+- Runtime: Python 3.12.14 on Linux. **97 offline tests passed**, including 11 new
+  synthetic review tests. The tests first failed on the absent review module.
+- Cases include source-field changes, normalization-only and context-only
+  revisions, case-only layouts, unknown metadata redaction, strategy/type/origin
+  matching, repeated versions, failed/missing runs, hidden-key/network refusal,
+  quality/date projections and byte-identical saved files after CLI review.
+- `review --help` and `git diff --check` passed. Original trader data and a real
+  account were not accessed in development or tests. Remote CI is checked
+  separately on the published commit; the user's revision cause remains to be
+  determined from their own local review report.
+
+## Selected history imports — local verification 2026-09-30 (Europe/Stockholm)
+
+- `fetch --kind closed_trades` saves only the requested closed-trade response;
+  `--kind orders` retains cursor traversal. The default remains both endpoints.
+- The manifest and CLI summary expose `requested_kinds`. An omitted endpoint
+  remains `not_requested`, with an explicit missing-history blocker. Completion
+  of the selected import never enables full-history or training gates.
+- Runtime: Python 3.12.14 on Linux. **86 offline tests passed**, including nine
+  new selected-fetch tests. Tests first failed on the absent selection argument.
+- Synthetic tests cover raw archival, forex/stock normalization, orders pagination,
+  cancelled orders, reuse after an earlier failed two-endpoint fetch, quarantine,
+  local argument rejection, failed selected reads, secret-reflection rejection,
+  hidden CLI input and persistence of scope in the `status` summary.
+- The default fetch still reports failure if orders are denied. There is no
+  automatic omission or fallback that makes a denied selected read successful.
+- `fetch --help` and `git diff --check` passed. No real API key, authenticated
+  provider request or original trader data was used in development or tests.
+  Remote CI is checked separately on the published commit.
+
+## API4 access diagnostics — local verification 2026-09-29
+
+- Current main `8c50561` requests match the reviewed official General API server,
+  GET methods, Bearer authorization, required JSON content header, query parameters
+  and cursor contract. No request-format defect was found that explains the user's 403.
+- The new `diagnose` command probes `GetAccessKey` and the two history endpoints
+  separately. Orders use `Limit=1`; probes do not follow cursors or save responses.
+- Runtime: Python 3.12.14 on Linux. **77 offline tests passed**, including the
+  existing importer suite and 15 new synthetic diagnostic/CLI/transport tests.
+- Tests cover actual GET request construction, per-endpoint 403 reports without
+  retries, successful/failed CLI exits, explicit access acknowledgement, hidden
+  key input, expected secret-bearing key metadata, case variants, metadata redaction,
+  HTTP-200 provider errors and rejection of unrelated hosts/write paths.
+- No API secret, personal metadata, provider error body or trade row is printed
+  by the diagnostic. The raw `GetAccessKey` response is not retained or passed
+  through ingestion. Existing ingestion secret-reflection rejection is unchanged.
+- `diagnose --help` and `git diff --check` passed.
+- No real key or authenticated provider call was used. Remote CI is reported
+  separately from this local verification. The user's actual access/403 cause
+  and complete historical coverage remain unverified. Training gates stay false.
+
 ## Current publication and CI — 2026-09-29
 
 - PR [#1](https://github.com/heke99/trading-intelligence/pull/1) was merged

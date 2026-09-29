@@ -53,23 +53,29 @@ def import_json(path: Path, out: Path, *, kind: str, strategy_id: int,
 
 
 def fetch_history(client: C2Client, out: Path, *, strategy_id: int,
-                  commission_plan: str = "0", naive_timezone: str | None = None,
+                  kind: str = "both", commission_plan: str = "0", naive_timezone: str | None = None,
                   timezone_evidence: str | None = None) -> dict:
     strategy_id = positive_id(strategy_id)
+    if kind not in ("both", "closed_trades", "orders"):
+        raise DataError("FETCH_KIND_INVALID")
+    kinds = ("closed_trades", "orders") if kind == "both" else (kind,)
     # Keep the version identity identical to importing the saved API response.
     context = dict(synthetic=False, naive_timezone=naive_timezone,
                    timezone_evidence=timezone_evidence)
     with DatasetStore(out) as store:
         m = store.start_run(strategy_id, "api4")
         m["commission_plan_requested"] = commission_plan
-        m["endpoint_traversal"] = {"closed_trades": "incomplete", "orders": "incomplete"}
+        m["requested_kinds"] = list(kinds)
+        m["endpoint_traversal"].update({record_kind: "incomplete" for record_kind in kinds})
+        m["blockers"].extend(f"{record_kind.upper()}_NOT_REQUESTED"
+                             for record_kind in ("closed_trades", "orders") if record_kind not in kinds)
         store.save_manifest(m)
         try:
-            for kind in ("closed_trades", "orders"):
-                for page in client.pages(kind, strategy_id, commission_plan=commission_plan):
-                    digest = store.archive(page.body, m, kind)
-                    _ingest(store, m, page.rows, digest, kind, context=context)
-                m["endpoint_traversal"][kind] = "complete"
+            for record_kind in kinds:
+                for page in client.pages(record_kind, strategy_id, commission_plan=commission_plan):
+                    digest = store.archive(page.body, m, record_kind)
+                    _ingest(store, m, page.rows, digest, record_kind, context=context)
+                m["endpoint_traversal"][record_kind] = "complete"
                 store.save_manifest(m)
             # Exhausted cursors do NOT establish inception coverage, rights or execution quality.
             return store.finish(m)
