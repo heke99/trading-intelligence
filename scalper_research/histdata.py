@@ -83,9 +83,17 @@ def _clock(text: str) -> int:
 def _source_text(value: Any, error: str) -> str:
     if (
         not isinstance(value, str) or not value.strip() or len(value) > 4096
-        or any(ord(character) < 32 and character not in "\n\t" for character in value)
+        or any(
+            (ord(character) < 32 and character not in "\n\t")
+            or 127 <= ord(character) <= 159
+            for character in value
+        )
     ):
         raise DataError(error)
+    try:
+        value.encode("utf-8")
+    except UnicodeError:
+        raise DataError(error) from None
     return value
 
 
@@ -181,7 +189,13 @@ def _spec(raw: bytes, source_hash: str) -> tuple[dict, dict]:
         executable_liquidity_verified=False,
         quality_flags=list(_FLAGS),
     )
-    return spec, _metadata(json_bytes(metadata))
+    # Base metadata can also contain an escaped lone surrogate. Encoding
+    # precedes market validation, so keep that failure inside the audit receipt.
+    try:
+        encoded_metadata = json_bytes(metadata)
+    except UnicodeError:
+        raise DataError("HISTDATA_SOURCE_SCHEMA") from None
+    return spec, _metadata(encoded_metadata)
 
 
 def _native_number(text: str, *, price: bool) -> Decimal:
