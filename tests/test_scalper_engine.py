@@ -257,6 +257,102 @@ class ReplayEngineTests(unittest.TestCase):
             self.assertEqual(caller_context.capitals, 0)
         self.assertEqual(actual, expected)
 
+    def test_explicit_finalize_defaults_match_existing_replay(self):
+        data = [q(0, 100, 101), q(1, 100, 101)]
+        default = replay(data, ScriptStrategy(), config())
+        explicit = replay(data, ScriptStrategy(), config(), finalize=True,
+                          entry_halt_from_time_msc=None)
+        self.assertEqual(default, explicit)
+        self.assertTrue(default["finalized"])
+        self.assertFalse(default["entry_halted"])
+        self.assertIn("OPEN_POSITION_AT_END", default["open_position"]["quality_flags"])
+
+    def test_observation_boundary_preserves_pending_entry_without_eof_cancellation(self):
+        result = replay([q(0, 100, 101)], ScriptStrategy(), config(), finalize=False)
+        self.assertEqual(result["pending_decision"]["kind"], "entry")
+        self.assertEqual(result["pending_decision"]["eligible_time_msc"], 1)
+        self.assertFalse(result["finalized"])
+        self.assertIsNone(result["open_position"])
+        self.assertEqual([event["event"] for event in result["events"]], ["entry_decision"])
+
+    def test_observation_boundary_preserves_pending_exit_and_marks_open(self):
+        strategy = ScriptStrategy()
+        strategy.stop_distance = D("2")
+        result = replay([q(0, 100, 101), q(1, 100, 101), q(2, 98, 99)],
+                        strategy, config(), finalize=False)
+        self.assertEqual(result["pending_decision"]["kind"], "exit")
+        self.assertEqual(result["open_position"]["pending_exit"], result["pending_decision"])
+        self.assertIn("OPEN_POSITION_AT_OBSERVATION_BOUNDARY", result["open_position"]["quality_flags"])
+        self.assertNotIn("OPEN_POSITION_AT_END", result["open_position"]["quality_flags"])
+        self.assertNotIn("pending_exit_unfilled_at_end", [e["event"] for e in result["events"]])
+
+    def test_longer_prefix_preserves_all_observed_events_with_pending_decisions(self):
+        data = [q(0, 100, 101), q(1, 100, 101), q(2, 98, 99), q(3, 97, 98)]
+        results = []
+        for length in range(1, len(data) + 1):
+            strategy = ScriptStrategy()
+            strategy.stop_distance = D("2")
+            results.append(replay(data[:length], strategy, config(), finalize=False))
+        for previous, current in zip(results, results[1:]):
+            self.assertEqual(previous["events"], current["events"][:len(previous["events"])])
+            self.assertEqual(previous["equity_points"], current["equity_points"][:len(previous["equity_points"])])
+
+    def test_paper_stop_cancels_entry_before_first_eligible_fill(self):
+        strategy = ScriptStrategy({0: "long", 1: "short", 2: "long"})
+        result = replay([q(t, 100, 101) for t in range(3)], strategy, config(),
+                        finalize=False, entry_halt_from_time_msc=1)
+        self.assertEqual(result["entered_trade_count"], 0)
+        self.assertTrue(result["entry_halted"])
+        self.assertIsNone(result["pending_decision"])
+        stops = [e for e in result["events"] if e["event"] == "paper_stop_observed"]
+        self.assertEqual(len(stops), 1)
+        self.assertEqual(stops[0]["time_msc"], 1)
+        self.assertEqual(result["events"][-1]["reason"], "paper_stop")
+
+    def test_paper_stop_position_exit_waits_for_later_quote_and_can_remain_open(self):
+        data = [q(0, 100, 101), q(1, 100, 101), q(2, 99, 100)]
+        boundary = replay(data, ScriptStrategy(), config(), finalize=False,
+                          entry_halt_from_time_msc=2)
+        self.assertEqual(boundary["closed_trade_count"], 0)
+        self.assertEqual(boundary["pending_decision"]["reason"], "paper_stop")
+        self.assertEqual(boundary["pending_decision"]["eligible_time_msc"], 3)
+        self.assertEqual(boundary["open_position"]["entry_time_msc"], 1)
+        finished = replay(data + [q(3, 98, 99)], ScriptStrategy(), config(),
+                          finalize=False, entry_halt_from_time_msc=2)
+        trade = finished["closed_trades"][0]
+        self.assertEqual(trade["exit_reason"], "paper_stop")
+        self.assertEqual(trade["exit_trigger_time_msc"], 2)
+        self.assertEqual(trade["exit_time_msc"], 3)
+        self.assertEqual(boundary["events"], finished["events"][:len(boundary["events"])])
+        finalized = replay(data, ScriptStrategy(), config(), entry_halt_from_time_msc=2)
+        self.assertEqual(finalized["closed_trade_count"], 0)
+        self.assertIsNotNone(finalized["open_position"])
+
+    def test_paper_stop_keeps_existing_exit_deadline_and_observes_only_future_quote(self):
+        strategy = ScriptStrategy()
+        strategy.stop_distance = D("2")
+        data = [q(0, 100, 101), q(1, 100, 101), q(2, 98, 99), q(3, 97, 98)]
+        result = replay(data, strategy, config(), finalize=False, entry_halt_from_time_msc=3)
+        self.assertEqual(result["closed_trades"][0]["exit_reason"], "stop")
+        self.assertEqual(result["closed_trades"][0]["exit_trigger_time_msc"], 2)
+        self.assertEqual(result["closed_trades"][0]["exit_time_msc"], 3)
+        future = replay(data[:2], ScriptStrategy(), config(), finalize=False,
+                        entry_halt_from_time_msc=10)
+        self.assertFalse(future["entry_halted"])
+        self.assertFalse(any(e["event"] == "paper_stop_observed" for e in future["events"]))
+        stopped = replay(data, ScriptStrategy(), config(), finalize=False,
+                         entry_halt_from_time_msc=0)
+        self.assertEqual(stopped["entered_trade_count"], 0)
+        self.assertEqual(stopped["events"][0]["event"], "paper_stop_observed")
+
+    def test_paper_boundary_and_control_inputs_are_strictly_typed(self):
+        for finalize in (None, 0, 1, "false"):
+            with self.subTest(finalize=finalize), self.assertRaises(ValueError):
+                replay([], ScriptStrategy(), config(), finalize=finalize)
+        for halt in (True, False, -1, 0.0, "0"):
+            with self.subTest(halt=halt), self.assertRaises(ValueError):
+                replay([], ScriptStrategy(), config(), entry_halt_from_time_msc=halt)
+
 
 if __name__ == "__main__":
     unittest.main()

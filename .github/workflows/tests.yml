@@ -21,8 +21,11 @@ jobs:
         run: python -m trading_intelligence demo --out "$RUNNER_TEMP/trading-demo"
       - name: Synthetic quote replay
         run: python -m scalper_research demo --out "$RUNNER_TEMP/scalper-demo"
+      - name: Synthetic learning and durable paper simulation
+        run: python -m scalper_research all-demo --out "$RUNNER_TEMP/scalper-all-demo"
       - name: Installed package smoke test
         run: |
           python -m pip install --no-deps .
           cd "$RUNNER_TEMP"
           scalper-research demo --out "$RUNNER_TEMP/installed-scalper-demo"
+          scalper-research all-demo --out "$RUNNER_TEMP/installed-scalper-all-demo"

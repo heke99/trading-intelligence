@@ -65,16 +65,21 @@ class EngineConfig:
             _integer(name, getattr(self, name), positive=True)
 
 
-def replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str, Any]:
+def replay(quotes: list[Any], strategy: Any, config: EngineConfig, *,
+           finalize: bool = True,
+           entry_halt_from_time_msc: int | None = None) -> dict[str, Any]:
     """Return auditable hypothetical fills and marked PnL for offline quotes."""
     # Explicit admission bounds permit exact aligned additions and products of
     # prices, quantity and multiplier without ambient Decimal28 rounding.
     # Keep the caller's global decimal context unchanged.
     with localcontext(Context(prec=1024)):
-        return _replay(quotes, strategy, config)
+        return _replay(quotes, strategy, config, finalize=finalize,
+                       entry_halt_from_time_msc=entry_halt_from_time_msc)
 
 
-def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str, Any]:
+def _replay(quotes: list[Any], strategy: Any, config: EngineConfig, *,
+            finalize: bool,
+            entry_halt_from_time_msc: int | None) -> dict[str, Any]:
     """Replay increasing quote clocks through an entry-only strategy.
 
     ``strategy.on_quote(quote, position)`` returns ``long``, ``short`` or None.
@@ -87,10 +92,22 @@ def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str,
     after the same latency. An exit already requested keeps its old deadline.
     Gap flags cannot establish the actual price path, availability, or maximum
     loss inside the gap.
-    At EOF, an open position remains open; its liquidation mark is unrealized.
+    At finalized EOF, an open position remains open; its mark is unrealized.
+    An observation boundary (finalize=False) preserves outstanding decisions
+    and emits no fabricated EOF cancellation. Replaying a longer prefix can
+    therefore preserve the already observed event prefix exactly.
+
+    A requested paper stop is observed only at the first quote at/after its
+    timestamp. It permanently halts new entries, cancels a pending entry before
+    any fill, and requests a delayed position exit. It is a local simulation
+    control, not an order or a fill at the time the control was requested.
     """
     if not isinstance(config, EngineConfig):
         raise ValueError("config must be EngineConfig")
+    if type(finalize) is not bool:
+        raise ValueError("finalize must be bool")
+    if entry_halt_from_time_msc is not None:
+        _integer("entry_halt_from_time_msc", entry_halt_from_time_msc)
     stop_distance = _decimal("stop_distance", strategy.stop_distance, positive=True)
     target_distance = _decimal("target_distance", strategy.target_distance, positive=True)
     max_hold_ms = _integer("max_hold_ms", strategy.max_hold_ms, positive=True)
@@ -117,6 +134,7 @@ def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str,
     peak = Decimal(0)
     maximum_drawdown = Decimal(0)
     risk_halted = False
+    entry_halted = False
     previous_quote: Any | None = None
     previous_session: bool | None = None
     fee_per_side = config.quantity * config.commission_per_unit_per_side
@@ -181,6 +199,16 @@ def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str,
         session_open = strategy.session_open(quote.time_msc)
         if type(session_open) is not bool:
             raise ValueError("session_open must return bool")
+        if (not entry_halted and entry_halt_from_time_msc is not None
+                and quote.time_msc >= entry_halt_from_time_msc):
+            entry_halted = True
+            emit("paper_stop_observed", quote,
+                 requested_time_msc=entry_halt_from_time_msc)
+            if pending is not None and pending["kind"] == "entry":
+                emit("pending_cancelled", quote, reason="paper_stop", pending=pending)
+                pending = None
+            if position is not None and pending is None:
+                request_exit(quote, "paper_stop")
         gap_ms = (quote.time_msc - previous_quote.time_msc
                   if previous_quote is not None else 0)
         gap = previous_quote is not None and gap_ms > config.max_quote_gap_ms
@@ -217,6 +245,8 @@ def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str,
                 price = entry_price(side, quote)
                 if not session_open:
                     rejection = "session_closed"
+                elif entry_halted:
+                    rejection = "paper_stop"
                 elif quote.ask - quote.bid > config.max_entry_spread:
                     rejection = "entry_spread_limit"
                 elif risk_halted or realized <= -config.max_loss_currency:
@@ -282,7 +312,8 @@ def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str,
         if signal not in (None, "long", "short"):
             raise ValueError("strategy signal must be long, short, or None")
         if (signal is not None and position is None and pending is None and session_open
-                and not gap and not risk_halted and entered_count < config.max_trades
+                and not gap and not risk_halted and not entry_halted
+                and entered_count < config.max_trades
                 and quote.ask - quote.bid <= config.max_entry_spread):
             pending = {"kind": "entry", "side": signal,
                        "decision_time_msc": quote.time_msc,
@@ -303,7 +334,7 @@ def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str,
 
     open_report = None
     if previous_quote is not None:
-        if pending is not None and pending["kind"] == "entry":
+        if finalize and pending is not None and pending["kind"] == "entry":
             emit("pending_cancelled", previous_quote, reason="end_of_data", pending=pending)
             pending = None
         if position is not None:
@@ -316,8 +347,10 @@ def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str,
                            "net_liquidation_pnl_currency": net,
                            "pending_exit": pending,
                            "quality_flags": sorted(set(position["quality_flags"])
-                                                   | {"OPEN_POSITION_AT_END", "UNREALIZED_EXIT_COST_ESTIMATE"})}
-            if pending is not None:
+                                                   | {("OPEN_POSITION_AT_END" if finalize
+                                                       else "OPEN_POSITION_AT_OBSERVATION_BOUNDARY"),
+                                                      "UNREALIZED_EXIT_COST_ESTIMATE"})}
+            if finalize and pending is not None:
                 emit("pending_exit_unfilled_at_end", previous_quote, pending=pending,
                      trade_id=position["trade_id"])
     report = {
@@ -328,6 +361,9 @@ def _replay(quotes: list[Any], strategy: Any, config: EngineConfig) -> dict[str,
         "config": asdict(config), "quote_count": len(quotes),
         "entered_trade_count": entered_count, "closed_trade_count": len(trades),
         "closed_trades": trades, "open_position": open_report,
+        "pending_decision": pending, "finalized": finalize,
+        "entry_halted": entry_halted,
+        "entry_halt_from_time_msc": entry_halt_from_time_msc,
         "events": events, "equity_points": equity_points,
         "realized_gross_pnl_currency": sum((t["gross_pnl_currency"] for t in trades), Decimal(0)),
         "realized_commission_currency": sum((t["commission_currency"] for t in trades), Decimal(0)),

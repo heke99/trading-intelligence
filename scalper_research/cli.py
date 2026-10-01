@@ -1,4 +1,4 @@
-"""Local-only quote research; no keys, login, broker connection or order methods."""
+"""Local quote research, learning and simulation; no broker order interface."""
 from __future__ import annotations
 
 import argparse
@@ -45,7 +45,7 @@ def demo_inputs(directory: Path) -> tuple[Path, Path, Path]:
 
 
 def parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Offline bid/ask replay of one explicit rule hypothesis; no learning or execution.")
+    p = argparse.ArgumentParser(description="Offline bid/ask import, chronological learning and durable local simulation.")
     p.add_argument("--version", action="version", version=__version__)
     sub = p.add_subparsers(dest="command", required=True)
     demo = sub.add_parser("demo", help="Run fictional quotes through isolated chronological partitions")
@@ -61,6 +61,31 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("--out", type=Path, required=True)
     status = sub.add_parser("status", help="Show newest replay including failed/incomplete run")
     status.add_argument("--out", type=Path, required=True)
+    bi5 = sub.add_parser("convert-bi5", help="Decode a local BI5 with explicit clock, scale and source evidence")
+    bi5.add_argument("file", type=Path)
+    bi5.add_argument("--spec", type=Path, required=True)
+    bi5.add_argument("--out", type=Path, required=True)
+    learn = sub.add_parser("learn", help="Fit on development only, select threshold on validation, then test once")
+    learn.add_argument("file", type=Path)
+    learn.add_argument("--metadata", type=Path, required=True)
+    learn.add_argument("--config", type=Path, required=True)
+    learn.add_argument("--out", type=Path, required=True)
+    ls = sub.add_parser("learning-status", help="Show latest learning receipt including failures")
+    ls.add_argument("--out", type=Path, required=True)
+    sub.add_parser("strategy-audit", help="Show evidence and market fields still required for named-trader strategies")
+    ps = sub.add_parser("paper-start", help="Bind a local append-only quote file to one persistent simulation")
+    ps.add_argument("file", type=Path)
+    ps.add_argument("--metadata", type=Path, required=True)
+    ps.add_argument("--config", type=Path, required=True)
+    ps.add_argument("--model", type=Path)
+    ps.add_argument("--threshold", type=float)
+    ps.add_argument("--out", type=Path, required=True)
+    for command, help_text in (("paper-step", "Process complete new quote rows with the same frozen state"),
+                               ("paper-stop", "Persist an entry halt; any exit needs later quotes"),
+                               ("paper-status", "Read durable simulation status"),
+                               ("all-demo", "Exercise every implemented stage on fictional data")):
+        psub = sub.add_parser(command, help=help_text)
+        psub.add_argument("--out", type=Path, required=True)
     return p
 
 
@@ -79,8 +104,31 @@ def main(argv: list[str] | None = None) -> int:
             result = import_quotes(args.file, args.metadata, args.out)
         elif args.command == "replay":
             result = run_research(args.file, args.metadata, args.config, args.out)
-        else:
+        elif args.command == "status":
             result = research_status(args.out)
+        elif args.command == "convert-bi5":
+            from .bi5 import convert_bi5
+            result = convert_bi5(args.file, args.spec, args.out)
+        elif args.command == "learn":
+            from .learning_pipeline import run_learning
+            result = run_learning(args.file, args.metadata, args.config, args.out)
+        elif args.command == "learning-status":
+            from .learning_pipeline import learning_status
+            result = learning_status(args.out)
+        elif args.command == "strategy-audit":
+            from .strategy_requirements import strategy_requirements
+            result = {"status": "completed", **strategy_requirements()}
+        elif args.command == "paper-start":
+            from .paper import start_paper
+            result = start_paper(args.file, args.metadata, args.config, args.out,
+                                 model_path=args.model, threshold=args.threshold)
+        elif args.command.startswith("paper-"):
+            from .paper import step_paper, stop_paper, paper_status
+            operation = {"paper-step": step_paper, "paper-stop": stop_paper, "paper-status": paper_status}[args.command]
+            result = operation(args.out)
+        else:
+            from .workflow import run_all_demo
+            result = run_all_demo(args.out)
         print(json_bytes(result).decode(), end="")
         if "INTERRUPTED" in result.get("errors", []):
             return 130

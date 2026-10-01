@@ -1,7 +1,7 @@
-# Trading Intelligence — history importers and offline replay v0.3
+# Trading Intelligence — history importers and offline research v0.4
 
-A read-only data-acquisition foundation. **Not a trained robot, an execution system,
-or a claim of investment performance.** No live trading, subscriptions, payment,
+A read-only data-acquisition foundation and a separate offline research package.
+**No verified market-trained robot or investment-performance claim.** No live trading, subscriptions, payment,
 broker login or order-placement methods exist in this package.
 
 The importer reads two documented Collective2 API4 endpoints: closed trades and
@@ -18,12 +18,17 @@ See [publisher commands and the path toward a scalper](docs/PUBLISHER_DATA_SV.md
 The standalone `scalper_research` package now imports explicit UTC-ms bid/ask
 quotes and replays one frozen rolling-channel rule hypothesis with latency,
 spread, commission and adverse slippage. It uses chronological partitions and
-keeps fills hypothetical. It does not read trader-history tables as training
-features. See [the Swedish replay guide](docs/SCALPER_REPLAY_SV.md).
+keeps fills hypothetical. It now fits a deterministic signal filter on development
+outcomes only, selects its threshold on validation, and evaluates the frozen result
+on a later test partition. Durable local quote-file simulation can use that frozen
+model. It does not read trader-history tables as training features or imitate
+named traders. See [the full Swedish workflow](docs/SCALPER_WORKFLOW_SV.md).
 
 ```bash
 python3 -m scalper_research demo --out ../scalper-demo
 python3 -m scalper_research status --out ../scalper-demo
+python3 -m scalper_research all-demo --out ../scalper-all-demo
+python3 -m scalper_research strategy-audit
 ```
 
 The demo uses fictional quotes only. Running it is a behavior check, not a
@@ -176,7 +181,10 @@ counts, access scope and start/end coverage have been independently reconciled.
 
 Every manifest has `training_ready=false`. This is a workflow marker, not a legal
 approval system or a security boundary against a person reading the raw database.
-There is no training command, market-data join, model, or execution connection yet.
+The history foundation still has no training command or expert/market join. The
+separate `scalper_research learn` command fits an independent quote hypothesis;
+the delivered engineering demonstration uses fictional quotes. No execution
+connection exists.
 
 ## Privacy, repository and operation
 
@@ -193,9 +201,11 @@ The GitHub Actions workflow only runs offline synthetic tests, without any C2 se
 The runtime does not depend
 on Vercel, Supabase, a GPU, a Windows terminal, or a live brokerage account.
 
-Next engineering milestone: run a permitted real export, reconcile source counts,
-confirm timestamps/instrument units/costs, then build a point-in-time market-data
-adapter and chronological benchmark. Data validation alone cannot prove profitability.
+Next evidence milestone: obtain permitted market quotes and complete relevant
+trader exports, reconcile coverage and clocks, confirm instrument units/costs,
+and evaluate the frozen hypothesis on genuinely unseen market periods. The BI5
+adapter requires explicit hourly/daily clocks and price scale; it does not download
+data or grant usage rights. Data validation alone cannot prove profitability.
 
 See [source contracts](docs/SOURCES.md), [data contract](docs/DATA_CONTRACT.md), and
 [verification record](docs/VERIFICATION.md).
