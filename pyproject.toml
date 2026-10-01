@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-intelligence"
-version = "0.2.0"
-description = "Read-only C2 and publisher-history importers with immutable evidence and audit gates"
+version = "0.3.0"
+description = "Read-only history importers and separate offline bid/ask rule replay"
 requires-python = ">=3.11"
 dependencies = []
 
 [project.scripts]
 trading-intelligence = "trading_intelligence.cli:main"
+scalper-research = "scalper_research.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["trading_intelligence*"]
+include = ["trading_intelligence*", "scalper_research*"]

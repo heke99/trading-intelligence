@@ -1,4 +1,4 @@
-# Trading Intelligence — history importers v0.2
+# Trading Intelligence — history importers and offline replay v0.3
 
 A read-only data-acquisition foundation. **Not a trained robot, an execution system,
 or a claim of investment performance.** No live trading, subscriptions, payment,
@@ -14,6 +14,20 @@ layouts, reviewed image transactions, public journal summaries and educational
 strategy cards. It preserves source types, unknown clocks and historical revisions;
 it does not turn them into authenticated fills or a learned trading policy.
 See [publisher commands and the path toward a scalper](docs/PUBLISHER_DATA_SV.md).
+
+The standalone `scalper_research` package now imports explicit UTC-ms bid/ask
+quotes and replays one frozen rolling-channel rule hypothesis with latency,
+spread, commission and adverse slippage. It uses chronological partitions and
+keeps fills hypothetical. It does not read trader-history tables as training
+features. See [the Swedish replay guide](docs/SCALPER_REPLAY_SV.md).
+
+```bash
+python3 -m scalper_research demo --out ../scalper-demo
+python3 -m scalper_research status --out ../scalper-demo
+```
+
+The demo uses fictional quotes only. Running it is a behavior check, not a
+measurement of profitability or an approval to connect a broker.
 
 ## Run without installing dependencies
 

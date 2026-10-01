@@ -1,0 +1,100 @@
+"""Local-only quote research; no keys, login, broker connection or order methods."""
+from __future__ import annotations
+
+import argparse
+from decimal import Decimal
+from pathlib import Path
+import sys
+
+from trading_intelligence.common import DataError, json_bytes
+from . import __version__
+from .market import import_quotes
+from .pipeline import _atomic, run_research, research_status
+
+
+def demo_inputs(directory: Path) -> tuple[Path, Path, Path]:
+    """Write a fixed fictional market, never download or pretend to measure edge."""
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    base = 1704186000000  # 2024-01-02 09:00 UTC, artificial quotes below.
+    offsets = [-2, 0, 1, 1, 4, 5, 8, 8, 10, 9, 6, 4, 1, -2, -4, -6, -7, -5, -3, 0, 3, 5, 6, 4]
+    lines = ["time_msc,bid,ask"]
+    for index, offset in enumerate(offsets * 3):
+        mid = Decimal("1.100000") + Decimal(offset) * Decimal("0.000010")
+        lines.append(f"{base + index * 250},{mid - Decimal('0.000010')},{mid + Decimal('0.000010')}")
+    metadata = {
+        "schema_version": 1, "source_id": "fictional_eurusd_quote_fixture_v1", "symbol": "EURUSD",
+        "timestamp_basis": "utc_epoch_milliseconds", "timezone_evidence": "fixture generator defines UTC epoch milliseconds",
+        "data_origin": "synthetic_fixture", "price_currency": "USD", "usage_rights": "synthetic_only",
+        "rights_evidence": "entirely fictional prices generated for offline behavior checks",
+    }
+    config = {
+        "schema_version": 1, "basis": "independent_rule_hypothesis",
+        "strategy": {"lookback_quotes": 3, "breakout_buffer": "0.000005", "stop_distance": "0.000040",
+                     "target_distance": "0.000060", "max_hold_ms": 1500,
+                     "session_start_minute_utc": 0, "session_end_minute_utc": 1440, "cooldown_ms": 500},
+        "execution": {"symbol": "EURUSD", "quantity": "1000", "contract_multiplier": "1", "price_currency": "USD",
+                      "commission_per_unit_per_side": "0.000001", "slippage_price": "0.000001", "latency_ms": 100,
+                      "max_quote_gap_ms": 1000, "max_entry_spread": "0.000040", "max_loss_currency": "1", "max_trades": 10},
+        "evaluation": {"development_end_msc": base + 24 * 250, "validation_end_msc": base + 48 * 250},
+    }
+    paths = (directory / "quotes.synthetic.csv", directory / "market.synthetic.json", directory / "config.synthetic.json")
+    _atomic(paths[0], ("\n".join(lines) + "\n").encode())
+    _atomic(paths[1], json_bytes(metadata))
+    _atomic(paths[2], json_bytes(config))
+    return paths
+
+
+def parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Offline bid/ask replay of one explicit rule hypothesis; no learning or execution.")
+    p.add_argument("--version", action="version", version=__version__)
+    sub = p.add_subparsers(dest="command", required=True)
+    demo = sub.add_parser("demo", help="Run fictional quotes through isolated chronological partitions")
+    demo.add_argument("--out", type=Path, required=True)
+    imp = sub.add_parser("import-quotes", help="Archive an explicit UTC-ms bid/ask CSV without inventing its clock or rights")
+    imp.add_argument("file", type=Path)
+    imp.add_argument("--metadata", type=Path, required=True)
+    imp.add_argument("--out", type=Path, required=True)
+    run = sub.add_parser("replay", help="Replay one frozen config across chronological development/validation/test")
+    run.add_argument("file", type=Path)
+    run.add_argument("--metadata", type=Path, required=True)
+    run.add_argument("--config", type=Path, required=True)
+    run.add_argument("--out", type=Path, required=True)
+    status = sub.add_parser("status", help="Show newest replay including failed/incomplete run")
+    status.add_argument("--out", type=Path, required=True)
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parser().parse_args(argv)
+    try:
+        if args.command == "demo":
+            paths = demo_inputs(args.out / "synthetic-inputs")
+            imported = import_quotes(paths[0], paths[1], args.out)
+            if imported["status"] != "completed":
+                result = imported
+            else:
+                result = run_research(*paths, args.out)
+                result.update(network_used=False, synthetic_only=True)
+        elif args.command == "import-quotes":
+            result = import_quotes(args.file, args.metadata, args.out)
+        elif args.command == "replay":
+            result = run_research(args.file, args.metadata, args.config, args.out)
+        else:
+            result = research_status(args.out)
+        print(json_bytes(result).decode(), end="")
+        if "INTERRUPTED" in result.get("errors", []):
+            return 130
+        return 2 if result["status"] == "failed" else 0
+    except DataError as error:
+        print(json_bytes({"error": str(error), "training_ready": False, "trading_enabled": False}).decode(), file=sys.stderr, end="")
+        return 2
+    except OSError:
+        print('{"error":"RESEARCH_LOCAL_IO_ERROR","training_ready":false}', file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        print('{"error":"INTERRUPTED","training_ready":false}', file=sys.stderr)
+        return 130
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
