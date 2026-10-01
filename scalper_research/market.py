@@ -28,6 +28,12 @@ SCHEMA_VERSION = 1
 _SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}\Z", re.ASCII)
 _NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\Z", re.ASCII)
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_RECONSTRUCTION_CAVEATS = frozenset({
+    "BOOTSTRAP_COMPLETION_ASSUMED", "CONTINUOUS_MATCHING_PHASE_UNVERIFIED",
+    "DELETE_OR_MODIFY_NOT_EXECUTION_LABELS", "NATIVE_MESSAGE_CLOCK_NOT_RECEIVE_CLOCK",
+    "SOURCE_ROW_ORDER_NOT_VERIFIED_EXCHANGE_SEQUENCE", "EQUAL_NS_PRIORITY_UNVERIFIED",
+    "DERIVED_SAMPLED_VISIBLE_BIDASK_NOT_EXECUTABLE_LIQUIDITY",
+})
 
 
 @dataclass(frozen=True)
@@ -96,10 +102,32 @@ def _metadata(raw: bytes) -> dict:
         raise DataError("MARKET_USAGE_RIGHTS_ORIGIN_CONFLICT")
     if rights == "user_asserted_permitted":
         _required_text(metadata, "rights_evidence")
+    if "source_export_status" in metadata and metadata["source_export_status"] != "completed":
+        raise DataError("MARKET_SOURCE_EXPORT_INCOMPLETE")
     for field in ("broker_verified", "training_ready", "full_history_verified"):
         if field in metadata and metadata[field] is not False:
             raise DataError("MARKET_UNSUPPORTED_VERIFICATION_CLAIM")
+    if "wse_required_max_quote_gap_ms" in metadata:
+        value = metadata["wse_required_max_quote_gap_ms"]
+        if type(value) is not int or not 1 <= value <= 60000:
+            raise DataError("MARKET_RECONSTRUCTION_GAP_POLICY_INVALID")
     return metadata
+
+
+def validate_quote_execution(metadata: dict, config: object) -> None:
+    """Do not bridge a segment break hidden by a wider execution gap budget.
+
+    WSE projection deliberately omits invalid buckets. Its explicit required
+    gap ceiling ensures every omitted bucket resets signal/pending state in the
+    replay engine. This is a data-context constraint, not a quality approval.
+    """
+    maximum = metadata.get("wse_required_max_quote_gap_ms")
+    if maximum is not None:
+        if type(maximum) is not int or not 1 <= maximum <= 60000:
+            raise DataError("MARKET_RECONSTRUCTION_GAP_POLICY_INVALID")
+        configured = getattr(config, "max_quote_gap_ms", None)
+        if type(configured) is not int or not 1 <= configured <= maximum:
+            raise DataError("RECONSTRUCTED_QUOTE_GAP_POLICY_MISMATCH")
 
 
 def _time_msc(value: str) -> int:
@@ -176,6 +204,14 @@ def _load_bytes(csv_raw: bytes, metadata_raw: bytes) -> QuoteDataset:
         flags.append("USAGE_RIGHTS_NOT_VERIFIED")
     if duplicate_timestamps:
         flags.append("EQUAL_TIMESTAMP_ORDER_UNVERIFIED")
+    if "wse_required_max_quote_gap_ms" in metadata:
+        source_flags = metadata.get("quality_flags", [])
+        if not isinstance(source_flags, list) or len(source_flags) > 32 or any(
+                not isinstance(flag, str) for flag in source_flags):
+            raise DataError("MARKET_RECONSTRUCTION_FLAGS_INVALID")
+        for flag in source_flags:
+            if flag in _RECONSTRUCTION_CAVEATS and flag not in flags:
+                flags.append(flag)
     return QuoteDataset(quotes, metadata, _sha256(csv_raw), _sha256(metadata_raw), flags)
 
 

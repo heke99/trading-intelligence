@@ -1,4 +1,4 @@
-# Trading Intelligence — history importers and offline research v0.4
+# Trading Intelligence — history importers and offline research v0.5
 
 A read-only data-acquisition foundation and a separate offline research package.
 **No verified market-trained robot or investment-performance claim.** No live trading, subscriptions, payment,
@@ -31,12 +31,21 @@ python3 -m scalper_research all-demo --out ../scalper-all-demo
 python3 -m scalper_research strategy-audit
 ```
 
+The native-data path now preserves WSE order-event nanoseconds and derives
+explicit causal bid/ask boundaries. A fixed public-source downloader verifies
+the original file size and hash; a local-file workflow archives the plan, imports,
+fits on development data, freezes validation selection and runs five predefined
+cost scenarios on the later test period. See [the WSE workflow](docs/WSE_WORKFLOW_SV.md).
+A read-only [MT5 export script](docs/MT5_EXPORT_SV.md) provides another local-data
+route; its terminal compilation and runtime have not been verified here.
+
 The demo uses fictional quotes only. Running it is a behavior check, not a
 measurement of profitability or an approval to connect a broker.
 
 ## Run without installing dependencies
 
-Python **3.11 or later**. The runtime uses only Python's standard library.
+Python **3.11 or later**. The core runtime uses only Python's standard library.
+The optional WSE HDF reader requires `python3 -m pip install '.[wse]'`.
 Run these commands from this repository's root directory:
 
 ```bash

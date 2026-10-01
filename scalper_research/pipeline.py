@@ -80,7 +80,7 @@ def parse_config(raw: bytes):
 
 
 def run_research(csv_path: Path, metadata_path: Path, config_path: Path, out: Path) -> dict:
-    from .market import load_quotes
+    from .market import load_quotes, validate_quote_execution
     from .engine import replay
 
     out = Path(out)
@@ -123,6 +123,7 @@ def run_research(csv_path: Path, metadata_path: Path, config_path: Path, out: Pa
                                         "max_gap_ms": max((b.time_msc-a.time_msc for a,b in zip(dataset.quotes,dataset.quotes[1:])), default=0)}
         if metadata["symbol"] != engine_config.symbol or metadata["price_currency"] != engine_config.price_currency:
             raise DataError("REPLAY_INSTRUMENT_OR_CURRENCY_MISMATCH")
+        validate_quote_execution(metadata, engine_config)
         if metadata["usage_rights"] == "not_verified":
             raise DataError("REPLAY_USAGE_RIGHTS_NOT_ASSERTED")
         if "EQUAL_TIMESTAMP_ORDER_UNVERIFIED" in dataset.quality_flags:

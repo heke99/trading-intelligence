@@ -15,6 +15,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: Install optional native HDF reader
+        run: python -m pip install '.[wse]'
       - name: Offline unit and integration tests
         run: python -m unittest discover -s tests -v
       - name: Synthetic end-to-end demo
@@ -23,9 +25,12 @@ jobs:
         run: python -m scalper_research demo --out "$RUNNER_TEMP/scalper-demo"
       - name: Synthetic learning and durable paper simulation
         run: python -m scalper_research all-demo --out "$RUNNER_TEMP/scalper-all-demo"
+      - name: Synthetic native order reconstruction, learning and cost stress
+        run: python -m scalper_research native-demo --out "$RUNNER_TEMP/scalper-native-demo"
       - name: Installed package smoke test
         run: |
           python -m pip install --no-deps .
           cd "$RUNNER_TEMP"
           scalper-research demo --out "$RUNNER_TEMP/installed-scalper-demo"
           scalper-research all-demo --out "$RUNNER_TEMP/installed-scalper-all-demo"
+          scalper-research native-demo --out "$RUNNER_TEMP/installed-scalper-native-demo"

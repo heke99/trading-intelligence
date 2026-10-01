@@ -1,4 +1,29 @@
-# Verification — v0.1.0
+# Verification history
+
+## Native-data research v0.5.0 — 2026-10-01
+
+- All 379 offline synthetic unit/integration tests pass with the optional
+  `h5py==3.16.0` reader installed. Core packages still have no runtime dependencies.
+- The native demonstration parses actual synthetic HDF compound tables,
+  preserves 3,627 fictional order events and derives 1,806 causal observations.
+  Every incorporated event precedes its labeled bucket-end boundary.
+- Development-only fitting, validation selection, frozen test reuse and five
+  predefined cost scenarios are covered; source caveats survive quote loading
+  and appear in each cost report. Invalid reconstructed buckets cannot be
+  bridged by a wider execution gap tolerance.
+- A real public-source download was attempted once. It failed during opening
+  the source, received zero bytes and published no dataset. The original HDF
+  layout, real-market training and broker forward execution remain unverified.
+- Local `wse-run` freezes specification/config bytes before import, stops on
+  failed import or unavailable frozen selection, and records finished failures.
+  This records local operation order; prior external data visibility is unknown.
+- The built wheel was installed and exercised outside the source directory with
+  `all-demo`, `native-demo` and local `wse-run`, using fictional data only.
+- The MT5 exporter has source review only. No MQL5 compiler or terminal runtime
+  is available here; Python tests do not establish its terminal behavior.
+- `training_ready=false`, `full_history_verified=false` and
+  `trading_enabled=false` remain correct. No complete Fabio/Siva execution ledger
+  or complete runnable imitation was obtained.
 
 ## Current publication and CI — 2026-09-29
 

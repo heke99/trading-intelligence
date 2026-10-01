@@ -19,6 +19,8 @@ runs/
 *.html
 *.htm
 *.parquet
+*.h5
+*.hdf5
 *.log
 *.zip
 *.tar*
