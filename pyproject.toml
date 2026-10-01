@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-intelligence"
-version = "0.3.0"
-description = "Read-only history importers and separate offline bid/ask rule replay"
+version = "0.4.0"
+description = "Read-only history importers and separate offline quote learning and simulation"
 requires-python = ">=3.11"
 dependencies = []
 

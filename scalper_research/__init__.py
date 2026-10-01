@@ -1,2 +1,2 @@
-"""Offline quote replay and explicit rule hypotheses; no model or order APIs."""
-__version__ = "0.1.0"
+"""Offline quote learning for independent hypotheses and local simulation."""
+__version__ = "0.2.0"
