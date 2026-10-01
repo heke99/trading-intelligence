@@ -6,7 +6,7 @@ Granskat 2026-10-01. Detta dokument beskriver underlaget för EURUSD, Nasdaq, XA
 |---|---|---|
 | EURUSD | Exakt brokersymbol och FX-/CFD-produkt | EUR/USD är namnkonvention; faktisk kontraktsstorlek, lots/basenheter, tick och kontovaluta saknas. |
 | Nasdaq | NDX-index, NQ, MNQ eller exakt CFD med cash-/terminsbasis | Aktuellt verifierat NQ: USD20/punkt, 0,25-punktstick = USD5. MNQ: USD2/punkt, 0,25-punktstick = USD0,50. Detta fastställer inga CFD- eller äldre brokervillkor. |
-| XAUUSD | Exakt brokerprodukt: metall/spot/CFD | Guldenhet och vikt per lot kräver specifikation; ingen100oz-standard antas. |
+| XAUUSD | Exakt brokerprodukt: metall/spot/CFD | Guldenhet och vikt per lot kräver specifikation; ingen standard på 100 oz antas. |
 | GBPJPY | Exakt brokersymbol och FX-/CFD-produkt | GBP/JPY enligt namnkonvention; kontrakt, profit-/kontovaluta och konvertering saknas. |
 | EURJPY | Exakt brokersymbol och FX-/CFD-produkt | EUR/JPY enligt namnkonvention; samma krav på kontrakt och konvertering. |
 
@@ -43,20 +43,20 @@ Mängdenhet och kontraktsmultiplikator används exakt en gång. Point, tickstorl
 
 Dagens hämtade specifikation styrker inte äldre villkor. Dokumentera effective-from/to och dela perioden när kontrakt, avgifter, swap eller sessionsregler ändras. Veckosessioner ersätter inte daterade handelskalendrar, helgundantag eller DST. För futures används originalkontrakt och explicit rollmap; en bakåtjusterad kontinuerlig serie är inte ett faktiskt fillpris.
 
-MetaQuotes dokumentation beskriver dataformatet och plattformen, inte en specifik brokers villkor eller dataanvändningslicens. CME:s publicerade2025-avtal visar olika användningsklasser; det fastställer inte användarens gällande2026-avtal, en generell träningsspärr eller ett köpbehov. Börja med befintliga legitima exporter och deras tillämpliga villkor.
+MetaQuotes dokumentation beskriver dataformatet och plattformen, inte en specifik brokers villkor eller dataanvändningslicens. CME:s publicerade avtal från 2025 visar olika användningsklasser; det fastställer inte användarens gällande avtal från 2026, en generell träningsspärr eller ett köpbehov. Börja med befintliga legitima exporter och deras tillämpliga villkor.
 
 ## Officiella primärkällor
 
 - NAS_NDX: [Nasdaq](https://indexes.nasdaqomx.com/Index/Overview/NDX) — official index description; Index Description.
 - CME_NQ: [CME Group](https://www.cmegroup.com/markets/equities/nasdaq/e-mini-nasdaq-100.contractSpecs.html) — official current contract reference; About E-mini Nasdaq-100.
 - CME_MNQ: [CME Group](https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.contractSpecs.html) — official current contract reference; About Micro E-mini Nasdaq-100.
-- CME_FAQ: [CME Group](https://www.cmegroup.com/articles/faqs/micro-e-mini-equity-index-futures-frequently-asked-questions.html) — official FAQ, not a dated historical schedule; Questions5,6,8,10.
+- CME_FAQ: [CME Group](https://www.cmegroup.com/articles/faqs/micro-e-mini-equity-index-futures-frequently-asked-questions.html) — official FAQ, not a dated historical schedule; Questions 5, 6, 8, 10.
 - CME_CAL: [CME Group](https://www.cmegroup.com/trading-hours.html) — official holiday/trading-hours hub; Holiday and Trading Hours.
 - MQ_SPEC: [MetaQuotes](https://www.mql5.com/en/docs/constants/environment_state/marketinfoconstants) — official symbol-property schema; Symbol Properties tables.
 - MQ_POINT: [MetaQuotes](https://www.mql5.com/en/book/automation/symbols/symbols_point_tick) — official price-unit documentation; Price representation accuracy and change steps.
-- MQ_COPY: [MetaQuotes](https://www.mql5.com/en/docs/python_metatrader5/mt5copyticksrange_py) — official tick-history API documentation; Note and example time_msc1578614411128.
+- MQ_COPY: [MetaQuotes](https://www.mql5.com/en/docs/python_metatrader5/mt5copyticksrange_py) — official tick-history API documentation; Note and example time_msc 1578614411128.
 - MQ_TICK: [MetaQuotes](https://www.mql5.com/en/docs/constants/structures/mqltick) — official native tick schema; MqlTick and tick flags.
 - MQ_SESSION: [MetaQuotes](https://www.mql5.com/en/docs/marketinformation/symbolinfosessiontrade) — official weekly-session API documentation; Parameters from/to.
 - MQ_TIME: [MetaQuotes](https://www.mql5.com/en/docs/dateandtime/timecurrent) — official native-server clock documentation; Description and Note.
 - MQ_DEAL: [MetaQuotes](https://www.mql5.com/en/docs/constants/tradingconstants/dealproperties) — official executed-deal schema; Deal Properties tables.
-- CME_RIGHTS: [CME Group](https://www.cmegroup.com/market-data/files/schedule-5-to-the-ila-february-2025.pdf) — official2025 licence-schedule context; Definitions page2; section11.
+- CME_RIGHTS: [CME Group](https://www.cmegroup.com/market-data/files/schedule-5-to-the-ila-february-2025.pdf) — official 2025 licence-schedule context; Definitions page 2; section 11.

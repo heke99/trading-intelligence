@@ -49,9 +49,12 @@ class HistDataImportTests(unittest.TestCase):
 
     def convert(self, raw: bytes, *, specification: dict | None = None) -> dict:
         self.csv.write_bytes(raw)
-        self.spec.write_bytes(json_bytes(
-            specification if specification is not None else self.make_spec(raw)
-        ))
+        # ASCII escapes deliberately let malformed surrogate strings reach
+        # the converter's decoder; json_bytes cannot serialize those fixtures.
+        document = specification if specification is not None else self.make_spec(raw)
+        self.spec.write_bytes(
+            (json.dumps(document, ensure_ascii=True, sort_keys=True, indent=2) + "\n").encode("ascii")
+        )
         return histdata.import_histdata(self.csv, self.spec, self.out)
 
     def failed(self, manifest: dict, error: str) -> None:
@@ -260,6 +263,9 @@ class HistDataImportTests(unittest.TestCase):
             ("native_timezone_utc_offset_minutes", False, "HISTDATA_FIXED_EST_REQUIRED"),
             ("source_clock_evidence", "", "HISTDATA_CLOCK_EVIDENCE_REQUIRED"),
             ("source_clock_evidence", "\x00malformed", "HISTDATA_CLOCK_EVIDENCE_REQUIRED"),
+            ("source_clock_evidence", "\x7f", "HISTDATA_CLOCK_EVIDENCE_REQUIRED"),
+            ("source_clock_evidence", "\x85", "HISTDATA_CLOCK_EVIDENCE_REQUIRED"),
+            ("source_clock_evidence", "\ud800", "HISTDATA_CLOCK_EVIDENCE_REQUIRED"),
             ("source", [], "HISTDATA_SOURCE_SCHEMA"),
         ):
             with self.subTest(key=key, value=value):
@@ -288,7 +294,10 @@ class HistDataImportTests(unittest.TestCase):
             "training_rights_evidence": "Synthetic test assertion: local training is permitted.",
             "attribution": "HistData.com; publisher/file authenticity is not verified.",
             "source_url": "https://www.histdata.com/",
+            "source_record_url": "https://www.histdata.com/f-a-q/data-files-detailed-specification/",
+            "source_download_url": "https://example.invalid/synthetic-fixture.csv",
             "license": "not_verified",
+            "license_url": "https://www.histdata.com/f-a-q/",
             "license_evidence": "No open raw-data license has been established.",
         }
         spec["source"].update(explicit)
@@ -314,6 +323,81 @@ class HistDataImportTests(unittest.TestCase):
         self.assertIsNotNone(result["completed_at_utc"])
         self.assertEqual(Path(result["raw_csv_path"]).read_bytes(), raw)
         self.assertTrue(Path(result["raw_spec_path"]).is_file())
+
+
+
+    def test_absent_training_assertion_stays_absent(self):
+        result = self.convert(b"20170101 000000001,1.1,1.2,0\n")
+        self.assertEqual(result["status"], "completed")
+        metadata = json.loads(Path(result["quotes_metadata_path"]).read_text())
+        self.assertNotIn("training_usage_rights", metadata)
+        self.assertNotIn("training_rights_evidence", metadata)
+
+    def test_explicit_training_assertions_reject_invalid_enum_origin_or_evidence(self):
+        raw = b"20170101 000000001,1.1,1.2,0\n"
+        cases = (
+            ({"training_usage_rights": True}, "HISTDATA_TRAINING_RIGHTS_INVALID"),
+            ({"training_usage_rights": []}, "HISTDATA_TRAINING_RIGHTS_INVALID"),
+            ({"training_usage_rights": "open_by_default"}, "HISTDATA_TRAINING_RIGHTS_INVALID"),
+            ({"training_usage_rights": "user_asserted_permitted"},
+             "HISTDATA_TRAINING_RIGHTS_EVIDENCE_REQUIRED"),
+            ({"training_usage_rights": "user_asserted_permitted", "training_rights_evidence": " "},
+             "HISTDATA_TRAINING_RIGHTS_EVIDENCE_REQUIRED"),
+            ({"training_usage_rights": "user_asserted_permitted", "training_rights_evidence": "\x00"},
+             "HISTDATA_TRAINING_RIGHTS_EVIDENCE_REQUIRED"),
+            ({"training_usage_rights": "user_asserted_permitted", "training_rights_evidence": "x" * 4097},
+             "HISTDATA_TRAINING_RIGHTS_EVIDENCE_REQUIRED"),
+            ({"data_origin": "user_supplied_unverified", "usage_rights": "not_verified",
+              "training_usage_rights": "synthetic_only"},
+             "HISTDATA_TRAINING_RIGHTS_ORIGIN_CONFLICT"),
+        )
+        for source_change, error in cases:
+            with self.subTest(source_change=source_change):
+                spec = self.make_spec(raw)
+                spec["source"].update(source_change)
+                self.failed(self.convert(raw, specification=spec), error)
+
+    def test_provenance_is_bounded_text_and_never_implies_automatic_access(self):
+        raw = b"20170101 000000001,1.1,1.2,0\n"
+        for field, value in (
+            ("attribution", 123), ("source_url", "\x00"),
+            ("source_record_url", " "), ("source_download_url", []),
+            ("license", "x" * 4097), ("license_url", "\x1f"),
+            ("license_evidence", ""),
+            ("attribution", "\x7f"), ("source_url", "\x85"),
+            ("source_record_url", "\ud800"),
+        ):
+            with self.subTest(field=field):
+                spec = self.make_spec(raw)
+                spec["source"][field] = value
+                self.failed(
+                    self.convert(raw, specification=spec), "HISTDATA_SOURCE_PROVENANCE_INVALID"
+                )
+        spec = self.make_spec(raw)
+        spec["source"]["attribution"] = "Synthetic test attribution.\nTab\tallowed."
+        spec["source"]["training_usage_rights"] = "not_verified"
+        result = self.convert(raw, specification=spec)
+        self.assertEqual(result["status"], "completed")
+        metadata = json.loads(Path(result["quotes_metadata_path"]).read_text())
+        self.assertEqual(metadata["attribution"], spec["source"]["attribution"])
+        self.assertEqual(metadata["training_usage_rights"], "not_verified")
+        self.assertIs(metadata["automated_download_permitted"], False)
+        self.assertIs(metadata["rights_verified"], False)
+
+
+
+    def test_escaped_surrogate_in_required_source_metadata_finishes_receipt(self):
+        raw = b"20170101 000000001,1.1,1.2,0\n"
+        for field in ("source_id", "rights_evidence"):
+            with self.subTest(field=field):
+                spec = self.make_spec(raw)
+                spec["source"][field] = "\ud800"
+                if field == "rights_evidence":
+                    spec["source"].update(
+                        data_origin="user_supplied_unverified",
+                        usage_rights="user_asserted_permitted",
+                    )
+                self.failed(self.convert(raw, specification=spec), "HISTDATA_SOURCE_SCHEMA")
 
 
 if __name__ == "__main__":

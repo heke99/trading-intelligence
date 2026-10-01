@@ -1,7 +1,7 @@
 """Local tick research workflow; no acquisition or broker execution."""
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Context, Decimal, localcontext
 from pathlib import Path
 from uuid import uuid4
 
@@ -172,51 +172,54 @@ def run_tick_demo(out: Path) -> dict:
               "fixture_note": "Fictional prices, sizes and fees; no broker specification or return evidence.", **_FALSE}
     _atomic(path, json_bytes(result))
     try:
-        base_paths = learning_demo_inputs(out/"fixture-base")
-        original_lines = base_paths[0].read_text().splitlines()[1:]
-        base_metadata = load_json(base_paths[1].read_bytes())
-        base_config = load_json(base_paths[2].read_bytes())
-        # Price/quantity scales only exercise different decimal and currency paths.
-        settings = (("EURUSD", "EURUSD", "USD", "1.1", "1", "1000"),
-                    ("Nasdaq", "NAS100_SYNTHETIC", "USD", "18000", "10000", "1"),
-                    ("XAUUSD", "XAUUSD", "USD", "2000", "1000", "1"),
-                    ("GBPJPY", "GBPJPY", "JPY", "180", "100", "1000"),
-                    ("EURJPY", "EURJPY", "JPY", "160", "100", "1000"))
-        for asset, symbol, currency, pivot, scaling, quantity in settings:
-            factor = Decimal(scaling)
-            directory = out/"synthetic-inputs"/symbol
-            directory.mkdir(parents=True, mode=0o700)
-            lines = ["time_msc,bid,ask"]
-            for line in original_lines:
-                native_time, bid, ask = line.split(",")
-                bid = Decimal(pivot)+(Decimal(bid)-Decimal("1.1"))*factor
-                ask = Decimal(pivot)+(Decimal(ask)-Decimal("1.1"))*factor
-                clock = int(native_time)
-                # Two distinct prices share one native millisecond; no extra time
-                # is invented to impose a fictional exchange sequence.
-                lines.extend([f"{clock-2},{bid},{ask}",
-                              f"{clock-1},{bid-factor*Decimal('0.000001')},{ask}",
-                              f"{clock-1},{bid},{ask}"])
-            metadata = {**base_metadata, "source_id": "fictional_tick_"+symbol.lower(),
-                        "symbol": symbol, "price_currency": currency,
-                        "timezone_evidence": "fictional generator defines UTC ms; equal clocks preserve physical row order"}
-            config = load_json(json_bytes(base_config))
-            config["execution"].update(symbol=symbol, price_currency=currency, quantity=quantity)
-            for key in ("slippage_price", "max_entry_spread", "commission_per_unit_per_side"):
-                config["execution"][key] = str(Decimal(config["execution"][key])*factor)
-            config["execution"]["max_loss_currency"] = "1000000"
-            for key in ("breakout_buffer", "stop_distance", "target_distance"):
-                config["strategy"][key] = str(Decimal(config["strategy"][key])*factor)
-            paths = (directory/"ticks.synthetic.csv", directory/"source.synthetic.json", directory/"config.synthetic.json")
-            _atomic(paths[0], ("\n".join(lines)+"\n").encode())
-            _atomic(paths[1], json_bytes(metadata))
-            _atomic(paths[2], json_bytes(config))
-            benchmark = run_tick_benchmark(*paths, out/"assets"/symbol,
-                                           sample_period_ms=1000, max_native_gap_ms=1000)
-            result["assets"][asset] = benchmark
-            _atomic(path, json_bytes(result))
-            if benchmark["status"] != "completed":
-                raise DataError("TICK_DEMO_ASSET_FAILED:"+asset)
+        # Isolate fixture arithmetic, including the baseline generator, from
+        # caller precision/exponent/trap settings; preserve the global context.
+        with localcontext(Context(prec=1024)):
+            base_paths = learning_demo_inputs(out/"fixture-base")
+            original_lines = base_paths[0].read_text().splitlines()[1:]
+            base_metadata = load_json(base_paths[1].read_bytes())
+            base_config = load_json(base_paths[2].read_bytes())
+            # Price/quantity scales only exercise different decimal and currency paths.
+            settings = (("EURUSD", "EURUSD", "USD", "1.1", "1", "1000"),
+                        ("Nasdaq", "NAS100_SYNTHETIC", "USD", "18000", "10000", "1"),
+                        ("XAUUSD", "XAUUSD", "USD", "2000", "1000", "1"),
+                        ("GBPJPY", "GBPJPY", "JPY", "180", "100", "1000"),
+                        ("EURJPY", "EURJPY", "JPY", "160", "100", "1000"))
+            for asset, symbol, currency, pivot, scaling, quantity in settings:
+                factor = Decimal(scaling)
+                directory = out/"synthetic-inputs"/symbol
+                directory.mkdir(parents=True, mode=0o700)
+                lines = ["time_msc,bid,ask"]
+                for line in original_lines:
+                    native_time, bid, ask = line.split(",")
+                    bid = Decimal(pivot)+(Decimal(bid)-Decimal("1.1"))*factor
+                    ask = Decimal(pivot)+(Decimal(ask)-Decimal("1.1"))*factor
+                    clock = int(native_time)
+                    # Two distinct prices share one native millisecond; no extra time
+                    # is invented to impose a fictional exchange sequence.
+                    lines.extend([f"{clock-2},{bid},{ask}",
+                                  f"{clock-1},{bid-factor*Decimal('0.000001')},{ask}",
+                                  f"{clock-1},{bid},{ask}"])
+                metadata = {**base_metadata, "source_id": "fictional_tick_"+symbol.lower(),
+                            "symbol": symbol, "price_currency": currency,
+                            "timezone_evidence": "fictional generator defines UTC ms; equal clocks preserve physical row order"}
+                config = load_json(json_bytes(base_config))
+                config["execution"].update(symbol=symbol, price_currency=currency, quantity=quantity)
+                for key in ("slippage_price", "max_entry_spread", "commission_per_unit_per_side"):
+                    config["execution"][key] = str(Decimal(config["execution"][key])*factor)
+                config["execution"]["max_loss_currency"] = "1000000"
+                for key in ("breakout_buffer", "stop_distance", "target_distance"):
+                    config["strategy"][key] = str(Decimal(config["strategy"][key])*factor)
+                paths = (directory/"ticks.synthetic.csv", directory/"source.synthetic.json", directory/"config.synthetic.json")
+                _atomic(paths[0], ("\n".join(lines)+"\n").encode())
+                _atomic(paths[1], json_bytes(metadata))
+                _atomic(paths[2], json_bytes(config))
+                benchmark = run_tick_benchmark(*paths, out/"assets"/symbol,
+                                               sample_period_ms=1000, max_native_gap_ms=1000)
+                result["assets"][asset] = benchmark
+                _atomic(path, json_bytes(result))
+                if benchmark["status"] != "completed":
+                    raise DataError("TICK_DEMO_ASSET_FAILED:"+asset)
         result.update(status="completed", model_fitted=True)
     except (DataError, OSError) as error:
         result["status"] = "failed"

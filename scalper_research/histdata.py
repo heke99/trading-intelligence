@@ -79,6 +79,16 @@ def _clock(text: str) -> int:
     return milliseconds
 
 
+
+def _source_text(value: Any, error: str) -> str:
+    if (
+        not isinstance(value, str) or not value.strip() or len(value) > 4096
+        or any(ord(character) < 32 and character not in "\n\t" for character in value)
+    ):
+        raise DataError(error)
+    return value
+
+
 def _spec(raw: bytes, source_hash: str) -> tuple[dict, dict]:
     spec = load_json(raw)
     if not isinstance(spec, dict):
@@ -99,9 +109,9 @@ def _spec(raw: bytes, source_hash: str) -> tuple[dict, dict]:
     offset = spec.get("native_timezone_utc_offset_minutes")
     if type(offset) is not int or offset != -300:
         raise DataError("HISTDATA_FIXED_EST_REQUIRED")
-    evidence = spec.get("source_clock_evidence")
-    if not isinstance(evidence, str) or not evidence.strip() or len(evidence) > 4096:
-        raise DataError("HISTDATA_CLOCK_EVIDENCE_REQUIRED")
+    evidence = _source_text(
+        spec.get("source_clock_evidence"), "HISTDATA_CLOCK_EVIDENCE_REQUIRED"
+    )
     source = spec.get("source")
     if not isinstance(source, dict) or source.get("symbol") != spec["symbol"]:
         raise DataError("HISTDATA_SOURCE_SCHEMA")
@@ -119,6 +129,32 @@ def _spec(raw: bytes, source_hash: str) -> tuple[dict, dict]:
             "rights_evidence",
         ) if key in source
     }
+    # Preserve explicit user assertions for each intended use. These are not
+    # independently verified rights and never imply a ready or trained model.
+    if "training_usage_rights" in source:
+        training = source["training_usage_rights"]
+        if training not in ("synthetic_only", "not_verified", "user_asserted_permitted"):
+            raise DataError("HISTDATA_TRAINING_RIGHTS_INVALID")
+        if training == "synthetic_only" and source.get("data_origin") != "synthetic_fixture":
+            raise DataError("HISTDATA_TRAINING_RIGHTS_ORIGIN_CONFLICT")
+        if training == "user_asserted_permitted":
+            _source_text(
+                source.get("training_rights_evidence"),
+                "HISTDATA_TRAINING_RIGHTS_EVIDENCE_REQUIRED",
+            )
+        metadata["training_usage_rights"] = training
+    if "training_rights_evidence" in source:
+        metadata["training_rights_evidence"] = _source_text(
+            source["training_rights_evidence"], "HISTDATA_TRAINING_RIGHTS_EVIDENCE_REQUIRED"
+        )
+    for field in (
+        "attribution", "source_url", "source_record_url", "source_download_url",
+        "license", "license_url", "license_evidence",
+    ):
+        if field in source:
+            metadata[field] = _source_text(
+                source[field], "HISTDATA_SOURCE_PROVENANCE_INVALID"
+            )
     metadata.update({field: False for field in _FALSE_CLAIMS})
     metadata.update(
         timezone_evidence=(
@@ -337,6 +373,8 @@ def import_histdata(file: Path, spec_path: Path, out: Path) -> dict:
         )
     except DataError as error:
         manifest.update(status="failed", errors=[str(error)])
+    except KeyboardInterrupt:
+        manifest.update(status="failed", errors=["INTERRUPTED"])
     except OSError:
         manifest.update(status="failed", errors=["HISTDATA_OUTPUT_WRITE_FAILED"])
     finally:
