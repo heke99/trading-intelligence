@@ -1,4 +1,4 @@
-# Trading Intelligence — Collective2 importer v0.1
+# Trading Intelligence — history importers v0.2
 
 A read-only data-acquisition foundation. **Not a trained robot, an execution system,
 or a claim of investment performance.** No live trading, subscriptions, payment,
@@ -8,6 +8,12 @@ The importer reads two documented Collective2 API4 endpoints: closed trades and
 historical orders. It also ingests saved API responses and explicitly mapped CSVs.
 An authenticated provider run has **not** yet been verified. A real exported CSV's
 headers have **not** yet been verified. See [the Swedish data guide](docs/DATA_GUIDE_SV.md).
+
+The separate publisher pipeline imports the eight reviewed Grittani/Hougaard XLSX
+layouts, reviewed image transactions, public journal summaries and educational
+strategy cards. It preserves source types, unknown clocks and historical revisions;
+it does not turn them into authenticated fills or a learned trading policy.
+See [publisher commands and the path toward a scalper](docs/PUBLISHER_DATA_SV.md).
 
 ## Run without installing dependencies
 
@@ -111,7 +117,8 @@ Supported input: UTF-8 CSV, comma/semicolon/tab delimiters. Field names, side va
 and any non-ISO datetime format must be explicitly mapped. Numeric strings must
 use decimal points and no thousands/currency formatting. Unsupported formats fail
 or quarantine; they are not silently guessed. Broker HTML, Excel, PDF and MT5 reports
-are **not** supported by this version. Keep such originals for a later adapter.
+are not supported by the C2 adapter. The separate publisher adapter accepts only
+its reviewed XLSX layouts and evidence schemas, not general broker reports.
 
 ## Timestamps and learning safety
 

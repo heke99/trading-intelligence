@@ -14,6 +14,8 @@ from . import __version__
 from .collective2 import C2Client, COMMISSION_PLANS
 from .common import DataError, json_bytes, load_json, read_limited
 from .pipeline import fetch_history, import_csv, import_json, inspect_csv
+from .publisher_pipeline import import_trader_xlsx, import_publisher_evidence, publisher_status
+from .trader_acquisition import download_trader_sources
 
 
 def _summary(report: dict, out: Path) -> dict:
@@ -22,6 +24,15 @@ def _summary(report: dict, out: Path) -> dict:
             "endpoint_traversal", "errors", "blockers")
     return {**{k: report[k] for k in keys},
             "manifest": str(out / "runs" / report["run_id"] / "manifest.json")}
+
+
+def _publisher_summary(report: dict, out: Path) -> dict:
+    keys = ("run_id", "mode", "status", "source_rows", "inserted_versions", "duplicate_observations",
+            "revision_observations", "inserted_snapshots", "temporal_quarantined_rows", "record_type_counts",
+            "quality_flag_counts", "training_ready", "full_history_verified", "market_history_joined",
+            "training_rights", "errors", "blockers")
+    return {**{key: report[key] for key in keys},
+            "manifest": str(out / "publisher-runs" / report["run_id"] / "manifest.json")}
 
 
 def _demo(out: Path) -> dict:
@@ -50,7 +61,7 @@ def _demo(out: Path) -> dict:
 
 
 def parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description="Read-only Collective2 data acquisition; no trading or training.")
+    p = argparse.ArgumentParser(description="Read-only trading-history acquisition; no trading or training.")
     p.add_argument("--version", action="version", version=__version__)
     sub = p.add_subparsers(dest="command", required=True)
     demo = sub.add_parser("demo", help="Run an offline synthetic import")
@@ -82,6 +93,27 @@ def parser() -> argparse.ArgumentParser:
     csv_imp.add_argument("--synthetic-fixture", action="store_true", help="Mark local test data as synthetic")
     status = sub.add_parser("status", help="Show the newest manifest, including incomplete/failed runs")
     status.add_argument("--out", type=Path, required=True)
+    download = sub.add_parser("download-trader-sources", help="Fetch exact reviewed public XLSX URLs; stop on access errors")
+    download.add_argument("--catalog", type=Path, required=True)
+    download.add_argument("--out", type=Path, required=True)
+    download.add_argument("--source-id", action="append")
+    trader = sub.add_parser("import-trader-xlsx", help="Import documented publisher XLSX as observations, not C2 fills")
+    trader.add_argument("--catalog", type=Path, required=True)
+    trader.add_argument("--raw-dir", type=Path, required=True)
+    trader.add_argument("--out", type=Path, required=True)
+    trader.add_argument("--source-id", action="append", help="Select catalog source IDs; default all")
+    trader.add_argument("--day-only", action="store_true", help="Keep Swing sheets outside this requested import scope")
+    trader.add_argument("--receipts-dir", type=Path, help="Optional hash-matched download_manifest receipts")
+    trader.add_argument("--synthetic-fixture", action="store_true")
+    evidence = sub.add_parser("import-publisher-evidence", help="Import reviewed image/journal facts or education cards")
+    evidence.add_argument("file", type=Path)
+    evidence.add_argument("--kind", choices=["image_transactions", "journal_summaries", "strategy_cards"], required=True)
+    evidence.add_argument("--source-id", required=True)
+    evidence.add_argument("--out", type=Path, required=True)
+    evidence.add_argument("--assets-root", type=Path, help="For images: root containing the reported original asset path")
+    evidence.add_argument("--synthetic-fixture", action="store_true")
+    publisher = sub.add_parser("publisher-status", help="Show publisher evidence scope, quality and historical versions")
+    publisher.add_argument("--out", type=Path, required=True)
     return p
 
 
@@ -114,6 +146,20 @@ def main(argv: list[str] | None = None) -> int:
             result = inspect_csv(args.file)
         elif args.command == "import-csv":
             result = _summary(import_csv(args.file, args.mapping, args.out, strategy_id=args.strategy_id, synthetic=args.synthetic_fixture), args.out)
+        elif args.command == "download-trader-sources":
+            result = download_trader_sources(args.catalog, args.out, source_ids=args.source_id)
+        elif args.command == "import-trader-xlsx":
+            report = import_trader_xlsx(args.catalog, args.raw_dir, args.out, source_ids=args.source_id,
+                                       include_swing=not args.day_only, synthetic=args.synthetic_fixture,
+                                       receipts_dir=args.receipts_dir)
+            result = _publisher_summary(report, args.out)
+        elif args.command == "import-publisher-evidence":
+            report = import_publisher_evidence(args.file, args.out, kind=args.kind, source_id=args.source_id,
+                                               synthetic=args.synthetic_fixture, assets_root=args.assets_root)
+            result = _publisher_summary(report, args.out)
+        elif args.command == "publisher-status":
+            status = publisher_status(args.out)
+            result = {**status, "latest_run": _publisher_summary(status["latest_run"], args.out)}
         else:
             files = list((args.out / "runs").glob("*/manifest.json"))
             if not files:
@@ -122,7 +168,9 @@ def main(argv: list[str] | None = None) -> int:
             report = max(reports, key=lambda m: m["started_at_utc"])
             result = _summary(report, args.out)
         print(json_bytes(result).decode(), end="")
-        return 0
+        if "INTERRUPTED" in result.get("errors", []):
+            return 130
+        return 2 if result.get("status") == "failed" else 0
     except DataError as error:
         print(json.dumps({"error": str(error), "training_ready": False}), file=sys.stderr)
         return 2

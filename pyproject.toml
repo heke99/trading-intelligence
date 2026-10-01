@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-intelligence"
-version = "0.1.0"
-description = "Read-only Collective2 history importer with immutable raw data and audit gates"
+version = "0.2.0"
+description = "Read-only C2 and publisher-history importers with immutable evidence and audit gates"
 requires-python = ">=3.11"
 dependencies = []
 

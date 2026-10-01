@@ -1,5 +1,9 @@
 # Data contract v1
 
+This contract's original sections describe the C2 namespace. Version 0.2 adds
+a separate publisher namespace; see its contract below and
+[the Swedish publisher guide](PUBLISHER_DATA_SV.md).
+
 ## Raw evidence
 
 Successful API response bodies and supplied local JSON/CSV files are archived without
@@ -74,3 +78,46 @@ market data, execution costs, sample-selection policy and chronological evaluati
 are unresolved. No CLI flag can enable trading or train a model. A future training
 pipeline needs its own reviewed admission check; do not read the audit tables directly
 as a finished model dataset.
+
+## Publisher namespace (software v0.2)
+
+Publisher evidence never enters C2 `record_versions`, `observations` or
+`completed_run_records`. Its own sources, snapshots, record versions and run
+occurrences are stored in `publisher_*` tables and `publisher-runs/` exports.
+`completed_publisher_records` includes completed historical versions, including
+quarantined observations; it is not a training-admitted or latest-version view.
+
+Identity is `(source_id, data_origin, record_kind, source_row_identity)`.
+XLSX identity is a source/sheet/physical-row locator, not a stable broker trade ID.
+Image identity uses the publisher image ID, visible row and rectangle; journal
+identity uses the reported post ID; teaching identity uses the source card ID.
+Reordered rows are not automatically reconciled. Distinct identical physical
+rows and exit legs are retained. No cross-source trade deduplication is inferred.
+
+Raw hash identifies immutable XLSX/JSON/JSONL/PNG bytes. XLSX semantic hashes
+include raw cell values, XML types, formulas/attributes and date system, excluding
+ZIP packaging and styles. Version fingerprints include adapter version and
+normalization context, excluding download/import clocks and byte receipts.
+Per-run occurrences preserve current snapshot provenance even when a version
+is reused; version JSON retains its first occurrence's provenance.
+
+Only documented layouts and explicit reviewed evidence schemas are accepted.
+Selection policy and unselected nonempty row locators are exported per sheet.
+Originals remain archived; omitted rows are not silently represented as trades.
+Excel formulas are not evaluated; cached numeric values remain publisher values.
+1900 fictional leap-day serials and invalid chronologies are flagged/quarantined.
+Local minute clocks, transaction dates and publication/download clocks do not
+become UTC execution events. Download clocks require explicit hash-matched receipts.
+
+Record types distinguish transaction ledgers, reported day exit legs, swing
+positions, journal position summaries and educational strategy cards. Cash values,
+signed quantities, stake, rounded journal P&L and displayed prices retain their
+reported meaning. Unknown P&L currency stays null. Strategy cards retain unknown
+parameters; they do not become learned policies or claimed historical signals.
+
+All publisher runs remain `training_ready=false`, `full_history_verified=false`,
+`market_history_joined=false`, `trading_enabled=false` and rights unverified.
+Completed acquisition/import means only the requested operation completed.
+Failures preserve raw/partial evidence and failed receipts/manifests. The public
+downloader follows only allowed Google export redirects, never retries access
+denials, and does not authenticate or select alternate routes.
