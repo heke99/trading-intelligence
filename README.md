@@ -218,3 +218,14 @@ data or grant usage rights. Data validation alone cannot prove profitability.
 
 See [source contracts](docs/SOURCES.md), [data contract](docs/DATA_CONTRACT.md), and
 [verification record](docs/VERIFICATION.md).
+
+## Five-asset native tick research
+
+The local `import-histdata`, `project-ticks`, `tick-plan`, `tick-run` and `tick-demo`
+commands prepare EURUSD, Nasdaq, XAUUSD, GBPJPY and EURJPY with explicit provenance,
+same-millisecond raw evidence, completed event-time sampling and frozen evaluation.
+There is no broker connection or multiasset product/fee default. The source probe
+received zero original bytes; the five-product demonstration is wholly fictional.
+Read [the Swedish tick workflow](docs/TICK_WORKFLOW_SV.md),
+[source audit](docs/TICK_SOURCE_AUDIT_SV.md) and
+[execution evidence checklist](docs/TICK_EXECUTION_EVIDENCE_SV.md) before supplying data.
