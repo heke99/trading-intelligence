@@ -17,7 +17,7 @@ from uuid import uuid4
 from trading_intelligence.common import DataError, json_bytes, load_json, now_utc, read_limited, sha256
 from . import __version__
 from .engine import replay
-from .market import _load_bytes, _metadata
+from .market import _load_bytes, _metadata, validate_quote_execution
 from .pipeline import _archive, parse_config
 from .strategy import RollingBreakout
 
@@ -210,6 +210,7 @@ def _run(prefix: bytes, metadata_raw: bytes, config_raw: bytes, halt_clock: int 
     quotes, metadata = _quotes(prefix, metadata_raw)
     if metadata["symbol"] != config.symbol or metadata["price_currency"] != config.price_currency:
         raise DataError("PAPER_INSTRUMENT_OR_CURRENCY_MISMATCH")
+    validate_quote_execution(metadata, config)
     context = _model_context(model_raw, config_raw, threshold, selection_raw)
     runner = RollingBreakout(strategy)
     model = context["model"]

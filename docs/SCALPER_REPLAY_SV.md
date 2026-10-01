@@ -1,12 +1,16 @@
 # Körbar scalpingprototyp för offlineforskning
 
 `scalper_research` är ett separat paket för bid/ask-import och regelbaserad replay.
-Historikimportören behåller sina egna tabeller och kommandon. Ingen modell tränas,
-ingen traderhistorik används automatiskt som signaldata och inga order skickas.
+Denna guide beskriver `demo` och `replay`, som inte tränar någon modell.
+Historikimportören behåller sina egna tabeller och kommandon. Traderhistorik
+används inte automatiskt som signaldata och inga order skickas. Det separata
+[lärandeflödet](SCALPER_WORKFLOW_SV.md) och
+[WSE-flödet](WSE_WORKFLOW_SV.md) beskrivs i egna guider.
 
 ## Kör direkt på Mac
 
-Python 3.11 eller senare; runtime kräver inga extra paket. Kör från projektroten:
+Python 3.11 eller senare; dessa CSV-/replay-kommandon kräver inga extra paket.
+WSE-läsaren behöver däremot det valfria `wse`-tillägget. Kör från projektroten:
 
 ```bash
 python3 -m scalper_research demo --out ../scalper-demo
@@ -134,6 +138,9 @@ Den kräver ett fungerande lokalt MT5/terminalupplägg; paketet här ansluter in
 terminalen. MT5:s GUI-export kan ha andra rubriker, format och tidsuppgifter. En
 godtycklig GUI-CSV antas därför inte följa UTC-ms-kontraktet; original och ett
 granskat format-/tidszonskontrakt behövs före en särskild adapter.
+För en uttrycklig native export finns nu ett fristående, read-only
+[MT5-skript och körguide](MT5_EXPORT_SV.md). Det kräver manuell kompilering och
+kontroll i terminalen; det har inte kompilerats eller körts i denna miljö.
 
 MetaQuotes skiljer även verkliga broker-ticks från genererade ticks och beskriver
 bid/ask som exekveringspriser: [officiell testerbeskrivning](https://www.metatrader5.com/en/terminal/help/algotrading/tick_generation).

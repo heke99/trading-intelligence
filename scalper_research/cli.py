@@ -65,11 +65,32 @@ def parser() -> argparse.ArgumentParser:
     bi5.add_argument("file", type=Path)
     bi5.add_argument("--spec", type=Path, required=True)
     bi5.add_argument("--out", type=Path, required=True)
+    ws = sub.add_parser("import-wse", help="Preserve native order events and derive explicit causal boundary snapshots")
+    ws.add_argument("file", type=Path)
+    ws.add_argument("--spec", type=Path, required=True)
+    ws.add_argument("--out", type=Path, required=True)
+    wrun = sub.add_parser("wse-run", help="Archive a local native-data plan, import, learn and stress one frozen selection")
+    wrun.add_argument("file", type=Path)
+    wrun.add_argument("--spec", type=Path, required=True)
+    wrun.add_argument("--config", type=Path, required=True)
+    wrun.add_argument("--out", type=Path, required=True)
+    for command, help_text in (("acquire-wse", "Retrieve and verify the fixed CC BY PEKAO original; no broker or credentials"),
+                               ("wse-plan", "Write a predeclared instrument-specific WSE research plan"),
+                               ("native-demo", "Exercise synthetic HDF orders, reconstruction, learning and cost stress")):
+        wsub = sub.add_parser(command, help=help_text)
+        wsub.add_argument("--out", type=Path, required=True)
     learn = sub.add_parser("learn", help="Fit on development only, select threshold on validation, then test once")
     learn.add_argument("file", type=Path)
     learn.add_argument("--metadata", type=Path, required=True)
     learn.add_argument("--config", type=Path, required=True)
     learn.add_argument("--out", type=Path, required=True)
+    stress = sub.add_parser("stress", help="Replay one frozen model with five predeclared cost scenarios")
+    stress.add_argument("file", type=Path)
+    stress.add_argument("--metadata", type=Path, required=True)
+    stress.add_argument("--config", type=Path, required=True)
+    stress.add_argument("--model", type=Path, required=True)
+    stress.add_argument("--threshold", type=float, required=True)
+    stress.add_argument("--out", type=Path, required=True)
     ls = sub.add_parser("learning-status", help="Show latest learning receipt including failures")
     ls.add_argument("--out", type=Path, required=True)
     sub.add_parser("strategy-audit", help="Show evidence and market fields still required for named-trader strategies")
@@ -109,9 +130,24 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "convert-bi5":
             from .bi5 import convert_bi5
             result = convert_bi5(args.file, args.spec, args.out)
+        elif args.command == "acquire-wse":
+            from .acquire import acquire_wse
+            result = acquire_wse(args.out)
+        elif args.command == "import-wse":
+            from .wse import import_wse
+            result = import_wse(args.file, args.spec, args.out)
+        elif args.command == "wse-run":
+            from .native_workflow import run_wse_benchmark
+            result = run_wse_benchmark(args.file, args.spec, args.config, args.out)
+        elif args.command in ("wse-plan", "native-demo"):
+            from .native_workflow import write_wse_plan, run_native_demo
+            result = write_wse_plan(args.out) if args.command == "wse-plan" else run_native_demo(args.out)
         elif args.command == "learn":
             from .learning_pipeline import run_learning
             result = run_learning(args.file, args.metadata, args.config, args.out)
+        elif args.command == "stress":
+            from .evaluation import run_cost_stress
+            result = run_cost_stress(args.file, args.metadata, args.config, args.model, args.threshold, args.out)
         elif args.command == "learning-status":
             from .learning_pipeline import learning_status
             result = learning_status(args.out)
@@ -130,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
             from .workflow import run_all_demo
             result = run_all_demo(args.out)
         print(json_bytes(result).decode(), end="")
-        if "INTERRUPTED" in result.get("errors", []):
+        if any(error in ("INTERRUPTED", "ACQUIRE_INTERRUPTED") for error in result.get("errors", [])):
             return 130
         return 2 if result["status"] == "failed" else 0
     except DataError as error:

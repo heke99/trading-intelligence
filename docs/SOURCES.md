@@ -37,7 +37,11 @@ The full OpenAPI JSON was not downloaded in this environment.
 into trades. `GetStrategyHistoricalOrders` is paginated. Closed trades are requested
 with explicit CommissionPlan=0, not an assumed net/gross interpretation.
 
-## Future MT5 adapter — not implemented here
+## MT5 deal-history adapter — not implemented here
+
+The separate [read-only market-tick export](MT5_EXPORT_SV.md) is implemented as
+an MQL5 script. It exports bid/ask observations, not these personal deal-history
+fields; compilation and terminal execution remain unverified here.
 
 - Broker deal-history fields:
   https://www.mql5.com/en/docs/python_metatrader5/mt5historydealsget_py

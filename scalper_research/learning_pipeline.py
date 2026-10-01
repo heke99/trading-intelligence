@@ -66,7 +66,7 @@ def run_learning(csv_path: Path, metadata_path: Path, config_path: Path, out: Pa
     unseen, so the audit deliberately leaves all acceptance gates false.
     """
     from .engine import replay
-    from .market import load_quotes
+    from .market import load_quotes, validate_quote_execution
 
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -127,6 +127,7 @@ def run_learning(csv_path: Path, metadata_path: Path, config_path: Path, out: Pa
         }
         if metadata["symbol"] != engine_config.symbol or metadata["price_currency"] != engine_config.price_currency:
             raise DataError("LEARNING_INSTRUMENT_OR_CURRENCY_MISMATCH")
+        validate_quote_execution(metadata, engine_config)
         manifest["training_rights"] = _rights(metadata)
         if "EQUAL_TIMESTAMP_ORDER_UNVERIFIED" in dataset.quality_flags:
             raise DataError("LEARNING_EQUAL_TIMESTAMP_ORDER_UNVERIFIED")
