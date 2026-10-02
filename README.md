@@ -1,4 +1,4 @@
-# Trading Intelligence — history importers and offline research v0.5
+# Trading Intelligence — history importers and offline research v0.7
 
 A read-only data-acquisition foundation and a separate offline research package.
 **No verified market-trained robot or investment-performance claim.** No live trading, subscriptions, payment,
@@ -41,6 +41,14 @@ route; its terminal compilation and runtime have not been verified here.
 
 The demo uses fictional quotes only. Running it is a behavior check, not a
 measurement of profitability or an approval to connect a broker.
+
+Large local tick CSVs can now be archived and split at UTC day/capacity boundaries,
+without splitting equal-millisecond groups or changing decimal prices. The new
+`shard-ticks` and `verify-tick-corpus` commands support explicit UTC-ms metadata
+and the existing fixed-EST HistData spec. They verify local intake/integrity, not
+source authenticity, complete history or continuous multi-shard model training.
+See [the corpus guide](docs/TICK_CORPUS_SV.md) and
+[the remaining real-data requirements](docs/DATA_READINESS_2026-10-02_SV.md).
 
 ## Run without installing dependencies
 

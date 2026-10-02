@@ -38,3 +38,5 @@ jobs:
           scalper-research native-demo --out "$RUNNER_TEMP/installed-scalper-native-demo"
           scalper-research tick-plan --out "$RUNNER_TEMP/installed-tick-plan"
           scalper-research tick-demo --out "$RUNNER_TEMP/installed-tick-demo"
+          scalper-research shard-ticks "$RUNNER_TEMP/installed-scalper-demo/synthetic-inputs/quotes.synthetic.csv" --evidence "$RUNNER_TEMP/installed-scalper-demo/synthetic-inputs/market.synthetic.json" --source-format utc_bidask_csv_v1 --max-shard-rows 17 --out "$RUNNER_TEMP/installed-tick-corpus"
+          python -c 'import os; from pathlib import Path; from scalper_research.cli import main; paths=list((Path(os.environ["RUNNER_TEMP"])/"installed-tick-corpus"/"tick-corpus-runs").glob("*/manifest.json")); assert len(paths)==1; raise SystemExit(main(["verify-tick-corpus",str(paths[0])]))'
