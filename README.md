@@ -1,4 +1,4 @@
-# Trading Intelligence — history importers and offline research v0.5
+# Trading Intelligence — history importers and offline research v0.7
 
 A read-only data-acquisition foundation and a separate offline research package.
 **No verified market-trained robot or investment-performance claim.** No live trading, subscriptions, payment,
@@ -38,9 +38,20 @@ fits on development data, freezes validation selection and runs five predefined
 cost scenarios on the later test period. See [the WSE workflow](docs/WSE_WORKFLOW_SV.md).
 A read-only [MT5 export script](docs/MT5_EXPORT_SV.md) provides another local-data
 route; its terminal compilation and runtime have not been verified here.
+The core is required to remain broker independent. The existing single-symbol
+export can use the current chart; automatic discovery is not implemented.
+See [instrument binding and original data acquisition](docs/BROKER_INDEPENDENT_DATA_SV.md).
 
 The demo uses fictional quotes only. Running it is a behavior check, not a
 measurement of profitability or an approval to connect a broker.
+
+Large local tick CSVs can now be archived and split at UTC day/capacity boundaries,
+without splitting equal-millisecond groups or changing decimal prices. The new
+`shard-ticks` and `verify-tick-corpus` commands support explicit UTC-ms metadata
+and the existing fixed-EST HistData spec. They verify local intake/integrity, not
+source authenticity, complete history or continuous multi-shard model training.
+See [the corpus guide](docs/TICK_CORPUS_SV.md) and
+[the remaining real-data requirements](docs/DATA_READINESS_2026-10-02_SV.md).
 
 ## Run without installing dependencies
 
@@ -218,3 +229,14 @@ data or grant usage rights. Data validation alone cannot prove profitability.
 
 See [source contracts](docs/SOURCES.md), [data contract](docs/DATA_CONTRACT.md), and
 [verification record](docs/VERIFICATION.md).
+
+## Five-asset native tick research
+
+The local `import-histdata`, `project-ticks`, `tick-plan`, `tick-run` and `tick-demo`
+commands prepare EURUSD, Nasdaq, XAUUSD, GBPJPY and EURJPY with explicit provenance,
+same-millisecond raw evidence, completed event-time sampling and frozen evaluation.
+There is no broker connection or multiasset product/fee default. The source probe
+received zero original bytes; the five-product demonstration is wholly fictional.
+Read [the Swedish tick workflow](docs/TICK_WORKFLOW_SV.md),
+[source audit](docs/TICK_SOURCE_AUDIT_SV.md) and
+[execution evidence checklist](docs/TICK_EXECUTION_EVIDENCE_SV.md) before supplying data.

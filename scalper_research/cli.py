@@ -61,6 +61,37 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("--out", type=Path, required=True)
     status = sub.add_parser("status", help="Show newest replay including failed/incomplete run")
     status.add_argument("--out", type=Path, required=True)
+    ht = sub.add_parser("import-histdata", help="Convert one local Generic ASCII tick CSV with explicit fixed EST and hash")
+    ht.add_argument("file", type=Path)
+    ht.add_argument("--spec", type=Path, required=True)
+    ht.add_argument("--out", type=Path, required=True)
+    shards = sub.add_parser("shard-ticks", help="Archive a large local CSV; split on UTC day/capacity without splitting equal clocks")
+    shards.add_argument("file", type=Path)
+    shards.add_argument("--evidence", type=Path, required=True, help="Market metadata JSON, or a HistData spec with original file hash")
+    shards.add_argument("--source-format", choices=("utc_bidask_csv_v1", "histdata_generic_ascii_tick_v1"), required=True)
+    shards.add_argument("--max-shard-rows", type=int, default=500_000)
+    shards.add_argument("--max-shard-bytes", type=int, default=32 * 1024 * 1024)
+    shards.add_argument("--gap-report-ms", type=int, default=60_000)
+    shards.add_argument("--out", type=Path, required=True)
+    verify = sub.add_parser("verify-tick-corpus", help="Recheck shard hashes, row locators and strict edges; not authenticity or completeness")
+    verify.add_argument("manifest", type=Path)
+    proj = sub.add_parser("project-ticks", help="Preserve raw tick rows and derive completed event-time buckets without forward fill")
+    proj.add_argument("file", type=Path)
+    proj.add_argument("--metadata", type=Path, required=True)
+    proj.add_argument("--sample-period-ms", type=int, required=True)
+    proj.add_argument("--max-native-gap-ms", type=int, required=True)
+    proj.add_argument("--out", type=Path, required=True)
+    tr = sub.add_parser("tick-run", help="Archive one local source/config, project, learn and stress one frozen hypothesis")
+    tr.add_argument("file", type=Path)
+    tr.add_argument("--metadata", type=Path, required=True)
+    tr.add_argument("--config", type=Path, required=True)
+    tr.add_argument("--sample-period-ms", type=int, required=True)
+    tr.add_argument("--max-native-gap-ms", type=int, required=True)
+    tr.add_argument("--out", type=Path, required=True)
+    for command, help_text in (("tick-plan", "Write the five-asset acquisition and evidence plan without fetching"),
+                               ("tick-demo", "Exercise five fictional tick products, development fit and frozen cost stress")):
+        ts = sub.add_parser(command, help=help_text)
+        ts.add_argument("--out", type=Path, required=True)
     bi5 = sub.add_parser("convert-bi5", help="Decode a local BI5 with explicit clock, scale and source evidence")
     bi5.add_argument("file", type=Path)
     bi5.add_argument("--spec", type=Path, required=True)
@@ -127,6 +158,28 @@ def main(argv: list[str] | None = None) -> int:
             result = run_research(args.file, args.metadata, args.config, args.out)
         elif args.command == "status":
             result = research_status(args.out)
+        elif args.command == "import-histdata":
+            from .histdata import import_histdata
+            result = import_histdata(args.file, args.spec, args.out)
+        elif args.command == "shard-ticks":
+            from .tick_corpus import shard_ticks
+            result = shard_ticks(args.file, args.evidence, args.out, source_format=args.source_format,
+                                 max_shard_rows=args.max_shard_rows, max_shard_bytes=args.max_shard_bytes,
+                                 gap_report_ms=args.gap_report_ms)
+        elif args.command == "verify-tick-corpus":
+            from .tick_corpus import verify_tick_corpus
+            result = verify_tick_corpus(args.manifest)
+        elif args.command == "project-ticks":
+            from .tick_projection import project_ticks
+            result = project_ticks(args.file, args.metadata, args.out,
+                                   sample_period_ms=args.sample_period_ms, max_native_gap_ms=args.max_native_gap_ms)
+        elif args.command == "tick-run":
+            from .tick_workflow import run_tick_benchmark
+            result = run_tick_benchmark(args.file, args.metadata, args.config, args.out,
+                                        sample_period_ms=args.sample_period_ms, max_native_gap_ms=args.max_native_gap_ms)
+        elif args.command in ("tick-plan", "tick-demo"):
+            from .tick_workflow import write_tick_plan, run_tick_demo
+            result = write_tick_plan(args.out) if args.command == "tick-plan" else run_tick_demo(args.out)
         elif args.command == "convert-bi5":
             from .bi5 import convert_bi5
             result = convert_bi5(args.file, args.spec, args.out)

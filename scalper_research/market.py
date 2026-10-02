@@ -33,7 +33,12 @@ _RECONSTRUCTION_CAVEATS = frozenset({
     "DELETE_OR_MODIFY_NOT_EXECUTION_LABELS", "NATIVE_MESSAGE_CLOCK_NOT_RECEIVE_CLOCK",
     "SOURCE_ROW_ORDER_NOT_VERIFIED_EXCHANGE_SEQUENCE", "EQUAL_NS_PRIORITY_UNVERIFIED",
     "DERIVED_SAMPLED_VISIBLE_BIDASK_NOT_EXECUTABLE_LIQUIDITY",
+    "SOURCE_EQUAL_MILLISECOND_ORDER_UNVERIFIED", "NATIVE_TIMESTAMP_NOT_RECEIVE_CLOCK",
+    "DERIVED_BUCKET_END_QUOTE_NOT_NATIVE_TICK", "NO_EMPTY_BUCKET_FORWARD_FILL",
+    "EVENT_TIME_TIMER_ASSUMED",
 })
+_GAP_CEILINGS = {"wse_required_max_quote_gap_ms": 60000,
+                 "projection_required_max_quote_gap_ms": 1000}
 
 
 @dataclass(frozen=True)
@@ -107,26 +112,31 @@ def _metadata(raw: bytes) -> dict:
     for field in ("broker_verified", "training_ready", "full_history_verified"):
         if field in metadata and metadata[field] is not False:
             raise DataError("MARKET_UNSUPPORTED_VERIFICATION_CLAIM")
-    if "wse_required_max_quote_gap_ms" in metadata:
-        value = metadata["wse_required_max_quote_gap_ms"]
-        if type(value) is not int or not 1 <= value <= 60000:
-            raise DataError("MARKET_RECONSTRUCTION_GAP_POLICY_INVALID")
+    for field, bound in _GAP_CEILINGS.items():
+        if field in metadata:
+            value = metadata[field]
+            if type(value) is not int or not 1 <= value <= bound:
+                raise DataError("MARKET_RECONSTRUCTION_GAP_POLICY_INVALID")
     return metadata
 
 
 def validate_quote_execution(metadata: dict, config: object) -> None:
-    """Do not bridge a segment break hidden by a wider execution gap budget.
+    """Apply every reconstruction ceiling so omitted buckets reset state.
 
-    WSE projection deliberately omits invalid buckets. Its explicit required
-    gap ceiling ensures every omitted bucket resets signal/pending state in the
-    replay engine. This is a data-context constraint, not a quality approval.
+    WSE snapshots and completed tick buckets deliberately omit invalid periods.
+    Their explicit gap ceilings constrain replay, learning, stress and paper
+    simulation. They do not establish executable liquidity or data approval.
     """
-    maximum = metadata.get("wse_required_max_quote_gap_ms")
-    if maximum is not None:
-        if type(maximum) is not int or not 1 <= maximum <= 60000:
-            raise DataError("MARKET_RECONSTRUCTION_GAP_POLICY_INVALID")
+    ceilings = []
+    for field, bound in _GAP_CEILINGS.items():
+        if field in metadata:
+            value = metadata[field]
+            if type(value) is not int or not 1 <= value <= bound:
+                raise DataError("MARKET_RECONSTRUCTION_GAP_POLICY_INVALID")
+            ceilings.append(value)
+    if ceilings:
         configured = getattr(config, "max_quote_gap_ms", None)
-        if type(configured) is not int or not 1 <= configured <= maximum:
+        if type(configured) is not int or not 1 <= configured <= min(ceilings):
             raise DataError("RECONSTRUCTED_QUOTE_GAP_POLICY_MISMATCH")
 
 
@@ -204,7 +214,7 @@ def _load_bytes(csv_raw: bytes, metadata_raw: bytes) -> QuoteDataset:
         flags.append("USAGE_RIGHTS_NOT_VERIFIED")
     if duplicate_timestamps:
         flags.append("EQUAL_TIMESTAMP_ORDER_UNVERIFIED")
-    if "wse_required_max_quote_gap_ms" in metadata:
+    if any(field in metadata for field in _GAP_CEILINGS):
         source_flags = metadata.get("quality_flags", [])
         if not isinstance(source_flags, list) or len(source_flags) > 32 or any(
                 not isinstance(flag, str) for flag in source_flags):

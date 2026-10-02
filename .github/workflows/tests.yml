@@ -27,6 +27,8 @@ jobs:
         run: python -m scalper_research all-demo --out "$RUNNER_TEMP/scalper-all-demo"
       - name: Synthetic native order reconstruction, learning and cost stress
         run: python -m scalper_research native-demo --out "$RUNNER_TEMP/scalper-native-demo"
+      - name: Five fictional tick products, preserved equal clocks and frozen evaluation
+        run: python -m scalper_research tick-demo --out "$RUNNER_TEMP/scalper-tick-demo"
       - name: Installed package smoke test
         run: |
           python -m pip install --no-deps .
@@ -34,3 +36,7 @@ jobs:
           scalper-research demo --out "$RUNNER_TEMP/installed-scalper-demo"
           scalper-research all-demo --out "$RUNNER_TEMP/installed-scalper-all-demo"
           scalper-research native-demo --out "$RUNNER_TEMP/installed-scalper-native-demo"
+          scalper-research tick-plan --out "$RUNNER_TEMP/installed-tick-plan"
+          scalper-research tick-demo --out "$RUNNER_TEMP/installed-tick-demo"
+          scalper-research shard-ticks "$RUNNER_TEMP/installed-scalper-demo/synthetic-inputs/quotes.synthetic.csv" --evidence "$RUNNER_TEMP/installed-scalper-demo/synthetic-inputs/market.synthetic.json" --source-format utc_bidask_csv_v1 --max-shard-rows 17 --out "$RUNNER_TEMP/installed-tick-corpus"
+          python -c 'import os; from pathlib import Path; from scalper_research.cli import main; paths=list((Path(os.environ["RUNNER_TEMP"])/"installed-tick-corpus"/"tick-corpus-runs").glob("*/manifest.json")); assert len(paths)==1; raise SystemExit(main(["verify-tick-corpus",str(paths[0])]))'
