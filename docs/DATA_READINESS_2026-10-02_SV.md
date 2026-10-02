@@ -2,6 +2,8 @@
 
 Det nya byggsteget är lokal införsel av större tickfiler. **Inga nya originalarkiv med marknadsticks och inga nya kompletta Fabio-/Siva-fillutdrag har införskaffats.** Kod och fiktiva testsiffror är inte evidens för att roboten lärt sig scalpa verkliga marknader.
 
+**Arkitekturkrav: brokeroberoende kärna.** Ingen fast broker behöver väljas för att fortsätta utvecklingen. Instrumentet ska bindas via aktuellt diagram eller granskade symboluppgifter; exakta symboler och kontraktsvillkor hör till respektive adapter och datakälla. Ensymbolexporten i MT5 använder redan diagrammets `_Symbol` när `InpSymbol` är tomt. Automatisk symbolidentifiering och en exekverande robot är ännu inte implementerade. Se [brokeroberoende bindning och hur underlagen hämtas](BROKER_INDEPENDENT_DATA_SV.md).
+
 ## Fem efterfrågade marknader
 
 | Marknad | Vad som fortfarande saknas för första verkliga körning |
@@ -40,7 +42,7 @@ För expertimitation behövs attribution, kompletta order-/fill-/partialutdrag, 
 
 ## Kvarvarande bygg- och evidensgrindar
 
-1. Bekräfta broker och exakt produkt/symbol per marknad, särskilt Nasdaq. Dagens produktlista bevisar inte historiska villkor.
+1. Bind varje önskad instrumentfamilj till diagrammet eller granskad produktmetadata från valfri datakälla. Dokumentera den faktiska produkten, särskilt för Nasdaq, utan att låsa kärnan till en broker. Dagens produktlista bevisar inte historiska villkor.
 2. Ta emot tillåtna original och dokumentera hur de erhölls, tidsbasis, rättigheter samt käll-/bytehash. Ingen lösenords- eller nyckeluppladdning behövs.
 3. Kör lokal formatkontroll, uppdelning och integritetsverifiering. Stäm av faktiska perioder, överlapp och luckor mot historisk sessionskalender och leverantörens täckning.
 4. Lås produktspecifik kostnadsmodell, dataperioder, reset-/purge-/holdoutregler och kriterier innan modellval. Att flytta sluttestet efter resultat är inte ett nytt oberoende test.
@@ -49,4 +51,4 @@ För expertimitation behövs attribution, kompletta order-/fill-/partialutdrag, 
 
 MT5-exporten är fortfarande källgranskad men inte kompilerad eller provkörd i en terminal. Inga verkliga brokerorders har skickats. Alla beredskapsgrindar för verklig träning/handel är kvar på falskt.
 
-Första externa underlaget som behövs från användaren är **broker + exakta symboler och en originalfil per marknad**, med användningsrätt och tillgängliga historiska kostnads-/kontraktsvillkor. Om målet uttryckligen är att imitera Fabio/Siva behövs även ett legitimt fillutdrag från dem. Deras privata historik är inte ett krav för att undersöka en oberoende quote-strategi, men är ett krav för att kalla den tränad på deras utförda affärer.
+Första externa underlaget är **en tillåten originalexport per marknad med källmetadata**, samt tillgängliga daterade kostnads-/kontraktsvillkor. En MT5-export från rätt diagram kan fånga det exakta symbolnamnet; det behöver inte anges separat i förväg. Datakällans identitet behövs för spårbarhet och produktgranskning, inte som en permanent brokerlåsning. Om målet uttryckligen är att imitera Fabio/Siva behövs även ett legitimt fillutdrag från dem. Deras privata historik är inte ett krav för att undersöka en oberoende quote-strategi, men är ett krav för att kalla den tränad på deras utförda affärer.

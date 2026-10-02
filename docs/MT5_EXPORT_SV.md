@@ -4,6 +4,8 @@
 
 **Koden är inte kompilerad eller körd i MT5 här.** MetaEditor och en MT5-terminal saknas i byggmiljön. Python-tester verifierar inte MQL5-syntax, terminalens historik, filkodning eller körbeteende. Kodens API-användning och spärrar har granskats mot de officiella källorna nedan; nästa faktiska kontroll är kompilering och en liten export i din terminal.
 
+För brokeroberoende användning: kör ensymbolexporten på rätt diagram med tomt `InpSymbol`. Den läser då diagrammets exakta `_Symbol` även när brokern har egna suffix. Det är befintlig exportbindning, inte en färdig symbolidentifierare eller handelsrobot. [Guiden för brokeroberoende data](BROKER_INDEPENDENT_DATA_SV.md) beskriver den planerade metadataidentifieringen, terminalens manuella originalexport och hur daterade avgifts-/kontraktsvillkor hämtas.
+
 ## Kör exporten
 
 1. Öppna terminalens **File → Open Data Folder**. Lägg `ExportResearchTicks.mq5`, `ExportResearchBasket.mq5` och `ResearchTickExport.mqh` tillsammans i `MQL5/Scripts/`. Öppna det skript du ska köra i MetaEditor. Kompilera och åtgärda eventuella fel innan körning; hjälpfunktionen behöver finnas bredvid skriptet.

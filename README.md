@@ -38,6 +38,9 @@ fits on development data, freezes validation selection and runs five predefined
 cost scenarios on the later test period. See [the WSE workflow](docs/WSE_WORKFLOW_SV.md).
 A read-only [MT5 export script](docs/MT5_EXPORT_SV.md) provides another local-data
 route; its terminal compilation and runtime have not been verified here.
+The core is required to remain broker independent. The existing single-symbol
+export can use the current chart; automatic discovery is not implemented.
+See [instrument binding and original data acquisition](docs/BROKER_INDEPENDENT_DATA_SV.md).
 
 The demo uses fictional quotes only. Running it is a behavior check, not a
 measurement of profitability or an approval to connect a broker.
