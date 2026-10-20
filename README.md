@@ -1,8 +1,8 @@
 # Trading Intelligence
 
-Rebuild for equities, ETFs and ordinary mutual funds with source-backed AI analysis, reproducible research and independently controlled execution.
+Rebuild for equities, ETFs, ordinary mutual funds and futures with source-backed AI analysis, reproducible research and independently controlled execution.
 
-**Current status: first offline slice of Phase 1.** The package implements explicit identities, versioned evidence, declared source-use permissions and historical identifier lookup. It has no external data feeds, AI models, backtester, UI, broker connection or order submission.
+**Current status: offline identity, evidence and futures slice of Phase 1.** The package implements explicit identities, versioned evidence, declared source-use permissions and historical identifier lookup, versioned futures reference snapshots and offline opening-intent previews. It has no external data feeds, AI models, backtester, UI, broker connection or order submission.
 
 Read the [Swedish masterplan](docs/MASTERPLAN_SV.md), [implemented contracts and limitations](docs/FOUNDATION.md) and [rebuild status](docs/REBUILD_STATUS.md).
 
@@ -12,6 +12,7 @@ Use Python 3.11 or later from the repository root. No runtime dependencies, API 
 
 ```bash
 PYTHONPATH=src python3 -m trading_intelligence demo --out data/demo
+PYTHONPATH=src python3 -m trading_intelligence futures-demo --out data/futures-demo
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
@@ -25,16 +26,19 @@ The example writes an ignored local SQLite database with invented records. A lat
 - Keep original bytes and revision lineage; old publication dates never backdate first receipt.
 - Deny undeclared data uses. Permission and provenance declarations still require independent verification before real datasets are admitted.
 - Keep ordinary mutual funds on a separate NAV subscription/redemption model. Their dealing engine is not implemented.
+- Futures have separate product/expiry/broker identities, raw prices, tick/multiplier, dated sessions and account margin snapshots. Physical delivery is excluded from the opening-intent pilot.
 - Separate intraday, event/swing and long-term books, with deterministic aggregate risk control in later phases.
 
-Masterplan 1.1 specifies locked predictions, delayed validated outcomes, incident classification, bounded retraining, challenger evaluation and controlled promotion. **Self-learning is planned and has not been implemented.**
+Masterplan 1.2 specifies locked predictions, delayed validated outcomes, incident classification, bounded retraining, challenger evaluation and controlled promotion. **Self-learning is planned and has not been implemented.**
+
+The futures example uses invented contract terms, margin and sessions. It checks an opening scenario and demonstrates blocked invalid inputs. No orders, fills, margin reservations or actual exchange calendar are produced. See [futures contracts and limits](docs/FUTURES.md).
 
 ## Recovery point
 
-The previous Collective2 application remains at commit `8c5056112721345540ea1cfbbca1f4c41fa816e8` and branch `archive/collective2-v0.1-before-equities-2026-10-20`. The clean reset was merged in PR #10. Git history is preserved; no external datasets or accounts were deleted.
+The previous Collective2 application remains at commit `8c5056112721345540ea1cfbbca1f4c41fa816e8` and branch `archive/collective2-v0.1-before-equities-2026-10-20`. The clean reset was merged in PR #10 and the first offline data foundation in PR #11. Git history is preserved; no external datasets or accounts were deleted.
 
 ## Next build steps
 
-Complete Phase 1 with exchange calendars, an auditable SEC adapter, licensed price/news imports, corporate actions and a separate NAV contract. Add artifact lineage, an outcome queue and incident records before any predictive model is trained. Demonstrate replay and data-quality acceptance checks before strategy work.
+Complete Phase 1 with exchange calendars, authoritative session imports, an auditable SEC adapter, licensed contract-level and equity price/news imports, corporate actions and a separate NAV contract. Add artifact lineage, an outcome queue and incident records before any predictive model is trained. Demonstrate replay and data-quality acceptance checks before strategy work.
 
 See [project instructions](AGENTS.md) before implementation. Test success on synthetic fixtures establishes these local contracts, not investment performance or production readiness.

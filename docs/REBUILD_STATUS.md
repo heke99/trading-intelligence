@@ -1,6 +1,6 @@
 # Rebuild status
 
-Date: 2026-10-20. Masterplan: 1.1. Package: 0.2.0.
+Date: 2026-10-20. Masterplan: 1.2. Package: 0.3.0.
 
 ## Reset completed
 
@@ -19,6 +19,16 @@ The Python package implements explicit issuer/instrument/listing contracts, exac
 
 This is partial Phase 1. It does not complete the masterplan's data ingestion or replay acceptance requirements.
 
+PR #11 merged this foundation into main at `96c79fac1ea517804684b90298c58b80b95d831a`.
+
+## Futures and supplied session snapshots
+
+Masterplan 1.2 adds futures as a separate flow. The additive code implements products and expiry identities; evidence-backed terms, sessions, broker bindings and account margins; exact tick/PnL/notional calculations; and a single-opening-intent preview. It supports linear fixed-tick cash-settled opening scenarios. Physical contracts need an explicit notice boundary to be represented, and physical openings remain blocked. See [FUTURES.md](FUTURES.md).
+
+This does not implement contract selection, rolling, daily/final settlement accounting, aggregate risk, a market feed or broker execution. Session segments are synthetic supplied fixtures, not imported exchange calendars. Merge and remote verification evidence are recorded in the associated PR.
+
+## Capability status
+
 | Capability | Status |
 | --- | --- |
 | Masterplan, analysis scope and build sequence | Documented |
@@ -26,7 +36,11 @@ This is partial Phase 1. It does not complete the masterplan's data ingestion or
 | Versioned raw evidence and historical identifier queries | Implemented locally |
 | Declared storage/research/training permissions | Implemented as metadata; independent entitlement review required |
 | Offline synthetic correction demo | Implemented and checked |
-| Exchange calendars and corporate actions | Not implemented |
+| Futures identities and dated reference snapshots | Implemented offline |
+| Futures tick/PnL/notional and opening-intent checks | Implemented offline; no live authorization |
+| Supplied session segments, breaks and overnight instants | Implemented offline |
+| Authoritative exchange calendars and corporate actions | Not imported or implemented |
+| Futures roll, daily/final settlement and aggregate margin engine | Not implemented |
 | SEC, price, news and NAV adapters | Not implemented |
 | Real equity/fund data entitlement | Not verified |
 | Trader-history completeness or verification | Not implemented or verified |
@@ -38,14 +52,16 @@ This is partial Phase 1. It does not complete the masterplan's data ingestion or
 
 ## Verification
 
-32 offline synthetic regression tests passed locally on Python 3.12.14. They test the new foundation, not the old importer or the replacement trading platform end to end. An offline CI workflow is configured for Python 3.11, 3.12 and 3.13; configured jobs are not evidence that remote CI has passed.
+81 offline synthetic regression tests passed locally on Python 3.12.14, including the original 32 foundation tests. New cases cover expiry identity, fixed-tick Decimal calculations, raw/adjusted prices, temporal corrections, missing/expired margin, account/currency mismatch, physical exclusion, limits, session breaks, overnight/DST instants, overlapping references and corruption. Existing cash databases remain readable with the additive futures tables.
+
+The original foundation passed remote CI on Python 3.11, 3.12 and 3.13. The futures branch defines the same matrix with both offline CLI examples; check the associated PR for its remote results. Tests do not establish investment performance or end-to-end production readiness.
 
 ## Next milestones and acceptance
 
-1. Add calendar contracts, processing-availability timestamps, immutable receipt observations and a SEC adapter with synthetic replay fixtures. First real ingestion remains gated on source terms and operational configuration.
-2. Select a market-data feed against coverage, timestamps, corporate actions, delisted securities and storage rights. Add price/news adapters and a separate NAV contract. Do not assume that public access permits model training.
-3. Demonstrate split, rename, article-revision and timezone replay. Add artifact dependencies, an outcome queue and incident lineage before the first model.
+1. Add authoritative calendar/reference imports, broker-capability data, processing-availability timestamps, immutable receipt observations and a SEC adapter with synthetic replay fixtures. First real ingestion remains gated on source terms and operational configuration.
+2. Select a market-data feed against coverage, timestamps, corporate actions, delisted securities and storage rights. Add price/news adapters, raw futures-expiry data and a separate NAV contract. Do not assume that public access permits model training.
+3. Demonstrate split, rename, article-revision and timezone replay. For futures, add contract-level fees, margin reservation, roll legs, variation/final settlement and aggregate exposure. Add artifact dependencies, an outcome queue and incident lineage before the first model.
 4. Implement source-backed analysis and simple frozen strategy baselines; then evaluate chronologically with costs before introducing candidate learning.
 5. Add shadow/paper operation, portfolio risk and reconciliation. Live trading requires the separate scope and evidence in the masterplan.
 
-Masterplan 1.1's learning cycle, incident categories, adaptive evaluation, model-promotion bounds and state-preserving rollback remain requirements for those later phases.
+Masterplan 1.2's learning cycle, incident categories, adaptive evaluation, model-promotion bounds and state-preserving rollback remain requirements for those later phases.

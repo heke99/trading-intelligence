@@ -41,8 +41,15 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     command = commands.add_parser("demo", help="Run an invented offline evidence and identity example")
     command.add_argument("--out", type=Path, required=True)
+    futures_command = commands.add_parser("futures-demo", help="Preview an invented futures opening intent offline")
+    futures_command.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    print(json.dumps(demo(args.out), indent=2))
+    if args.command == "futures-demo":
+        from .futures_demo import futures_demo
+        result = futures_demo(args.out)
+    else:
+        result = demo(args.out)
+    print(json.dumps(result, indent=2, default=str))
 
 
 if __name__ == "__main__":
