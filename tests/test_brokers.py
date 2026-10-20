@@ -247,6 +247,16 @@ class BrokerTests(unittest.TestCase):
         with self.assertRaises(EvidenceIntegrityError):
             self.prepare()
 
+    def test_cross_account_swapped_payload_and_hash_cannot_replay(self):
+        self.prepare(self.a)
+        self.prepare(self.b)
+        row = self.store.db.execute("SELECT draft_json, draft_hash FROM broker_drafts WHERE account_key=?", (self.b.key,)).fetchone()
+        with self.store.db:
+            self.store.db.execute("UPDATE broker_drafts SET draft_json=?, draft_hash=? WHERE account_key=?",
+                                  (row["draft_json"], row["draft_hash"], self.a.key))
+        with self.assertRaises(EvidenceIntegrityError):
+            self.prepare(self.a)
+
     def test_revoked_source_cannot_prepare_new_draft(self):
         self.store.set_permissions("fixture", known_at=LATER, uses={Use.STORAGE})
         with self.assertRaises(UseNotAllowed):

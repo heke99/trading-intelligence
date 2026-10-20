@@ -90,6 +90,12 @@ class BrokerStore(FuturesStore):
         if hashlib.sha256(row["draft_json"].encode()).hexdigest() != row["draft_hash"]:
             raise EvidenceIntegrityError("Prepared broker draft failed integrity verification")
         body = json.loads(row["draft_json"])
+        expected = dict(account_key=row["account_key"], intent_id=row["intent_id"],
+                        intent_hash=hashlib.sha256(intent_json.encode()).hexdigest(),
+                        client_order_id=client_order_id(row["account_key"], row["intent_id"]),
+                        draft_id=hashlib.sha256(_key(row["account_key"], row["intent_id"]).encode()).hexdigest())
+        if any(body.get(name) != value for name, value in expected.items()):
+            raise EvidenceIntegrityError("Saved draft envelope does not belong to this account/intent")
         body["snapshot_ids"] = tuple(body["snapshot_ids"])
         return PreparedDraft(**body, replayed=True)
 
