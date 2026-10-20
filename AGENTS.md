@@ -11,6 +11,12 @@ The user's approved direction is a rebuild for equities, ETFs and ordinary mutua
 - Ordinary funds require their own cutoff, forward NAV, subscription/redemption and settlement logic. Do not reuse intraday equity fills for funds.
 - Keep intraday, event/swing and long-term books separate while aggregating account exposure and reconciling with the broker.
 - Record all model trials, use chronological evaluation, prevent label overlap and fit preprocessing only on training data. Register source snapshots, model/prompt/code versions and execution assumptions.
+- Log predictions before outcomes; learn only from matured validated labels known before the training cutoff. Corrected labels get their own availability time and must not be double-counted.
+- Distinguish data, extraction, execution and policy defects from ordinary forecast losses. Preserve append-only incidents, corrections and affected-artifact lineage; AI postmortems are hypotheses rather than training truth.
+- Evaluate the complete adaptive process against a frozen baseline. A final test period consumed by selection is no longer untouched for subsequent candidates.
+- Keep automatic model promotion within a versioned preconfigured policy; start in paper_only. Candidates cannot increase risk mandates, rewrite evaluation gates or deploy code freely.
+- Deploy compatible immutable bundles of model, features, calibration and policies. Rollback preserves external trades and account state; keep executable exit-handler versions for open positions.
+- Hard order stops override strategy modes. Pauses for risk increase may allow separately permitted reducing actions only with verified exposure and pending-order state. Always process late fills and status events.
 - Use current official documentation and pinned dependencies. Retain upstream licenses/NOTICE. Review external skills before adoption and install only components used in the current phase.
 - Tests and CI use synthetic or explicitly permitted non-sensitive fixtures. Never commit API keys, real trader exports, generated databases, model artifacts or licensed raw datasets.
 - Run checks appropriate to the changed phase. Add regression coverage for meaningful defects; do not fabricate product tests for documentation-only changes.

@@ -2,6 +2,19 @@
 
 Date: 2026-10-20
 
+Masterplan version: 1.1
+
+## Plan review in version 1.1
+
+- Added a complete learning cycle with locked predictions, outcome maturation and as-of label corrections.
+- Separated ordinary forecast losses from data, interpretation, execution and policy defects.
+- Defined incident lineage, bounded candidate training, model promotion policy and isolated code repair.
+- Clarified adaptive evaluation, calibration data and consumed final holdouts.
+- Added strategy modes, hard-stop priority and rollback preserving account state and executable exit handlers.
+- Moved feedback foundations into early build phases and added concrete acceptance requirements.
+
+Self-learning, code repair and the new execution services remain unimplemented. This update changes the plan and project instructions only.
+
 ## Scope of this change
 
 This is a clean planning foundation for a rebuild of Trading Intelligence. It replaces the prior Collective2-focused code tree with a new product direction and implementation plan. It does not implement the replacement product.

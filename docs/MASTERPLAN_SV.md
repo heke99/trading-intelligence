@@ -1,6 +1,6 @@
 # Trading Intelligence masterplan för aktier ETF och fonder
 
-Version 1.0 · 20 oktober 2026 · För Hekmat Hourani
+Version 1.1 · 20 oktober 2026 · För Hekmat Hourani
 
 ## 1 Beslut och mål
 
@@ -17,6 +17,8 @@ Prioriterade beslut:
 - Intradag, händelsestyrd swing och långsiktig allokering får separata strategiböcker, modeller och resultatmått.
 - LEAN utvärderas som första börshandelsmotor. Qlib är ett senare forskningsverktyg. NautilusTrader är ett alternativ, inte en extra motor som installeras samtidigt.
 - Traderhistorik blir en kompletterande datakälla. Egen marknads- och händelsehistorik gör att projektet kan fortsätta även när privata orderloggar saknas.
+- Självlärande byggs som en återkopplingsloop med låsta prognoser, verifierade utfall, felklassning, förbättringsförslag och kontrollerade versionsbyten.
+- Automatisk anpassning får ske inom en fastställd policy. Minne, modellträning, riskanpassning och kodändringar har olika behörigheter och tester.
 - Ingen tränings- eller liveberedskap antas. Varje dataset och strategi måste få egna verifierade statusar.
 
 ## 2 Ombyggnad och rensning av projektet
@@ -36,7 +38,7 @@ Det som bör återinföras efter separat kodgranskning är idéerna om oföränd
 | Instrument | Analys | Ordermodell | Första omfattning |
 | --- | --- | --- | --- |
 | Noterade aktier | Bolag, rapporter, pris, volym och händelser | Börsorder med aktuella kvoteringar | Första börspiloten |
-| ETF | Exponering, innehav, kostnad, överlapp och likviditet | Börsorder som separat värdepapper | Obelånade instrument som kontot får handla |
+| ETF | Exponering, innehav, kostnad, överlapp och likviditet | Börsorder som separat värdepapper | Behöriga instrument utan hävstång, invers eller enaktieexponering |
 | Vanlig öppen fond | NAV, andelsklass, avgifter, benchmark och förvaltning | Teckning eller inlösen till relevant framtida fondkurs | Analys först, orderadapter senare |
 | Index | Marknadsläge och jämförelse | Ingen direkt order | Referensdata |
 | Valuta | Omräkning, kassabok och ekonomisk exponering | Eventuell kontoväxling via mäklaradapter | Ingen egen valutastrategi |
@@ -46,7 +48,7 @@ ETF:er handlas under börsdagen till marknadspris. En vanlig fond får normalt e
 
 För en svensk användare skiljer vi analysuniversum från det aktuella kontots handelsuniversum. Ett instrument kan analyseras även om det inte kan köpas. Instrumentbehörighet, produktdokument, konto, mäklare och bosättningsland måste kontrolleras. Ingen automatisk ersättning med CFD, derivat eller en till synes likadan ETF tillåts. [S3]
 
-Första forskningsurvalet är ungefär 30–50 likvida amerikanska aktier i ett sammanhängande bolagsnätverk. En separat historisk urvalsregel används i backtest, inklusive bolag som senare försvunnit. ETF-piloten använder ett litet dokumenterat urval; vilka som faktiskt kan handlas avgörs efter kontoverifiering. Vanliga fonder börjar som bevaknings- och allokeringsunderlag.
+Första forskningsurvalet är ungefär 30–50 likvida amerikanska aktier i ett sammanhängande bolagsnätverk. En separat historisk urvalsregel används i backtest, inklusive bolag som senare försvunnit. ETF-piloten använder ett litet dokumenterat urval; vilka som faktiskt kan handlas avgörs efter kontoverifiering. Vanliga fonder börjar som bevaknings- och allokeringsunderlag. Det begränsade bolagsnätverket är ett tekniskt och analytiskt piloturval. Resultat därifrån ska inte generaliseras till hela marknaden utan ett separat förregistrerat urval och bredare senare prov.
 
 ## 4 Arkitektur och ansvar
 
@@ -62,6 +64,8 @@ Vi börjar med ett sammanhållet repo, tydliga moduler och ett litet antal drift
 | AI för dokument | Avgränsad eve-tjänst i TypeScript | Läsning, källutvinning, motargument och strukturerade analyskort |
 | Börssimulering och order | LEAN-worker | Samma strategikontrakt i historisk simulering och kontrollerad exekvering |
 | Jobb | En Postgres-baserad jobbkatalog och worker i starten | Schemaläggning, låsning, försök, hjärtslag och återhämtning |
+| Lärande | Avgränsade Python-jobb och modellregister | Mogna utfall, kvalitetskontroll, kandidater och versionsbeslut |
+| Felkorrigering | Incidentregister och separat reparationsmiljö | Orsakshypotes, regressionstest, åtgärd och verifiering |
 
 eve är ett förslag för den nya AI-tjänsten, inte för själva orderloopen. Verktygen får läsa godkända datasnapshots och kalla beräkningsfunktioner. De får inte skicka mäklarorder. Projektets installerade versionsdokumentation ska styra implementationen. [S4]
 
@@ -70,6 +74,8 @@ Webben kan ligga på Vercel. Kontinuerliga marknadsflöden, forskningsjobb och m
 Postgres är kontrollplan och bokföring, inte standarddestination för varje börstick. Relationer kan börja som vanliga tidsversionerade tabeller. Separat grafdatabas, Kafka, ClickHouse och vektordatabas införs först när en uppmätt begränsning motiverar dem. En sökbar dokumentkatalog räcker för första beviskedjan.
 
 Föreslagna moduler är web, research_api, ingestion, research_agent, execution_worker, fund_worker, contracts, strategies, evaluations, infra och docs. API-kontrakt definieras med OpenAPI och JSON Schema; TypeScript-typer genereras och testas mot Python-modeller. Tomma moduler presenteras inte som implementerade funktioner.
+
+Modulerna learning och monitoring ansvarar för återkoppling och övervakning. Träningsjobb får läsa godkända dataset och skriva kandidatversioner men kan inte ändra den aktiva handelsversionen direkt. En separat versionskontroll tillämpar publicerad bytespolicy. Handelsutskick passerar en enda auktoritativ orderägare per konto; forskningskörningar saknar produktionsanslutning.
 
 ## 5 Open source som återanvänds och utvärderas
 
@@ -83,7 +89,8 @@ Föreslagna moduler är web, research_api, ingestion, research_agent, execution_
 | TradingAgents | Analysroller och motargument | Apache 2.0 | Referens för forskningsflödet |
 | scikit-learn och LightGBM | Baslinjer, klassificering, regression och rangordning | Verifiera paketens aktuella licenser | Numeriska modeller före djupinlärning |
 | DuckDB och Polars | Analys av Parquet och tabeller | Verifiera vald release och beroenden | Databearbetning |
-| MLflow | Registrering av experiment och modeller | Verifiera vald release | Inför när modellförsöken börjar |
+| MLflow | Registrering av experiment, modellversioner och artefakter | Verifiera vald release | Inför när modellförsöken börjar |
+| River | Inkrementella modeller och fördröjd löpande utvärdering | BSD 3 Clause för projektet; verifiera vald release | Valfritt senare efter jämförelse mot batchomträning |
 | eve | Versionerade AI-verktyg och analysflöden | Verifiera vald release och runtimevillkor | Avgränsad analystjänst |
 
 LEAN-motorns öppna licens betyder inte att hela standardflödet är gratis. Den nuvarande officiella CLI-dokumentationen kräver medlemskap i en QuantConnect-organisation på betald nivå. Vi väljer mellan direkt drift av motorn och ett abonnemang efter motorprovet och kostnadsjämförelsen. [S5, S6]
@@ -91,6 +98,8 @@ LEAN-motorns öppna licens betyder inte att hela standardflödet är gratis. Den
 NautilusTrader dokumenterar en versionsövergång. Adapterstöd och stabil release måste kontrolleras innan det väljs. Qlib ska inte bli en andra auktoritativ ordermotor. TradingAgents är inte belägg för en lönsam strategi. [S7, S8, S9]
 
 Alla importerade delar får källadress, commit eller release, licens, NOTICE där det krävs, ändringshistorik och ansvarig modul. Skills granskas som kod och instruktioner före användning. Vi installerar inte breda sociala läsare eller godtyckliga tradingverktyg för att en analysrutin behöver ett rapportfält. Open source-instruktioner ger inte automatiskt rätt att lagra, återdistribuera eller träna på en extern tjänsts data. [S10, S11]
+
+Första lärandeloopen använder schemalagda Python-jobb, befintliga datakontrakt och MLflow när modeller finns. MLflow dokumenterar versioner, aliases och tags; det tillhandahåller inte vår statistiska godkännandepolicy. River är ett möjligt senare verktyg för inkrementellt lärande och fördröjd utvärdering, inte ett krav för att systemet ska kunna förbättras. Vi bygger inte flera överlappande övervakningsramverk från start. [S31, S32, S33]
 
 ## 6 Datakällor och anskaffning
 
@@ -132,12 +141,20 @@ Restaterade rapporttal, uppdaterade artiklar och reviderad makrodata blir nya ve
 | Traderdata | trader_accounts, order_events, fills, fees, cashflows | Verifierad mäklarhistorik, modellhistorik och papper hålls isär |
 | Forskning | opportunities, feature_snapshots, labels, experiments | Beslutstid, egenskapsversion, utfallshorisont och datasnapshot |
 | Modeller | model_versions, calibrations, evaluation_runs | Träningsperiod, försökshistorik och godkänd användning |
+| Återkoppling | predictions, label_definitions, outcome_events | Låst prognos, utfallshorisont, tillgänglig tid och etikettversion |
+| Korrigering | incidents, correction_events, artifact_dependencies | Belagd orsak, ursprungsversion och berörda följdartefakter |
+| Lärande | learning_runs, model_candidates, promotion_events | Tillåtna data, jämförelser, kandidatstatus och bytesbeslut |
+| Driftpolicy | promotion_policies, deployment_manifests, monitor_snapshots | Oföränderliga versioner, mandat, larm och återgång |
 | Handel | decisions, risk_checks, orders, executions, reconciliations | Spårbara orderstatusar, kassaflöden och avstämning |
 | Fonder | fund_terms, fund_navs, subscriptions, redemptions | Bryttid, kursdag, publicering, accepterad order och likviddag |
 
 Värdepapper får intern instrumentidentitet med separata mappningar till ISIN, FIGI, börsnotering och mäklarens kontrakts-ID. En ticker räcker inte. Automatisk textlikhet får föreslå en matchning men inte godkänna en tvetydig order. OpenFIGI är en hjälp för identifierare, inte ett fullständigt historiskt värdepappersregister. [S16]
 
 Ett datasets status delas upp i åtkomst, rättigheter, tidskvalitet, fullständighet och tillåtet forskningsändamål. full_history_verified och training_ready förblir false tills just det materialet uppfyller dokumenterade krav. En lyckad import räcker inte. Uttalat okända värden ska förbli okända.
+
+Prognoser lagras före utfallet med prediction_id, decision_at, target_definition_id, horizon, model_version, feature_snapshot_id, memory_snapshot_id och policy_version. Utfallet kopplas senare med label_end, outcome_available_at, origin och version. En faktisk affär, ett modellerat marknadsutfall och en traders uppgift om sin avsikt är olika källtyper.
+
+Alla härledda artefakter får explicita beroenden till källor, beräkningar och etikettversioner. En korrigering skapar en ny version och markerar berörda dataset, experiment och modeller som påverkade. Ursprungliga beslut bevaras. Den korrigerade analysen redovisas separat från det realiserade historiska resultatet.
 
 ## 8 Bolagsgraf och ekonomiska samband
 
@@ -168,15 +185,15 @@ AI-tjänsten ska lämna korta, strukturerade beslutsunderlag med kontrollerbart 
 
 Varje analystjänst får tillåtna verktyg, typade in- och utdata, tidsgräns, kostnadsbudget, testfall och avstå-svar. Externa artiklar, webbsidor och traderkommentarer behandlas som data och kan inte ändra instruktioner, hämta hemligheter eller ge orderbehörighet.
 
-Analyskortet innehåller event_id, snapshot_id, beslutstid, instrument, horisont, bekräftade fakta, relationer, hypotes, motargument, osäkerheter och nästa kontroll. Språkmodellens egen säkerhet är inte en kalibrerad sannolikhet för vinst. Om en numerisk prognos används kommer den från en utvärderad modell med dokumenterad kalibrering.
+Analyskortet innehåller event_id, snapshot_id, beslutstid, instrument, horisont, bekräftade fakta, relationer, hypotes, motargument, osäkerheter och nästa kontroll. Det har även giltighetstid, villkor för att hypotesen inte längre gäller och status för eventuell uppföljning. En uppdaterad analys ersätter inte den prognos som redan utvärderas. Språkmodellens egen säkerhet är inte en kalibrerad sannolikhet för vinst. Om en numerisk prognos används kommer den från en utvärderad modell med dokumenterad kalibrering.
 
 Modellnamn, promptversion, verktygsresultat, datahash och beräkningsversion sparas. Modeller ska kunna bytas genom ett leverantörsoberoende kontrakt. Små modeller kan användas för sortering; svårare eller motsägelsefulla fall kan få mer analys inom budgeten. Fler roller eller modeller införs bara om mätningen visar bättre kvalitet per kostnad och fördröjning.
 
-Ett första granskningsmaterial bör innehålla 100–200 händelser med positiva, negativa, tvetydiga och irrelevanta exempel. Mät rätt identifiering, korrekta siffror och enheter, giltiga källhänvisningar, förväxlingar, dubbletter och välmotiverat avstående. Föreslaget första krav är full spårbarhet för fakta som används i en handelskandidat och inga olösta kritiska identitets- eller tidsfel.
+Ett första granskningsmaterial bör innehålla 100–200 händelser med positiva, negativa, tvetydiga och irrelevanta exempel. Mät rätt identifiering, korrekta siffror och enheter, giltiga källhänvisningar, förväxlingar, dubbletter och välmotiverat avstående. Föreslaget första krav är full spårbarhet för fakta som används i en handelskandidat och inga olösta kritiska identitets- eller tidsfel. AI-genererade efterhandsförklaringar är granskningshypoteser. De blir inte korrekta träningsetiketter genom att samma modell upprepar dem. Bekräftade faktakorrigeringar behöver regler, källstöd eller separat granskning.
 
 ## 10 Strategier och algoritmer
 
-Varje strategi definieras innan slututvärderingen: syfte, universum, tillgänglig information, beslutstid, in- och utträde, positionering, kostnader, avstående, benchmark, primärt mått och stoppvillkor. Parametervarianter räknas som forskningsförsök och registreras även när de går dåligt.
+Varje strategi definieras innan slututvärderingen: syfte, universum, tillgänglig information, beslutstid, in- och utträde, positionering, kostnader, avstående, benchmark, primärt mått och stoppvillkor. Signalens giltighet, utfallshorisont och positionens exitpolicy definieras var för sig. Parametervarianter räknas som forskningsförsök och registreras även när de går dåligt.
 
 | Strategi | Första testbara hypotes | Horisont | Baslinje |
 | --- | --- | --- | --- |
@@ -193,9 +210,11 @@ Stapelns stängningspris och intervallets högsta eller lägsta pris blir tillg�
 
 Första algoritmlagret är deterministiska regler och enkla statistiska modeller. Därefter jämförs regulariserad regression och LightGBM för riktning, rangordning, förväntad nettoöveravkastning eller kvantiler. Djupinlärning, reinforcement learning och avancerade regimmodeller införs först om enklare alternativ lämnar ett tydligt problem olöst.
 
-Egenskaper kan omfatta relativ styrka, volym, volatilitet, spread, rapportöverraskning, nyhetsnyhet, försäljningsberoende och värderingsmått. Normalisering, imputering, urval och kalibrering lärs endast på träningsperioden. Inga framtida exitpriser, efterhandsberäknade trade-VWAP eller senare artikelformuleringar får användas som ingångsegenskaper.
+Egenskaper kan omfatta relativ styrka, volym, volatilitet, spread, rapportöverraskning, nyhetsnyhet, försäljningsberoende och värderingsmått. Normalisering, imputering och egenskapsurval anpassas inom respektive träningsfönster. Modellval använder separat kronologisk validering. Kalibrering får ett särskilt avsett material skilt från det som tränar den underliggande prognosmodellen. Inga framtida exitpriser, efterhandsberäknade trade-VWAP eller senare artikelformuleringar får användas som ingångsegenskaper.
 
 Modellens förslag jämförs med förväntade handelskostnader, osäkerhet och riskbudget. Vi väljer inte en godtycklig summa av AI-betyg som köpknapp. Avstå blir ett uttryckligt alternativ. Samtidiga signaler vägs i en portföljpolicy som hanterar nettoexponering, likviditet, sektor och gemensamma beroenden.
+
+Första lärandealgoritmen är schemalagd batchomträning med ett förregistrerat fönster, tillåtna egenskaper och ett begränsat antal försök. Inkrementellt lärande eller ändrade strategivikter jämförs mot en oförändrad modell och samma batchrutin innan de kan väljas. Portföljens riskmandat är en separat gräns och kan inte utökas av träningsoptimeringen.
 
 ## 11 Traderhistorik som kompletterande läromaterial
 
@@ -206,7 +225,7 @@ Vi skiljer tre uppgifter: förstå traderns beteende, förutsäga marknadens fra
 | Deltagande traders | Originalexporter, hela kontoperioder och journaler | Kräver avstämd historik och rätt till avtalad användning |
 | Collective2 | Strategiorder och avslutade affärer via dokumenterade API:er | Modellhistorik hålls separat från verifierade mäklaravslut |
 | Kinfo eller liknande | Mäklarverifierade profiler och resultat | Profilen bevisar inte komplett export eller träningsrätt |
-| Offentliga intradagsgenomgångar | Exempel på setups och förklaringar | Urval, ofullständig tidsinformation och efterhandsförklaring märks |
+| Öppna genomgångar | Exempel på setups och förklaringar | Urval, ofullständig tidsinformation och efterhandsförklaring märks |
 | SEC 13F | Rapporterade kvartalsinnehav | Inga exakta köpdatum eller fullständiga orderloggar |
 | SEC Form 4 och 13D | Rapporterade transaktioner och vissa uttalade planer | Publiceringsfördröjning, transaktionstyp och fotnoter behövs |
 | ARK | Dagliga innehav och meddelanden efter stängning | Officiellt historiskt handelsarkiv erbjuds inte |
@@ -217,7 +236,7 @@ Collective2 dokumenterar historiska order och avslutade trades, men åtkomst, t�
 
 För varje trader behövs tidsstämplade delavslut, orderkedja, ändringar, avgifter, cash flows, kontovaluta och kapitalhistorik. Vi tar med förlustperioder, misslyckade strategier och nedlagda konton när de finns. Traders viktas inte efter social räckvidd eller en utvald avkastningsbild.
 
-Utan bevakningslista eller aktivitet vet vi inte vad tradern valde bort. En minut utan avslut etiketteras därför som oobserverad, inte avstått köp. Vårt eget system ska från första dagen logga alla kvalificerade kandidater och skälen till köp, sälj, minskning eller avstående.
+Utan bevakningslista eller aktivitet vet vi inte vad tradern valde bort. En minut utan avslut etiketteras därför som oobserverad, inte avstått köp. För utvärdering av beteendemodeller hålls även senare tidsperioder och, när urvalet tillåter, hela traders utanför utvecklingsmaterialet. Det hjälper oss att skilja ett överförbart mönster från en viss persons enskilda historik. Vårt eget system ska från första dagen logga alla kvalificerade kandidater och skälen till köp, sälj, minskning eller avstående.
 
 Historiken kompletteras med marknadsdata som fanns före handlingen. Beteendemodeller får föreslå regler att testa. Om tradern saknar dokumenterad ursprunglig stop eller motivering fyller AI inte i den som fakta. Video eller journal kan ge en hypotes med separat källklassning.
 
@@ -235,21 +254,37 @@ Fondordern har egna steg: mottagen, behörighetskontrollerad, lämnad till distr
 
 Automatiska fondorder aktiveras först när en vald mäklare faktiskt stöder teckning och inlösen genom ett verifierat gränssnitt. Tills dess finns analys, manuella orderunderlag och separat simulering. Ett anpassat datafält i LEAN bevisar inte fungerande fondorder.
 
+Fondlärande väntar tills relevant kurs har publicerats och vald utfallshorisont passerat. Faktiskt affärsresultat kräver dessutom avstämda order och kostnader. NAV-datum, publicering, affärsdag och likviddag är skilda tidpunkter. En korrigerad NAV får en ny etikettversion; den ger inte roboten historisk tillgång till den korrigerade kursen.
+
 ## 13 Risk portfölj och orderhantering
 
 Varje strategi har egen bok och riskbudget. Det hindrar att en förlorande intradagsaffär byter etikett till långsiktigt innehav. En gemensam portföljmotor räknar samlad ekonomisk exponering och mäklarordrar. Om två strategier vill samma instrument ska tilldelning och intern nettning vara förklarlig.
 
-Riskpolicyn omfattar position, total och nettoexponering, sektor, beroenden, volatilitet, omsättning, kassareserv och maximal tillåten förlust enligt valda mått. Gränser konfigureras före körning. Det finns inga löften om att en stop begränsar förlusten vid gap, avbrott eller avsaknad av likviditet.
+Riskpolicyn omfattar position, total och nettoexponering, sektor, beroenden, volatilitet, omsättning, kassareserv och maximal tillåten förlust enligt valda mått. Gränser konfigureras före körning. En förtestad regulator får minska risk vid sämre likviditet, dataproblem eller konstaterad försämring. Återgång kräver uttryckliga observationskrav, väntetid och skilda trösklar för stopp och återstart. Den får aldrig höja mandatets tak eller öka risk för att vinna tillbaka förluster. Det finns inga löften om att en stop begränsar förlusten vid gap, avbrott eller avsaknad av likviditet.
 
 Den första börspiloten använder köp och kontanter. Blankning kräver senare verifierade lån, locate, avgifter och mäklarvillkor. Riskgränser i procent eller kronor bestäms när kapital, kontotyp och kostnadsmodell är kända; de ska inte härledas från en språkmodells säkerhetsbetyg.
 
 Ordermotorn hanterar förslag, riskkontroll, skickad order, kvittens, delavslut, avslut, avbeställning, avvisning och okänd status. Varje order får idempotensnyckel och beständig koppling till beslutet. Vid timeout får motorn inte anta att ingen order finns och skicka en ny utan kontroll.
 
-Mäklaren är auktoritet för externa avslut. Det interna systemet avstämmer order, innehav, avgifter och kassa vid start, återanslutning och löpande. Olöst kritisk differens blockerar nya order. Avgifter, likviddag, öppettider, prissteg, valutahantering och stödda ordertyper ligger i tidsversionerade mäklarkapaciteter.
+Mäklaren är auktoritet för externa avslut. Det interna systemet avstämmer order, innehav, avgifter och kassa vid start, återanslutning och löpande. Olöst kritisk differens blockerar riskökande order. Avgifter, likviddag, öppettider, prissteg, valutahantering och stödda ordertyper ligger i tidsversionerade mäklarkapaciteter. Avstämningen omfattar även manuella mäklaraffärer, korrigerade avslut, bolagshändelser och valutaposter. Okända externa innehav registreras som sådana och tillskrivs inte automatiskt en strategi.
 
 Varje konto har exakt en aktiv orderägare. Ett ledarlås med utgångstid och ett stigande ägarskapstoken kontrolleras vid orderutskick, så att en gammal worker inte fortsätter handla efter failover. Idempotensnycklar ersätter inte detta skydd. Förlorad ägarskapssignal blockerar nya order och kräver avstämning före återstart.
 
-Nödstoppet ska ha definierad innebörd: stoppa nya order, försöka avbeställa öppna order och rapportera kvarvarande exponering. Automatisk försäljning av alla innehav är en separat policy. För vanliga fonder kan en redan accepterad order sakna möjlighet att återkallas.
+Nödstoppet har högre prioritet än strategins driftläge. Ett hårt orderstopp blockerar alla nya orderutskick, även exits, men fortsätter ta emot status och avslut. Verifierade avbeställningar kan hanteras av en separat tillåten rutin. Automatisk försäljning av alla innehav är en separat policy. För vanliga fonder kan en redan accepterad order sakna möjlighet att återkallas.
+
+Strategins driftläge är beständigt och har definierade övergångar: active, degraded, reduce_only, paused och recovery. I paus fortsätter status, avstämning och uppföljning av kvarvarande exponering. Skyddande exits kan tillåtas enligt nedan när inget hårt stopp gäller. Återstart kräver datakontroll, avstämning och giltigt kontoägarskap. En timeout eller ett avbeställningsförsök bevisar inte att en order är borta.
+
+| Läge | Riskökande order | Reducerande order | Status och sena avslut |
+| --- | --- | --- | --- |
+| Active | Enligt mandat | Enligt exitpolicy | Alltid |
+| Degraded | Bara inom begränsad policy | Med verifierad kvantitet | Alltid |
+| Reduce only eller paused | Nej | Bara om uttryckligen tillåtet och verifierat | Alltid |
+| Recovery | Nej före godkänd återstart | Bara verifierad skyddsåtgärd | Alltid |
+| Hårt orderstopp | Nej | Nej | Alltid |
+
+En reducerande order kräver verifierad tillgänglig position, hänsyn till öppna order och möjliga sena avslut samt kontroll att den inte skapar motsatt exponering. Okänd kvantitet eller osäkra orderstatusar gör även denna order otillåten tills läget är avstämt.
+
+En versionsåtergång återställer kod och modellpaket men aldrig kassa eller externa avslut till en äldre snapshot. Varje position behåller strategy_id, model_version och den körbara exitregelns kodversion tills en explicit överföring genomförts. En kompatibel exithanterare måste finnas kvar så länge den behövs. Väntande fondorder följs färdigt även om en strategi eller kandidat stoppas.
 
 ## 14 Tester som skiljer resultat från efterhandsanpassning
 
@@ -257,27 +292,107 @@ Tester delas mellan dataintegritet, analyskvalitet, prognosvärde, portföljresu
 
 1. Frys hypotes, urvalsregel, horisont, label, kostnadsmodell och primärt mått före sluttestet.
 2. Dela kronologiskt med rullande träning och senare validering. Ta bort träningsobservationer vars utfallsperiod överlappar validering eller test. Gruppera samma nyhet och relaterade bolagshändelser så att de inte läcker mellan delar.
-3. Lär endast förbehandling och modellval på träningsmaterialet. Oregelbundna händelser kräver en egen tids- och gruppdelning; en standardfunktion är inte automatiskt korrekt. [S24]
+3. Anpassa förbehandling på träningsfönstret och använd separat kronologisk validering för modellval. Kalibrering får avsett separat material. Sluttestet används inte för dessa val. Oregelbundna händelser kräver en egen tids- och gruppdelning; en standardfunktion är inte automatiskt korrekt. [S24, S34]
 4. Jämför kontanter, riskjämförbar benchmark, enkla prisregler, direkta nyheter, graf och traderinformation. Ta bort ett lager i taget för att mäta dess bidrag.
-5. Registrera alla försök. Håll en sista period orörd. Skatta osäkerhet med hänsyn till att affärer samma dag eller kring samma händelse är beroende. Många trades är inte lika med många oberoende observationer. [S25]
+5. Registrera alla försök. Håll en sista period orörd fram till dess definierade slututvärdering. Skatta osäkerhet med hänsyn till att affärer samma dag eller kring samma händelse är beroende. Många trades är inte lika med många oberoende observationer. [S25]
 6. Stressa spread, latens, avgifter, marknadspåverkan, delavslut, uteblivna avslut, gap, stopp och sämre feed. Visa resultat per period, sektor, instrument och marknadsläge.
 7. Kör framåtriktad skugganalys och därefter simulerad orderhantering. Jämför vad systemet förutsåg med vad som faktiskt fanns tillgängligt.
 
+När ett sluttest har påverkat modellval, prompt, minnesrutin eller korrigering är det förbrukat som oberoende sluttest för de efterföljande valen. Det kan bli utvecklingsmaterial. Nya kandidater behöver ny framtida evidens eller en i förväg definierad sekventiell jämförelsepolicy med begränsade försök. Upprepad testning tills en kandidat ser bra ut är inte oberoende verifiering.
+
+Själva anpassningsregeln testas kronologiskt: starta från dokumenterad modell och minne, lås prognosen, invänta tillgängligt utfall, poängsätt och uppdatera först därefter. Även normalisering, kalibrering och minneshämtning följer denna ordning. Jämför oförändrad modell, batchomträning och eventuell inkrementell modell på samma möjligheter och kostnader. En modell som redan sett hela perioden får inte användas som startpunkt. River dokumenterar denna princip som fördröjd löpande utvärdering. [S32]
+
 Historiska tester med en modern språkmodell kan innehålla kunskap om senare utfall från modellens förträning. Att dölja framtida dokument i vår egen databas löser inte hela det problemet. Framåtriktade resultat och enklare textmodeller är viktiga jämförelser.
 
-Rapporten visar avkastning efter modellerade kostnader, drawdown, nedsiderisk, kapitalbindning, turnover, kapacitet, benchmarkexponering och osäkerhet. Win rate är inte ett huvudbevis. Valda trösklar måste förregistreras per strategi när datatäckning och realistiska kostnader är kända.
+Rapporten visar avkastning efter modellerade kostnader, drawdown, nedsiderisk, kapitalbindning, turnover, kapacitet, benchmarkexponering och osäkerhet. Resultat räknas i jämförbar valuta med dokumenterad hantering av kapitalflöden och utdelningar. Extraktionskvalitet och sannolikhetskalibrering rapporteras separat från ekonomiskt resultat. Win rate är inte ett huvudbevis. Valda trösklar måste förregistreras per strategi när datatäckning och realistiska kostnader är kända.
 
 Innan live måste varje strategi klara den förregistrerade bedömningen av nettoresultat, risk, osäkerhet och bidrag jämfört med baslinjen på orört testmaterial och framåtriktade observationer. Operationell stabilitet räcker inte. Om underlaget är negativt eller för svagt stannar strategin i forskning eller simulerad handel.
 
-## 15 Lärande minne och modelluppdateringar
+## 15 Självlärande felkorrigering och kontrollerade uppdateringar
 
-Minne består av tidsstämplade analysfall, källor, prognoser, avståenden och senare utfall. Det hämtar liknande tidigare situationer som var avslutade och kända före det nya beslutet. En senare förklaring får inte ändra den ursprungliga beslutsloggen.
+Självlärandet ska vara ett eget systemflöde som samlar erfarenheter, mäter kvalitet, föreslår förbättringar och kontrollerar om de hjälper. Det innebär inte att modellen förbättras efter varje affär. En korrekt förlust registreras som ett utfall. Ett faktiskt fel behöver belägg och en verifierad åtgärd. Även en vinst kan innehålla datafel eller ett brutet riskvillkor.
 
-Vi skiljer mellan faktisk observation, analys som gjordes då och efterhandsutvärdering. Minnet får stödja hypoteser och felsökning. Det är inte bevis för att en ny situation får samma utfall. Utvärdera om minneshämtning förbättrar resultatet jämfört med samma modell utan minne.
+### 15 1 Fyra skilda former av förbättring
 
-Modelluppdateringar sker som challenger mot en befintlig version. De får ett fryst dataset, hela experimenthistoriken, oberoende utvärdering och ett spårbart beslut om eventuell ersättning. En uppdatering marknadsförs inte automatiskt för att ett kort backtest förbättras.
+Minne lagrar och hämtar tidigare källbelagda fall. Modellträning ändrar numeriska parametrar. Kalibrering justerar hur en prognos förhåller sig till observerad frekvens. Kod- och policyändringar påverkar systemets logik. Dessa har olika tester och behörigheter. Att lägga ett fall i minnet tränar inte språkmodellens vikter.
 
-Drift i data, modell eller exekveringskostnad kan minska risk eller stoppa nya order. Den ska inte utlösa fri självändring av produktionens strategi. Felsökning, omträning och återaktivering är separata steg med rollback.
+Språkmodellen kan föreslå en förbättrad tolkning, ny regel eller kodpatch. Förslaget är en kandidat tills det verifierats. Modellens egen efterhandsberättelse får inte fungera som facit. Finjustering av språkmodellen är ett separat senare beslut som kräver kontrollerade exempel och mätbart bättre analyskvalitet.
+
+### 15 2 Återkoppling från beslut till moget utfall
+
+Flödet är beslut, låst prognos, väntan på utfall, utvärdering, felklassning, förbättringskandidat, oberoende prov och eventuell versionsväxling. Alla steg länkas till samma prognos, snapshot och strategiversion. Beslut, avståenden och ej genomförda order följs utan att blanda faktisk handel med hypotetiska utfall.
+
+Utfallsjobbet hanterar pending, matured, unavailable och quarantined. En senare korrigering skapar en ny version med hänvisning till föregående etikett och en egen available_at. Historisk träning vid tid T använder versionen som var känd vid T; rättelsen ärver inte originalets tillgänglighetstid. target_definition anger vad som ska mätas, referenstid, utfallshorisont, benchmark och pris- och kostnadskonvention. För realiserat handelsresultat används verkliga avslut; för marknadsprognoser används en förregistrerad hypotetisk genomförbar regel.
+
+En femdagarsprognos får inte lära sig ett slutligt utfall efter en dag. Orealiserad avkastning kan övervakas men blir inte automatiskt rätt träningsetikett. Endast mogna, validerade utfall som var tillgängliga före träningskörningens stoppdatum får användas. Saknad data blir aldrig nollavkastning. Försenade utfall, handelsstopp och avnoteringar hanteras uttryckligt och rapporteras, så att svåra eller förlustbringande fall inte försvinner ur utvärderingen.
+
+### 15 3 Felklassning och orsaksanalys
+
+| Felklass eller utfall | Exempel | Tillåten första åtgärd |
+| --- | --- | --- |
+| Källfel eller identitet | Fel valuta, bolag, tidszon eller gammal kurs | Karantän och blockering av berörda beräkningar |
+| Dokumenttolkning | Negation missas eller miljoner blir miljarder | Källbelagd korrigering och regressionsexempel |
+| Beräkningsfel | Framtida värde i feature eller felaktig etikett | Spärra påverkat material och bygg om härledningar |
+| Exekveringsfel | Dubbelorder, fel kvantitet eller okänt avslut | Stoppa riskökning och avstäm innan åtgärd |
+| Policybrott | Exponeringsgräns kringgås | Blockera och utred incidenten |
+| Prognosavvikelse | Korrekt sannolikhetsprognos får negativt utfall | Poängsätt prognosen utan omedelbart regelbyte |
+| Möjlig försämring | Sämre prognos eller ekonomi på tillräckligt material | Undersök orsak och skapa kandidat inom policyn |
+
+En incident får identitet, upptäcktstid, kategori, allvar, berörda beslut och data, orsakshypotes och verifieringsstatus. Orsaken får förbli okänd. Slippage över antagandet kan vara marknadsförhållanden, en dålig kostnadsmodell eller ett tekniskt fel och ska inte automatiskt klassas som kodbugg.
+
+Korrigeringar bevarar gammalt och nytt värde, källstöd, orsak, åtgärd och berörda följdartefakter. Läckande dataset och experiment markeras som ogiltiga för tidigare prestandapåståenden. Historiskt realiserat resultat och resultat efter en korrigerad replay visas var för sig. Korrigerad historik skriver inte om den information roboten faktiskt hade.
+
+### 15 4 Minne och granskad återanvändning
+
+Minnet består av fakta, analysen som gjordes då, låst prognos, utfall och separat senare utvärdering. Hämtning vid ett beslut får bara använda information som redan var känd; utfallsdelen kräver ett färdigt och tillgängligt utfall. Ursprunglig analys ersätts aldrig av den efterföljande förklaringen.
+
+Liknande fall kan ge kandidathypoteser och motargument. Vi mäter förbättring mot samma modell utan minne. Minskad kvalitet eller höjd kostnad utan tydligt värde kan motivera att minnesfunktionen stängs av. Ingen förlorad affär blir direkt en ny systeminstruktion.
+
+### 15 5 Träningsjobb och takt per strategi
+
+Första versionen använder batchomträning. En policy anger schema eller utlösande villkor, minsta nya mogna underlag, tillåtna modellfamiljer och egenskaper, historikfönster, antal försök och resursbudget. Ett driftlarm kan skapa ett träningsförslag men ger inte rätt att ersätta modellen.
+
+Intradag kan utvärderas efter avslutade sessioner och avstämda kostnader. Swing behöver färdiga utfall för sin horisont. Långsiktiga strategier och fonder kräver längre uppföljning, med hänsyn till rapport- och NAV-publicering. Ett kort tidsfönster med många korrelerade observationer räknas inte som samma mängd oberoende evidens.
+
+Varje learning_run låser dataurval, etikettversioner, stoppdatum, uppdateringsregel, kod, startmodell och kostnader. Poängsättning och träningsurval har en observationsjournal som unikt identifierar prediction_id, target_definition_id och label_version. En rättelse ersätter eller återtar den gamla observationen i nya resultat; båda räknas inte som två oberoende utfall. Återförsök på samma jobb skapar inte fler försök eller en extra modellpromotion. Endast en utsedd kandidat kan publiceras per dokumenterad jämförelse; inga ändlösa loopar som söker tills något ser bättre ut.
+
+### 15 6 Kandidater och versionsbyten
+
+Kandidatstatus är draft, trained, validated, shadow, eligible, promoted och retired eller rolled_back. Varje övergång får kriterier, mätvärden och skäl. Jämförelsen mot den aktiva modellen använder samma förutsättningar, möjligheter, risk och kostnader. Ingen förändring är ett giltigt beslut om ingen kandidat uppfyller kraven.
+
+Ett driftsättningsmanifest innehåller modell, featureschema, förbehandling, kalibrering, prompt och skill-versioner, riskpolicy, exekveringskonfiguration samt data- och kodreferenser. Det införs atomiskt med oföränderliga versions-ID:n. En alias som pekar på en ny modell räcker inte för att visa vilken kombination som faktiskt användes. MLflow kan bära modellversionerna medan vår kontrolltjänst ansvarar för övergångar och statistiska krav. [S31]
+
+Promotion kräver datakvalitet, mogen oberoende evidens, förregistrerade krav på nettoresultat och risk, relevant kalibrering, godkänd driftsfunktion och oförändrat mandat. En förbättring som beror på större risk får inte döljas som bättre modell. Driftsättning börjar med skuggläge; begränsad aktiv utrullning följer först när tillåten policy och evidens finns.
+
+### 15 7 Vad som får ske automatiskt
+
+| Åtgärd | Automatisk hantering | Begränsning |
+| --- | --- | --- |
+| Samla utfall och övervaka | Ja enligt definierade jobb | Tids- och kvalitetskontroller gäller |
+| Bekräftad datakorrigering | Ny version och ombyggnad | Ursprungliga beslut och påverkan bevaras |
+| Träna och jämföra kandidater | Ja inom resurs- och dataram | Ingen egen livebehörighet |
+| Minska eller pausa risk | Ja enligt testade regler | Ingen höjning av riskmandat |
+| Återställa normal drift | Bara enligt återstartspolicy | Avstämning och observationskrav krävs |
+| Byta aktiv modell | Möjligt inom beslutad bytespolicy | Alla kvalitets- och versionskrav måste uppfyllas |
+| Ändra kod eller mandat | Isolerat förslag och verifiering | Separat releasepolicy för ändringens kritikalitet |
+
+Startläget för modellpromotion är paper_only. Automatisk modellpromotion i en redan aktiverad livemiljö kan senare tillåtas genom en explicit konfigurerad policy. Policyn anger omfattning, tak och stoppvillkor så att rutinuppdateringar inte kräver ett nytt beslut varje gång. Nya instrumenttyper, höjda risktak, nya datarättigheter och fri ändring av ordersemantik ingår inte i detta mandat.
+
+### 15 8 Teknisk självreparation och återgång
+
+Reparationsflödet är incident, reproducerande test, isolerad kodgren, minsta patch, relevanta tester och replay, skuggläge och versionssatt release enligt ändringspolicy. Agenten får felsöka, föreslå och testa rättningar utan produktions- eller mäklarhemligheter. Den får inte ändra sina egna testkrav eller riskspärrar för att få igenom en patch.
+
+Kritiska ändringar av instrumentmappning, orderlogik, risk eller databokföring kräver särskild verifiering och releasepolicy. Vanliga dataåterförsök och redan testade återstartsprocedurer kan automatiseras separat. Systemet ska minska påverkan när det inte kan reparera ett fel och rapportera vad som återstår.
+
+Senast fungerande versionspaket bevaras. Rollback byter körbar version men behåller verkliga order, innehav, avgifter och kassabok enligt avsnitt 13. Återgång kräver kompatibilitetskontroll för datakontrakt och kvarvarande positioner. Övervaknings- och stoppfunktionen kan inte avaktiveras av den modell som utvärderas.
+
+### 15 9 Mätning som visar om lärandet hjälper
+
+Följ separat datakvalitet, analysfel, prognosfel och kalibrering på mogna utfall, nettoresultat, risk och verkliga exekveringskostnader. Ändrad indatafördelning bevisar inte förlorat prognosvärde. Larmtrösklar tar hänsyn till tid på dagen, period och beroende mellan observationer.
+
+Jämför den oförändrade modellen med hela den adaptiva processen. Mät även avståenden, kandidater som nekats, tid till upptäckt och verifierad rättning, omträningens kostnad, felaktiga återstarter och misslyckade återgångar. Bättre textprecision eller kalibrering är värdefullt men inte samma sak som bättre nettoavkastning.
+
+Lärandets acceptansprov omfattar försenat utfall, korrigerad etikett, framtida minnesinformation, dubblerat träningsjobb, förbrukat sluttest, kandidat med högre risk, ofullständigt versionspaket, överskriden budget och rollback med öppna positioner. Dessa prov måste visa att spärrarna fungerar även när kandidaten ser attraktiv ut.
 
 ## 16 Webb och användarflöden
 
@@ -291,7 +406,9 @@ Gränssnittet byggs för att användaren ska kunna följa bevis och resultat. De
 - Forskningsvyn jämför baslinjer och modeller på samma tidsperiod och kostnadsantaganden.
 - Traderdata visar verifieringsnivå, täckning och avstämning före eventuell forskningsanvändning.
 - Order och portfölj visar livscykel, delavslut, avgifter och avvikelser mot mäklaren.
-- Driftvyn visar fördröjning, jobb, dataluckor, kostnader och nödstopp.
+- Lärandevyn visar väntande och mogna utfall, aktiv modell, kandidater, jämförelser och versionshistorik.
+- Incidentvyn visar felklass, underlag, berörda beslut, rättningar och verifieringsstatus.
+- Driftvyn visar fördröjning, jobb, dataluckor, kostnader, beständigt driftläge och nödstopp.
 
 Inläst artikel får en direkt källänk och synlig versionstid. Statusarna analys, skuggläge, simulerad handel och live ska alltid kunna skiljas åt. Mobilvyn prioriterar bevakning, läsning, avvikelser och stoppfunktioner.
 
@@ -303,13 +420,13 @@ Originalexporter och licensierade dokument förvaras privat med åtkomstlogg och
 
 Backuper ska återläsas i prov. Rådata, konfiguration, databas och modellversioner behöver tillsammans kunna återskapa en körning. Jobb har lås, timeout, återförsök med backoff och en tydlig fellista. Samma jobb får inte producera dubbla dataset eller order.
 
-Övervakning följer feedfördröjning, saknade data, antal karantänrader, analysfel, modellkostnad, avvisade riskkontroller, mäklarkontakt och avstämningsdifferenser. Produktionsberoenden och containrar versionslåses. Underhållsregler och API-förändringar kontrolleras före uppgradering.
+Övervakning följer feedfördröjning, saknade data, antal karantänrader, analysfel, modellkostnad, avvisade riskkontroller, mäklarkontakt och avstämningsdifferenser. Träningsjobb och reparationsagent har separata behörigheter från ordermotorn. Kandidatartefakter kontrolleras mot tillåten typ, innehåll, hash och versionsmanifest innan de kan laddas. Resurs- och anropsbudgeter begränsar träning, analys och återförsök. Produktionsberoenden och containrar versionslåses. Underhållsregler och API-förändringar kontrolleras före uppgradering.
 
 För Supabase följs aktuell dokumentation, RLS och nyckelhantering. Databasen ska inte göras publikt läsbar för att förenkla utveckling. Den aviserade avvecklingen av äldre TLS-cipherkombinationer i november 2026 ska beaktas vid val av klienter och runtime. [S26]
 
 ## 18 Byggordning och leveranskriterier
 
-Varje fas har en leverans som går att demonstrera. Nästa fas ska lösa ett konstaterat behov. Kalenderuppskattningar för utveckling är inte bevis för strategins kvalitet.
+Varje fas har en leverans som går att demonstrera. Nästa fas ska lösa ett konstaterat behov. Kalenderuppskattningar för utveckling är inte bevis för strategins kvalitet. Återkopplingsloggen byggs före modellträning; det ska gå att lära senare från de första riktiga besluten. Traderdata är en parallell valfri källa och blockerar inte framåtriktad simulering. En separat algoritm, ny modellfamilj eller ny fondtyp införs en i taget när föregående flöde är verifierat.
 
 ### Fas 0 Rensning och arkitekturbeslut
 
@@ -317,19 +434,19 @@ Arkivera den gamla grenen, gör en ren ombyggnadsgren och publicera masterplan, 
 
 ### Fas 1 Instrument och datagrund
 
-Bygg instrumentregister, kalendrar, källregister, råarkiv och första importer för SEC, prisdata och en nyhetskälla. Lägg till NAV-import som separat datakontrakt. Klart när omkörning är idempotent, tvetydigheter hamnar i karantän och split, namnbyte, artikelrevision och tidszon kan återspelas korrekt.
+Bygg instrumentregister, kalendrar, källregister, råarkiv och första importer för SEC, prisdata och en nyhetskälla. Lägg till NAV-import som separat datakontrakt. Klart när omkörning är idempotent, tvetydigheter hamnar i karantän och split, namnbyte, artikelrevision och tidszon kan återspelas korrekt. Lägg också grunden för artefaktberoenden, utfallsdefinitioner och en separat incidentlogg.
 
 ### Fas 2 Första analyskedjan
 
-Bygg en händelsetyp, en verifierad direkt bolagsrelation och ett källbelagt analyskort. Kör samma händelse från rådata till strukturerat resultat. Klart när kvalitetsutvärderingen, källstöd och explicit avstående fungerar även för motsägelsefulla eller irrelevant dokument.
+Bygg en händelsetyp, en verifierad direkt bolagsrelation och ett källbelagt analyskort. Kör samma händelse från rådata till strukturerat resultat. Klart när kvalitetsutvärderingen, källstöd och explicit avstående fungerar även för motsägelsefulla eller irrelevanta dokument. Spara låsta prognoser och avståenden, utfallskö och belagda korrigeringar. Demonstrera att ett ännu inte tillgängligt utfall inte kan bli minne eller träningsdata.
 
 ### Fas 3 Börsmotor och enkel strategi
 
-Gör LEAN-provet med egna normaliserade data och en enkel deterministisk regel. Modellera avgifter, spread, fördröjning och handelstider. Klart när avslut, position och kassa kan avstämmas och samma regel ger förklarlig replay. Besluta därefter direktdrift eller betald CLI-väg.
+Gör LEAN-provet med egna normaliserade data och en enkel deterministisk regel. Modellera avgifter, spread, fördröjning och handelstider. Klart när avslut, position och kassa kan avstämmas och samma regel ger förklarlig replay och kandidatens giltighet inte förväxlas med positionens exitpolicy. Demonstrera beständiga driftlägen och kostnadsattribution. Besluta därefter direktdrift eller betald CLI-väg.
 
 ### Fas 4 Forskning och jämförelser
 
-Bygg kronologisk utvärdering, experimentregister och baslinjer. Testa pris, direkta händelser och graf separat. Lägg till första ML-modellen när datakontraktet är stabilt. Klart när slutperioden är orörd, alla försök är registrerade och rapporten visar kostnadskänslighet samt osäkerhet. Ett negativt resultat är ett giltigt utfall.
+Bygg kronologisk utvärdering, experimentregister och baslinjer. Testa pris, direkta händelser och graf separat. Lägg till första ML-modellen när datakontraktet är stabilt. Klart när slutperioden är orörd, alla försök är registrerade och rapporten visar kostnadskänslighet samt osäkerhet. Inför modellregister, begränsade kandidatkörningar och deklarerad promotionpolicy i paper_only. Testa hela läranderegeln med fördröjda etiketter och jämför mot en fryst modell. Sluttestet får inte återanvändas som orört efter modellval. Ett negativt resultat är ett giltigt utfall.
 
 ### Fas 5 Traderhistorik
 
@@ -337,15 +454,15 @@ Lägg till mäklarexport och valfri Collective2-adapter. Verifiera tidszon, kost
 
 ### Fas 6 Framåtriktad simulering
 
-Kör skugganalys och därefter simulerade order med separata strategiböcker. Testa återstart, dubbel kvittens, nätverksavbrott, avvisad order, delavslut och nödstopp. Klart när alla kritiska avstämningsfel är lösta och framåtriktade beslut går att rekonstruera. En bestämd månadslängd bevisar inte alpha.
+Kör skugganalys och därefter simulerade order med separata strategiböcker. Testa återstart, dubbel kvittens, nätverksavbrott, avvisad order, delavslut och nödstopp. Klart när alla kritiska avstämningsfel är lösta och framåtriktade beslut går att rekonstruera. Kör även modellbyte och rollback med öppna positioner och försenade avslut. Fondorder används här som syntetiska kontraktsprov inför nästa fas. Visa att en misslyckad kandidat stannar i simulering och att avstämningen överlever versionsbytet. En bestämd månadslängd bevisar inte alpha.
 
 ### Fas 7 Fondallokering och mäklarkapacitet
 
-Bygg exponering genom fondinnehav, avgiftskontroll och långsam ombalansering. Genomför fondorderprovet för vald distributör om gränssnitt finns. Klart när bryttider, kursdag, väntande order, kassa och likvid är korrekt representerade. Analys får levereras även om automatisk fondhandel ännu inte stöds.
+Bygg exponering genom fondinnehav, avgiftskontroll och långsam ombalansering. Genomför fondorderprovet för vald distributör om gränssnitt finns. Klart när bryttider, kursdag, väntande order, kassa och likvid är korrekt representerade. Visa även försenad NAV och korrigerad fondetikett i lärandeloopen. Upprepa versionsbytes- och rollbackproven genom det färdiga fondflödet med väntande order; kontraktsproven i fas 6 ersätter inte detta. Analys får levereras även om automatisk fondhandel ännu inte stöds.
 
 ### Fas 8 Begränsad live och kontrollerad utveckling
 
-Verifiera aktuellt konto, tillgängliga instrument, feedavtal, riskbudget och mäklaradapter. Kräv också godkänd förregistrerad strategiutvärdering enligt avsnitt 14; bristande eller otillräckliga resultat blockerar live. Live aktiveras som ett separat beslut med vald kapitalgräns och godkända strategiversioner. Följ verkliga avslut och kostnader mot simuleringen. Vid driftfel minskas eller stoppas risken enligt policy. Det finns ingen automatisk upptrappning baserad på några få vinster.
+Verifiera aktuellt konto, tillgängliga instrument, feedavtal, riskbudget och mäklaradapter. Kräv också godkänd förregistrerad strategiutvärdering enligt avsnitt 14; bristande eller otillräckliga resultat blockerar live. Live aktiveras som ett separat beslut med vald kapitalgräns och godkända strategiversioner. Följ verkliga avslut och kostnader mot simuleringen. Vid driftfel minskas eller stoppas risken enligt policy. Ett eventuellt automatiskt modellbyte får bara ske inom publicerad policy enligt avsnitt 15 och måste kunna återgå utan att tappa öppna order. Det finns ingen automatisk upptrappning baserad på några få vinster.
 
 ## 19 Första konkreta utvecklingsuppgifter
 
@@ -361,7 +478,14 @@ Verifiera aktuellt konto, tillgängliga instrument, feedavtal, riskbudget och m�
 | P1 | Direkt bolagsrelation | Tidssatt källa och explicit okänd exponering |
 | P1 | LEAN-replay och kassabok | Avgifter, utdelning, split och delavslut avstämda |
 | P2 | Kronologiska baslinjer | Ingen framtida datapunkt i något ingångssnapshot |
+| P1 | Låsta prognoser och utfallskö | En femdagarsetikett är spärrad tills utfallet är tillgängligt |
+| P1 | Incidenter och härledning | Korrigering markerar rätt följdartefakter utan att skriva om beslut |
 | P2 | Egen opportunity-logg | Kandidater och avståenden sparas vid beslutet |
+| P2 | Modellregister och kandidatjämförelse | Samma möjligheter och kostnader samt oförändrad risk |
+| P2 | Policy för automatisk promotion | Nekad kandidat förblir inaktiv och beslutet är spårbart |
+| P2 | Test av hela läranderegeln | Fördröjt utfall poängsätts före uppdatering |
+| P3 | Isolerad reparationskedja | Fel reproduceras och patch kan testas utan handelshemligheter |
+| P3 | Återgång med verkligt tillstånd | Öppna positioner och sena avslut behålls efter rollback |
 | P2 | Traderexportadapter | Original, delavslut och kapitalhistorik avstämda |
 | P2 | NAV-simulator | Order före och efter bryttid får rätt kursdag |
 | P3 | Paper-mäklaradapter | Återanslutning skapar inga dubbla order |
@@ -371,13 +495,13 @@ Verifiera aktuellt konto, tillgängliga instrument, feedavtal, riskbudget och m�
 
 Budgeten delas mellan historiska data, livefeed, nyheter och estimat, fonddata, mäklaravgifter, lagring, beräkning och modellanalys. Handel för egen räkning och professionell vidareanvändning kan ha olika datavillkor. Budgeten ska därför bygga på faktisk användningsklass och offert.
 
-Första mätningen omfattar kostnad per analyserad händelse, per godkänt analyskort och per simulerad strategidag. Spara tokenåtgång, modellval, cacheträffar, datauttag, lagring och worker-tid. Återanvänd analys för samma dokumentversion; en senare uppdatering får en ny körning.
+Första mätningen omfattar kostnad per analyserad händelse, per godkänt analyskort och per simulerad strategidag. Spara tokenåtgång, modellval, cacheträffar, datauttag, lagring och worker-tid. Återanvänd analys för samma dokumentversion; en senare uppdatering får en ny körning. Träningsförsök och felsökningsloopar har tak för tid, antal kandidater och kostnad; ett larm får inte starta obegränsad omträning.
 
 De praktiska valen är första mäklarkonto, dataleverantör, månatlig databudget, första fondurval och eventuell rätt att använda traderexporter. De hindrar inte att datakontrakt och offlinekedja byggs. De måste däremot vara avgjorda innan kontospecifik livehandel eller ett betalt dataköp genomförs.
 
 ## 21 Instruktion till nästa byggagent
 
-Arbeta i ombyggnadsgrenen och läs AGENTS.md och denna plan först. Börja med fas 1 efter att planeringsgrunden granskats. Implementera instrumentregister och oföränderlig källimport före strategier. Håll datahämtning, analys, simulering och orderläggning i separata kontrakt.
+Arbeta i ombyggnadsgrenen och läs AGENTS.md och denna plan först. Börja med fas 1 efter att planeringsgrunden granskats. Implementera instrumentregister och oföränderlig källimport före strategier. Håll datahämtning, analys, simulering, återkoppling och orderläggning i separata kontrakt. Bygg utfallskö och incidentlogg innan den första modellen tränas. Implementera avsnitt 15 som en del av varje relevant fas, inte som en senare självlärande-funktion utan indata.
 
 Använd aktuella officiella dokument för valda versioner. Bevara licenser när kod återanvänds. Lägg inte in alla föreslagna ramverk. Installera endast vad den aktuella fasen använder och lås versionerna. Genomför inga betalda köp eller liveorder som ett led i ett tekniskt test.
 
@@ -417,5 +541,9 @@ Officiella dokument och projektkällor kontrollerades den 20 oktober 2026. Rekom
 - S28 LightGBM: https://github.com/lightgbm-org/LightGBM
 - S29 DuckDB Parquet: https://duckdb.org/docs/stable/data/parquet/overview
 - S30 Befintlig projektgrund: https://github.com/heke99/trading-intelligence/tree/8c5056112721345540ea1cfbbca1f4c41fa816e8
+- S31 MLflow modellregister och versionshantering: https://mlflow.org/docs/latest/ml/model-registry/workflow/
+- S32 River fördröjd löpande utvärdering: https://riverml.xyz/dev/api/evaluate/progressive-val-score/
+- S33 River projekt och licens: https://github.com/online-ml/river
+- S34 scikit-learn om kalibrering: https://scikit-learn.org/stable/modules/calibration.html
 
 De första leveransernas verifieringsjournal ska ange faktiska API-prov, datatäckning, kostnader, körningar och resultat. Denna plan är kravbilden som de leveranserna bedöms mot.

@@ -6,6 +6,8 @@ Rebuild plan for an equities, ETF and mutual-fund research platform with source-
 
 Read the complete [Swedish masterplan](docs/MASTERPLAN_SV.md). It covers the architecture, data contracts, open-source choices, analyses, strategy hypotheses, trader-history workflow, fund pricing, validation, portfolio controls and phased implementation.
 
+Version 1.1 specifies self-learning and error correction: immutable forecasts, delayed validated outcomes, incident classification, correction lineage, bounded retraining, challenger evaluation, policy-controlled promotion and state-preserving rollback. These are documented requirements, not implemented capabilities.
+
 ## Rebuild scope
 
 - Start with liquid equities and eligible ETFs, excluding leveraged, inverse and single-stock products in the pilot.
