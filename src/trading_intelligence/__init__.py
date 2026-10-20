@@ -8,4 +8,4 @@ from .broker_store import BrokerStore
 
 __all__ = ["AssetKind", "DataOrigin", "Entity", "Instrument", "Listing", "Use", "EvidenceStore",
            "FutureContract", "FutureProduct", "FutureTerms", "FuturesStore", "BrokerStore"]
-__version__ = "0.4.0"
+__version__ = "0.5.0"

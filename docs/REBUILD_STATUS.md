@@ -1,6 +1,6 @@
 # Rebuild status
 
-Date: 2026-10-20. Masterplan: 1.3. Package: 0.4.0.
+Date: 2026-10-20. Masterplan: 1.3. Package: 0.5.0.
 
 ## Reset completed
 
@@ -33,6 +33,12 @@ PR #12 passed remote CI and was merged into main at ff7601cc42b62e4555e20411f35f
 
 The temporal reference implementation is now shared between futures and brokers without changing existing futures tables or snapshot identities. Real broker transport, credentials, execution, account risk and reconciliation remain unimplemented. See [BROKERS.md](BROKERS.md).
 
+## Read-only broker reference import
+
+PR #13 passed remote CI and merged into main at bda750c7b47ae0aaea8977935697f87c79b3b2c7. This new slice adds an Alpaca paper account/assets GET reader, strict field normalization, raw-response archive, receipt and post-processing availability, immutable import batches and CLI configuration. It has no authenticated-account verification and no orders/positions/fills transport. Supplied/local records and real GET captures are distinguished by endpoint provenance. See [BROKER_IMPORTS.md](BROKER_IMPORTS.md).
+
+Unknown fields remain unknown. Wrong account identity, malformed rows and ambiguous assets are quarantined. No canonical binding, account trading capability or training approval is inferred. Provider publication/economic time remains null instead of being fabricated from receipt. A failed partial fetch publishes no complete batch; durable failed-attempt journaling remains future work.
+
 ## Capability status
 
 | Capability | Status |
@@ -49,7 +55,9 @@ The temporal reference implementation is now shared between futures and brokers 
 | Futures roll, daily/final settlement and aggregate margin engine | Not implemented |
 | Multi-broker canonical intents, account isolation and persisted drafts | Implemented offline |
 | Two synthetic broker format encoders and explicit adapter registry | Implemented offline; no external connection |
-| Real broker adapters, order transport and reconciliation | Not implemented |
+| Alpaca paper reference GET reader and vendor-field normalization | Implemented; authenticated API access not verified |
+| Raw response archive, processed availability and immutable reference batches | Implemented and tested with synthetic responses |
+| Real order transport, positions/fill reconciliation and second vendor reader | Not implemented |
 | SEC, price, news and NAV adapters | Not implemented |
 | Real equity/fund data entitlement | Not verified |
 | Trader-history completeness or verification | Not implemented or verified |
@@ -61,9 +69,9 @@ The temporal reference implementation is now shared between futures and brokers 
 
 ## Verification
 
-115 offline synthetic regression tests passed locally on Python 3.12.14, including the original 81 foundation/futures tests. Broker cases cover per-account isolation, strict capabilities, native mapping, raw prices/lots, stale/missing references, stable retries, changed-input conflicts, restart persistence, live-route rejection and corrupt archives. New cases cover expiry identity, fixed-tick Decimal calculations, raw/adjusted prices, temporal corrections, missing/expired margin, account/currency mismatch, physical exclusion, limits, session breaks, overnight/DST instants, overlapping references and corruption. Existing cash databases remain readable with the additive futures tables.
+158 offline synthetic regression tests passed locally on Python 3.12.14, including all 115 previous foundation/futures/broker tests. New tests cover HTTP endpoint/method limits, headers/redirect failures, account identity, unknown flags/values, decimal normalization, malformed/duplicate JSON, quarantine, processed availability, import retries/restarts, permissions, partial fetch and integrity failures. Broker cases cover per-account isolation, strict capabilities, native mapping, raw prices/lots, stale/missing references, stable retries, changed-input conflicts, restart persistence, live-route rejection and corrupt archives. New cases cover expiry identity, fixed-tick Decimal calculations, raw/adjusted prices, temporal corrections, missing/expired margin, account/currency mismatch, physical exclusion, limits, session breaks, overnight/DST instants, overlapping references and corruption. Existing cash databases remain readable with the additive futures tables.
 
-The original foundation and futures slice passed remote CI on Python 3.11, 3.12 and 3.13. The broker slice defines the same matrix with all three offline CLI examples; check its associated PR for remote results. Tests do not establish investment performance or end-to-end production readiness.
+The original foundation, futures and multi-broker slices passed remote CI on Python 3.11, 3.12 and 3.13. The reference-import slice defines the same matrix with all four offline CLI examples; check its associated PR for remote results. Tests do not establish investment performance or end-to-end production readiness.
 
 ## Next milestones and acceptance
 
