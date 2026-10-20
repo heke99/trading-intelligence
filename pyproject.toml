@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trading-intelligence"
+version = "0.2.0"
+description = "Offline identity and evidence foundation for equities and fund research"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+trading-intelligence = "trading_intelligence.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

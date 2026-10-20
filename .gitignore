@@ -28,6 +28,7 @@ node_modules/
 .turbo/
 dist/
 build/
+*.egg-info/
 coverage/
 *.log
 .DS_Store

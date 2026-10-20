@@ -2,7 +2,7 @@
 
 The user's approved direction is a rebuild for equities, ETFs and ordinary mutual funds. Read docs/MASTERPLAN_SV.md and docs/REBUILD_STATUS.md before implementing a phase.
 
-- This branch is a planning foundation. Do not claim services, strategies, trader-history access, model training or live trading are implemented until they are independently verified.
+- This branch starts Phase 1 with a small offline identity/evidence foundation. Do not claim services, strategies, trader-history access, model training or live trading are implemented until they are independently verified.
 - Preserve the archive branch and parent history. Never force-push the default branch or delete private source evidence as part of cleanup.
 - Keep entity, share class, listing and broker instrument identity separate. Ambiguous symbol matches block order routing.
 - Store immutable raw evidence, revisions, known-at times, timezones, source classes and usage rights. Unknown values remain unknown.
