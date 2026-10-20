@@ -1,36 +1,33 @@
-# Real exports, credentials and generated datasets MUST NOT enter the repository.
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Private or licensed evidence and generated results
 data/
 private/
 raw/
-runs/
-.env
-.env.*
-*.key
-*.pem
-*.p12
-*.sqlite*
+datasets/
+models/
+artifacts/
+backtests/
+*.sqlite
+*.sqlite3
 *.db
-*.csv
-*.json
-*.jsonl
-*.xml
-*.html
-*.htm
-*.parquet
-*.log
-*.zip
-*.tar*
-# Only reviewed, synthetic examples and public candidate identifiers are tracked.
-!examples/*.csv
-!examples/*.json
+
+# Runtime and build output
+.venv/
 __pycache__/
 *.py[cod]
-.venv/
-venv/
 .pytest_cache/
-.coverage*
-htmlcov/
+.ruff_cache/
+node_modules/
+.next/
+.turbo/
 dist/
 build/
-*.egg-info/
+coverage/
+*.log
 .DS_Store
