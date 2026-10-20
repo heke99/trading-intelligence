@@ -1,6 +1,6 @@
 # Trading Intelligence masterplan för aktier ETF fonder och futures
 
-Version 1.2 · 20 oktober 2026 · För Hekmat Hourani
+Version 1.3 · 20 oktober 2026 · För Hekmat Hourani
 
 ## 1 Beslut och mål
 
@@ -96,6 +96,20 @@ Postgres är kontrollplan och bokföring, inte standarddestination för varje b�
 Föreslagna moduler är web, research_api, ingestion, research_agent, execution_worker, fund_worker, contracts, strategies, evaluations, infra och docs. API-kontrakt definieras med OpenAPI och JSON Schema; TypeScript-typer genereras och testas mot Python-modeller. Tomma moduler presenteras inte som implementerade funktioner.
 
 Modulerna learning och monitoring ansvarar för återkoppling och övervakning. Träningsjobb får läsa godkända dataset och skriva kandidatversioner men kan inte ändra den aktiva handelsversionen direkt. En separat versionskontroll tillämpar publicerad bytespolicy. Handelsutskick passerar en enda auktoritativ orderägare per konto; forskningskörningar saknar produktionsanslutning.
+
+### 4 1 Flera brokers utan brokerlogik i strategin
+
+Version 1.3 gör brokeroberoende till ett uttryckligt leveranskrav. Strategin lämnar ett kanoniskt orderunderlag med internt instrument, strategi, kvantitet, riktning, rått pris, beslutstid och giltighet. Mottagande broker väljs genom explicit kontoanknytning, inte textlikhet eller automatisk billigaste-route. Samma analys kan användas för flera konton, men varje konto har eget beslut, eget riskmandat, kapacitet, referensdata och avstämning.
+
+**Kontonyckel.** Identiteten omfattar broker, anslutning, externt konto och miljö (paper/live). Lika kontonummer eller order-ID hos två brokers innebär inte samma konto eller affär. Flera anslutningar till samma externa konto kräver en gemensam auktoritativ orderägare och avstämning före framtida utskick; anslutningsnyckeln ger inte rätt att dubbelrouta kontot.
+
+**Adapterkontrakt.** En adapter normaliserar instrumentuppslag, kontokapacitet, marknadsdata, orderförfrågningar, status, avbeställningar, delavslut, positioner, kassa och fel. Strategin ska inte känna till native symbol, TWS order-ID eller en viss leverantörs JSON. Första implementationen är avsiktligt bara beständiga offlineunderlag och två syntetiska kodare, utan submit-/cancel-metod eller externa anslutningar. BrokerStore sparar exakt adapter/version och källsnapshot. Den är inte en ordermotor.
+
+**Instrument och förmågor.** Mappning görs från explicit aktie-/ETF-notering eller förfallande future till det aktuella kontots native instrument-ID, symbol, valuta, handelsplats, prissteg och kvantitetssteg. Ingen automatisk substitution med CFD, annat förfall eller annan produktstorlek tillåts. Tidsbegränsade kapacitetssnapshots anger giltiga kombinationer av instrumenttyp, ordertyp, time-in-force och sessionsläge. En kombination får inte uppfinnas genom att blanda oberoende stödda flaggor. Okänd/gammal kapacitet eller tvetydig mappning blockerar det nya underlaget.
+
+**Återförsök och återhämtning.** Klientens stabila intent-ID nycklas per kontoroute. Ändrade parametrar med samma nyckel är en konflikt. Ett återförsök ska läsa exakt det sparade underlaget och klient-ID:t, även efter omstart eller en senare referenskorrigering. Det är historisk återläsning, inte ny orderbehörighet. Före framtida utskick måste aktuell risk, källa, quote, session, behörighet och orderägarskap kontrolleras igen. En timeout efter utskick blir okänd status tills den ursprungliga brokern har avstämts. Byt inte broker för att försöka igen: det kan skapa två positioner. Alpaca dokumenterar klient-ID och statusuppslag, medan IBKR har ett eget socketbaserat protokoll. Dessa skillnader motiverar adaptergränsen men bevisar inte färdig integration hos oss. [S40, S41]
+
+**Risk och aktivering.** Konto- och sammanlagd ekonomisk risk bedöms före utskick; saldo får inte antas flyttbart mellan brokers. Valuta, avgifter, lån/locate, margin, öppna order och sena fills måste ingå i respektive verifierade kontomodell. Vanliga fonder använder fortsatt eget tecknings-/inlösenflöde. Ett godkänt offlineformat verifierar inte tillgänglig marknad, kontoeligibilitet, positiv avkastning eller handelsförmåga. Riktiga brokeradaptrar börjar med läsande metadata/kontoprov och paper-avstämning, därefter separat liveaktivering enligt fas 8.
 
 ## 5 Open source som återanvänds och utvärderas
 
@@ -485,7 +499,7 @@ Bygg exponering genom fondinnehav, avgiftskontroll och långsam ombalansering. G
 
 ### Fas 8 Begränsad live och kontrollerad utveckling
 
-Verifiera aktuellt konto, tillgängliga instrument, feedavtal, riskbudget och mäklaradapter. Kräv också godkänd förregistrerad strategiutvärdering enligt avsnitt 14; bristande eller otillräckliga resultat blockerar live. Live aktiveras som ett separat beslut med vald kapitalgräns och godkända strategiversioner. Följ verkliga avslut och kostnader mot simuleringen. Vid driftfel minskas eller stoppas risken enligt policy. Ett eventuellt automatiskt modellbyte får bara ske inom publicerad policy enligt avsnitt 15 och måste kunna återgå utan att tappa öppna order. Det finns ingen automatisk upptrappning baserad på några få vinster.
+Verifiera varje brokers aktuella konto, anslutningsmiljö, tillgängliga instrument, feedavtal, riskbudget och mäklaradapter. Gemensamma strategier måste klara kontospecifik risk och samlad exponering; ingen automatisk broker-failover sker efter okänd orderstatus. Kräv också godkänd förregistrerad strategiutvärdering enligt avsnitt 14; bristande eller otillräckliga resultat blockerar live. Live aktiveras som ett separat beslut med vald kapitalgräns och godkända strategiversioner. Följ verkliga avslut och kostnader mot simuleringen. Vid driftfel minskas eller stoppas risken enligt policy. Ett eventuellt automatiskt modellbyte får bara ske inom publicerad policy enligt avsnitt 15 och måste kunna återgå utan att tappa öppna order. Det finns ingen automatisk upptrappning baserad på några få vinster.
 
 ## 19 Första konkreta utvecklingsuppgifter
 
@@ -495,6 +509,8 @@ Verifiera aktuellt konto, tillgängliga instrument, feedavtal, riskbudget och m�
 | P0 | Kontrakt för enhet, instrument och notering | Två listningar och ett namnbyte hanteras utan sammanblandning |
 | P0 | Källobjekt och tidsversionering | Ursprunglig och korrigerad artikel kan återspelas separat |
 | P0 | Datakatalog och användningsstatus | Ej verifierat material blockeras för otillåtet användningsfall |
+| P0 | Kontoavgränsad brokeradapter och instrumentmappning | Samma instrument får olika native ID hos två brokers utan korsroutning |
+| P0 | Beständiga orderunderlag per konto | Omstart/återförsök behåller klient-ID och ändrade parametrar blockeras |
 | P0 | Futuresprodukt och explicit förfall | Mikro-/standardkontrakt, kontinuerlig serie och mäklar-ID kan inte förväxlas |
 | P0 | Futuresvillkor, marginal och session | Fel tick, stängd session, utgången marginal och förfallsgräns blockerar ett öppningsunderlag |
 | P1 | Futuresavräkning och rullningsreplay | Daglig variation och slutavräkning dubbelräknas inte; delavslut och fel i andra benet avstäms |
@@ -583,3 +599,8 @@ Futureskällor tillagda i version 1.2, kontrollerade 20 oktober 2026:
 - S37 CME marginaler och föränderliga krav: https://www.cmegroup.com/solutions/risk-management/performance-bonds-margins.html
 - S38 CME fysisk leverans: https://www.cmegroup.com/articles/brochures-and-handbooks/101-overview-delivery.html
 - S39 QuantConnect/LEAN kontraktskedjor och mappningsbyten: https://www.quantconnect.com/docs/v2/writing-algorithms/securities/asset-classes/futures/handling-data
+
+Brokerkällor tillagda i version 1.3, kontrollerade 20 oktober 2026:
+
+- S40 Alpaca order-ID, status och buying power: https://docs.alpaca.markets/us/docs/orders-at-alpaca
+- S41 IBKR TWS socketprotokoll och anslutningsmodell: https://www.interactivebrokers.com/docs/tws-api/doc/introduction

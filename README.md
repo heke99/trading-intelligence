@@ -2,7 +2,7 @@
 
 Rebuild for equities, ETFs, ordinary mutual funds and futures with source-backed AI analysis, reproducible research and independently controlled execution.
 
-**Current status: offline identity, evidence and futures slice of Phase 1.** The package implements explicit identities, versioned evidence, declared source-use permissions and historical identifier lookup, versioned futures reference snapshots and offline opening-intent previews. It has no external data feeds, AI models, backtester, UI, broker connection or order submission.
+**Current status: offline identity, evidence, futures and multi-broker slice of Phase 1.** The package implements explicit identities, versioned evidence, declared source-use permissions and historical identifier lookup, versioned futures reference snapshots and offline opening-intent previews and persistent broker-specific drafts. It has no external data feeds, AI models, backtester, UI, broker connection or order submission.
 
 Read the [Swedish masterplan](docs/MASTERPLAN_SV.md), [implemented contracts and limitations](docs/FOUNDATION.md) and [rebuild status](docs/REBUILD_STATUS.md).
 
@@ -13,6 +13,7 @@ Use Python 3.11 or later from the repository root. No runtime dependencies, API 
 ```bash
 PYTHONPATH=src python3 -m trading_intelligence demo --out data/demo
 PYTHONPATH=src python3 -m trading_intelligence futures-demo --out data/futures-demo
+PYTHONPATH=src python3 -m trading_intelligence brokers-demo --out data/brokers-demo
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
@@ -29,13 +30,15 @@ The example writes an ignored local SQLite database with invented records. A lat
 - Futures have separate product/expiry/broker identities, raw prices, tick/multiplier, dated sessions and account margin snapshots. Physical delivery is excluded from the opening-intent pilot.
 - Separate intraday, event/swing and long-term books, with deterministic aggregate risk control in later phases.
 
-Masterplan 1.2 specifies locked predictions, delayed validated outcomes, incident classification, bounded retraining, challenger evaluation and controlled promotion. **Self-learning is planned and has not been implemented.**
+Masterplan 1.3 specifies locked predictions, delayed validated outcomes, incident classification, bounded retraining, challenger evaluation and controlled promotion. **Self-learning is planned and has not been implemented.**
 
 The futures example uses invented contract terms, margin and sessions. It checks an opening scenario and demonstrates blocked invalid inputs. No orders, fills, margin reservations or actual exchange calendar are produced. See [futures contracts and limits](docs/FUTURES.md).
 
+The broker demo prepares one canonical instrument in two invented native formats with separate account/environment namespaces. Retries and reopening reuse stored drafts. These are test adapters, not IBKR/Alpaca integrations, and no orders are sent. See [multi-broker contracts](docs/BROKERS.md).
+
 ## Recovery point
 
-The previous Collective2 application remains at commit `8c5056112721345540ea1cfbbca1f4c41fa816e8` and branch `archive/collective2-v0.1-before-equities-2026-10-20`. The clean reset was merged in PR #10 and the first offline data foundation in PR #11. Git history is preserved; no external datasets or accounts were deleted.
+The previous Collective2 application remains at commit `8c5056112721345540ea1cfbbca1f4c41fa816e8` and branch `archive/collective2-v0.1-before-equities-2026-10-20`. The clean reset was merged in PR #10 and the first offline data foundation in PR #11. Futures reference support was merged in PR #12. Git history is preserved; no external datasets or accounts were deleted.
 
 ## Next build steps
 

@@ -1,6 +1,6 @@
 # Rebuild status
 
-Date: 2026-10-20. Masterplan: 1.2. Package: 0.3.0.
+Date: 2026-10-20. Masterplan: 1.3. Package: 0.4.0.
 
 ## Reset completed
 
@@ -27,6 +27,12 @@ Masterplan 1.2 adds futures as a separate flow. The additive code implements pro
 
 This does not implement contract selection, rolling, daily/final settlement accounting, aggregate risk, a market feed or broker execution. Session segments are synthetic supplied fixtures, not imported exchange calendars. Merge and remote verification evidence are recorded in the associated PR.
 
+## Multi-broker preparation
+
+PR #12 passed remote CI and was merged into main at ff7601cc42b62e4555e20411f35fff2710fc0601. The next slice introduces canonical order intents and broker/connection/account/environment namespaces, evidence-backed account capability and instrument snapshots, two invented offline adapter formats, and persistent idempotent drafts. A retry retrieves the original draft rather than rebuilding a changed request or failing over to another broker.
+
+The temporal reference implementation is now shared between futures and brokers without changing existing futures tables or snapshot identities. Real broker transport, credentials, execution, account risk and reconciliation remain unimplemented. See [BROKERS.md](BROKERS.md).
+
 ## Capability status
 
 | Capability | Status |
@@ -41,6 +47,9 @@ This does not implement contract selection, rolling, daily/final settlement acco
 | Supplied session segments, breaks and overnight instants | Implemented offline |
 | Authoritative exchange calendars and corporate actions | Not imported or implemented |
 | Futures roll, daily/final settlement and aggregate margin engine | Not implemented |
+| Multi-broker canonical intents, account isolation and persisted drafts | Implemented offline |
+| Two synthetic broker format encoders and explicit adapter registry | Implemented offline; no external connection |
+| Real broker adapters, order transport and reconciliation | Not implemented |
 | SEC, price, news and NAV adapters | Not implemented |
 | Real equity/fund data entitlement | Not verified |
 | Trader-history completeness or verification | Not implemented or verified |
@@ -52,9 +61,9 @@ This does not implement contract selection, rolling, daily/final settlement acco
 
 ## Verification
 
-81 offline synthetic regression tests passed locally on Python 3.12.14, including the original 32 foundation tests. New cases cover expiry identity, fixed-tick Decimal calculations, raw/adjusted prices, temporal corrections, missing/expired margin, account/currency mismatch, physical exclusion, limits, session breaks, overnight/DST instants, overlapping references and corruption. Existing cash databases remain readable with the additive futures tables.
+115 offline synthetic regression tests passed locally on Python 3.12.14, including the original 81 foundation/futures tests. Broker cases cover per-account isolation, strict capabilities, native mapping, raw prices/lots, stale/missing references, stable retries, changed-input conflicts, restart persistence, live-route rejection and corrupt archives. New cases cover expiry identity, fixed-tick Decimal calculations, raw/adjusted prices, temporal corrections, missing/expired margin, account/currency mismatch, physical exclusion, limits, session breaks, overnight/DST instants, overlapping references and corruption. Existing cash databases remain readable with the additive futures tables.
 
-The original foundation passed remote CI on Python 3.11, 3.12 and 3.13. The futures branch defines the same matrix with both offline CLI examples; check the associated PR for its remote results. Tests do not establish investment performance or end-to-end production readiness.
+The original foundation and futures slice passed remote CI on Python 3.11, 3.12 and 3.13. The broker slice defines the same matrix with all three offline CLI examples; check its associated PR for remote results. Tests do not establish investment performance or end-to-end production readiness.
 
 ## Next milestones and acceptance
 
@@ -64,4 +73,4 @@ The original foundation passed remote CI on Python 3.11, 3.12 and 3.13. The futu
 4. Implement source-backed analysis and simple frozen strategy baselines; then evaluate chronologically with costs before introducing candidate learning.
 5. Add shadow/paper operation, portfolio risk and reconciliation. Live trading requires the separate scope and evidence in the masterplan.
 
-Masterplan 1.2's learning cycle, incident categories, adaptive evaluation, model-promotion bounds and state-preserving rollback remain requirements for those later phases.
+Masterplan 1.3's learning cycle, incident categories, adaptive evaluation, model-promotion bounds and state-preserving rollback remain requirements for those later phases.

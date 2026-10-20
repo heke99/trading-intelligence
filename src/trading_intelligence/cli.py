@@ -43,8 +43,13 @@ def main():
     command.add_argument("--out", type=Path, required=True)
     futures_command = commands.add_parser("futures-demo", help="Preview an invented futures opening intent offline")
     futures_command.add_argument("--out", type=Path, required=True)
+    brokers_command = commands.add_parser("brokers-demo", help="Prepare two invented broker formats without sending orders")
+    brokers_command.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    if args.command == "futures-demo":
+    if args.command == "brokers-demo":
+        from .broker_demo import broker_demo
+        result = broker_demo(args.out)
+    elif args.command == "futures-demo":
         from .futures_demo import futures_demo
         result = futures_demo(args.out)
     else:

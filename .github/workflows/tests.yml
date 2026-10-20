@@ -33,3 +33,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence futures-demo --out "${RUNNER_TEMP}/ti-futures-demo"
+      - name: Run multi-broker offline example
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence brokers-demo --out "${RUNNER_TEMP}/ti-brokers-demo"
