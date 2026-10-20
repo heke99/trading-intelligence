@@ -35,6 +35,7 @@ class AssetKind(StrEnum):
     ETF = "etf"
     MUTUAL_FUND = "mutual_fund"
     INDEX = "index"
+    FUTURE = "future"
 
 
 class DataOrigin(StrEnum):
@@ -90,6 +91,8 @@ class Instrument:
         required(self.instrument_id, "instrument_id")
         required(self.entity_id, "entity_id")
         object.__setattr__(self, "kind", AssetKind(self.kind))
+        if self.kind == AssetKind.FUTURE:
+            raise ContractError("Futures use FutureProduct and FutureContract, not an issuer/share-class identity")
         if self.share_class is not None:
             required(self.share_class, "share_class")
         currency(self.base_currency)

@@ -2,6 +2,9 @@
 
 from .contracts import AssetKind, DataOrigin, Entity, Instrument, Listing, Use
 from .store import EvidenceStore
+from .futures import FutureContract, FutureProduct, FutureTerms
+from .futures_store import FuturesStore
 
-__all__ = ["AssetKind", "DataOrigin", "Entity", "Instrument", "Listing", "Use", "EvidenceStore"]
-__version__ = "0.2.0"
+__all__ = ["AssetKind", "DataOrigin", "Entity", "Instrument", "Listing", "Use", "EvidenceStore",
+           "FutureContract", "FutureProduct", "FutureTerms", "FuturesStore"]
+__version__ = "0.3.0"

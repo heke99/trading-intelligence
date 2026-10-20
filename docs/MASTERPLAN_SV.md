@@ -1,6 +1,6 @@
-# Trading Intelligence masterplan för aktier ETF och fonder
+# Trading Intelligence masterplan för aktier ETF fonder och futures
 
-Version 1.1 · 20 oktober 2026 · För Hekmat Hourani
+Version 1.2 · 20 oktober 2026 · För Hekmat Hourani
 
 ## 1 Beslut och mål
 
@@ -14,6 +14,7 @@ Prioriterade beslut:
 
 - Aktier och vanliga ETF:er blir första instrumenten för simulerad börshandel. Hävstångsprodukter, inversa ETF:er och enaktie-ETF:er utesluts i piloten.
 - Vanliga öppna fonder får analysstöd tidigt men ett separat orderflöde för NAV, bryttider och likviddagar.
+- Futures ingår genom ett eget kontraktsregister, tidsversionerade villkor och en separat forsknings-/simuleringsbok. Första futurespiloten avgränsas till linjära, kontantavräknade kontrakt med fast tickstorlek; detta ändrar inte aktiepilotens riskmandat.
 - Intradag, händelsestyrd swing och långsiktig allokering får separata strategiböcker, modeller och resultatmått.
 - LEAN utvärderas som första börshandelsmotor. Qlib är ett senare forskningsverktyg. NautilusTrader är ett alternativ, inte en extra motor som installeras samtidigt.
 - Traderhistorik blir en kompletterande datakälla. Egen marknads- och händelsehistorik gör att projektet kan fortsätta även när privata orderloggar saknas.
@@ -42,13 +43,32 @@ Det som bör återinföras efter separat kodgranskning är idéerna om oföränd
 | Vanlig öppen fond | NAV, andelsklass, avgifter, benchmark och förvaltning | Teckning eller inlösen till relevant framtida fondkurs | Analys först, orderadapter senare |
 | Index | Marknadsläge och jämförelse | Ingen direkt order | Referensdata |
 | Valuta | Omräkning, kassabok och ekonomisk exponering | Eventuell kontoväxling via mäklaradapter | Ingen egen valutastrategi |
-| Optioner, terminer och komplexa produkter | Senare separat forskningsområde | Egna kontrakt och riskmodeller | Utanför första versionen |
+| Futures/terminer | Underliggande marknad, kontraktskurva, volym och open interest | Explicit förfallande kontrakt, marginal och separat avräkning | Datakontrakt nu; linjär kontantavräknad simulering före eventuell live |
+| Optioner, perpetuals, CFD och andra komplexa produkter | Separat senare forskningsområde | Egna kontrakt och riskmodeller | Ingår inte automatiskt genom futuresstödet |
 
 ETF:er handlas under börsdagen till marknadspris. En vanlig fond får normalt en fondkurs som ännu inte är känd när ordern lämnas. Fond och distributör kan ha olika bryttider, kursdagar och bokföringsdagar. En NAV som publiceras senare får inte användas som indata före orderbeslutet. Den kan däremot vara korrekt avslutskurs i efterhand för en accepterad order, enligt fondens och distributörens faktiska regler. [S1, S2]
 
 För en svensk användare skiljer vi analysuniversum från det aktuella kontots handelsuniversum. Ett instrument kan analyseras även om det inte kan köpas. Instrumentbehörighet, produktdokument, konto, mäklare och bosättningsland måste kontrolleras. Ingen automatisk ersättning med CFD, derivat eller en till synes likadan ETF tillåts. [S3]
 
 Första forskningsurvalet är ungefär 30–50 likvida amerikanska aktier i ett sammanhängande bolagsnätverk. En separat historisk urvalsregel används i backtest, inklusive bolag som senare försvunnit. ETF-piloten använder ett litet dokumenterat urval; vilka som faktiskt kan handlas avgörs efter kontoverifiering. Vanliga fonder börjar som bevaknings- och allokeringsunderlag. Det begränsade bolagsnätverket är ett tekniskt och analytiskt piloturval. Resultat därifrån ska inte generaliseras till hela marknaden utan ett separat förregistrerat urval och bredare senare prov.
+
+### 3 1 Futures med egna identiteter och kontroller
+
+Version 1.2 utökar omfattningen enligt Hekmats instruktion. Det här är en konstruktionsplan; implementerad status finns i REBUILD_STATUS.md. Den första kodleveransen är en offlinegrund och ett beräknat öppningsunderlag, inte en fungerande terminsmäklare.
+
+**Identitet och pris.** Skilj underliggande index/tillgång, börsprodukt, faktiskt förfallande kontrakt och mäklarens kontrakts-ID. Ett namn som Nasdaq kan betyda index, fond, CFD eller flera futuresstorlekar och förfall; textlikhet får inte välja åt kontot. Kontinuerliga serier är härledda analysdata. Order och avslut knyts till rått kontraktspris och explicit förfall. LEAN dokumenterar kontraktskedjor och byte av mappat kontrakt, vilket ska verifieras i vårt senare motorprov. [S39]
+
+**Villkor.** Varje villkorsversion behöver prisvaluta, prisenhet, multiplikator, tickstorlek/tickvärde, tickregel, handelssession, sista handelstid, avräkningssätt och leveransrelaterade gränser. CME:s MNQ-beskrivning visar exempelvis att produktstorlek och prissteg är explicita egenskaper. Våra testdata är uppdiktade och ersätter inte aktuella börsvillkor. Variabel ticktabell, invers payoff och andra icke-linjära produkter kräver nya modeller och spärras av den första pilotens antagningsregler. [S35]
+
+**Förfall och leverans.** Vi sparar både ekonomisk giltighet och när villkoren blev kända. Sista handelstid, first notice där relevant och mäklarens tidigare stängningsgräns får inte härledas från en generell tredje-fredagsregel. En explicit entry_cutoff stoppar nya öppningsförslag i god tid. Fysisk leverans är blockerad i första öppningspiloten. Senare stöd kräver verifierad leveranshantering och exitpolicy, inte bara ett datumfält. CME beskriver både rullning och att kvarstående kontrakt går till kontant eller fysisk avräkning. [S36, S38]
+
+**Marginal och risk.** Marginal är säkerhet, inte nominell exponering eller ett förlusttak. Historiska och aktuella börs- och mäklarkrav hålls isär och sparas med konto, kontrakt, valuta, känd tid och utgångstid. Rabatterad intradagsmarginal ersätter inte kraven vid sessionens slut. Okänd/gammal marginal, fel kontovaluta eller ofullständig mäklarkapacitet blockerar nya riskökningar. Pilotens jämförelse använder fulla initial-/underhållskrav med en separat konfigurerad buffert; detta är inte en SPAN-motor. CME anger att marginalkrav varierar med produkt och volatilitet. Produktionsmotorn måste även kontrollera samlad exponering, öppna order, reserverad marginal, likviditet och stress. [S37]
+
+**Sessioner.** Importera daterade sessionsegment, underhållspauser, helgdagar, tidiga stängningar och IANA-tidszoner från verifierad källa. Över-natt-session och handelsdatum är olika fält. En syntetisk kalender med korrekt UTC-jämförelse bevisar inte att vi har laddat börsens riktiga kalender. Kalenderändringar måste kunna rättas utan att skriva om tidigare kunskap.
+
+**Rullning och avräkning.** Förregistrera urvalsregel, tillgänglig volym/open interest, tidpunkt och kostnader. Rullning skapar explicita stängnings- och öppningsben; namnbyte i en dataserie flyttar inte en verklig position. Gamla och nya ben, eventuell samtidig exponering, delavslut, avslag och avgifter avstäms separat. Justerade analyspriser får inte skapa fiktiv PnL. Daglig variation margin, realiserad/orealiserad PnL och slutavräkning behöver en gemensam kassabok så att samma rörelse inte bokas två gånger. Negativa priser stöds endast när både kontrakts- och mäklarvillkor uttryckligen medger det.
+
+**Verifiering före handel.** Bygg i ordningen kontrakt och offlinekontroller, kontraktsvisa data, deterministisk replay, rullning/avräkning, paper-adapter och först därefter separat liveprövning enligt fas 8. En godkänd lokal preview är aldrig orderbehörighet. Optioner, perpetuals och CFD:er ingår inte genom detta tillägg.
 
 ## 4 Arkitektur och ansvar
 
@@ -81,7 +101,7 @@ Modulerna learning och monitoring ansvarar för återkoppling och övervakning. 
 
 | Projekt | Roll | Licens eller villkor att kontrollera | Beslut |
 | --- | --- | --- | --- |
-| QuantConnect LEAN | Historisk simulering och handel för aktier och ETF | Apache 2.0 för motorn; CLI, moln och data har separata villkor | Förstahandsval för motorprovet |
+| QuantConnect LEAN | Motorprov för aktier, ETF och förfallande futures | Apache 2.0 för motorn; CLI, moln och data har separata villkor | Förstahandsval för motorprovet |
 | Microsoft Qlib | Forskning, egenskaper och modellutvärdering | MIT | Senare om det sparar forskningsarbete |
 | NautilusTrader | Tickdata, orderbok och händelsestyrd exekvering | LGPL 3.0; verifiera vald version och adapter | Alternativ om intradagskraven motiverar motorbyte |
 | Finance Skills | Rutiner för värdering, rapporter, estimat och likviditet | MIT; källdata har egna villkor | Läs och anpassa utvalda arbetsflöden |
@@ -115,6 +135,7 @@ Första lärandeloopen använder schemalagda Python-jobb, befintliga datakontrak
 | Estimat | Leverantör med historik över då kända prognoser | Vintage, publiceringstid och senare revideringar |
 | Makro | Officiella källor och ALFRED där tillämpligt | Den då tillgängliga dataversionen, inte senaste revideringen |
 | Fonder | Fondbolag, distributör eller licensierad datakälla | ISIN, andelsklass, NAV-datum, publicering, avgifter och bryttid |
+| Futures | Börsens kontraktsvillkor och licensierad kontraktsvis marknadsfeed | Tickstorlek, multiplikator, pris-/valutaenhet, sessioner, förfall, leveransrisk och då gällande mäklarmarginal |
 
 SEC:s publika API:er ger inlämningshistorik och XBRL utan API-nyckel. Originaldokument behövs fortfarande för relationer och redovisningssammanhang. Vi följer SEC:s aktuella åtkomstregler och begränsar anrop. [S12]
 
@@ -147,6 +168,7 @@ Restaterade rapporttal, uppdaterade artiklar och reviderad makrodata blir nya ve
 | Driftpolicy | promotion_policies, deployment_manifests, monitor_snapshots | Oföränderliga versioner, mandat, larm och återgång |
 | Handel | decisions, risk_checks, orders, executions, reconciliations | Spårbara orderstatusar, kassaflöden och avstämning |
 | Fonder | fund_terms, fund_navs, subscriptions, redemptions | Bryttid, kursdag, publicering, accepterad order och likviddag |
+| Futures | future_products, future_contracts, contract_terms, margin_snapshots, roll_events | Produkt, förfall, mäklaridentitet, giltighet, känd tid och avräkningsflöden hålls isär |
 
 Värdepapper får intern instrumentidentitet med separata mappningar till ISIN, FIGI, börsnotering och mäklarens kontrakts-ID. En ticker räcker inte. Automatisk textlikhet får föreslå en matchning men inte godkänna en tvetydig order. OpenFIGI är en hjälp för identifierare, inte ett fullständigt historiskt värdepappersregister. [S16]
 
@@ -262,7 +284,7 @@ Varje strategi har egen bok och riskbudget. Det hindrar att en förlorande intra
 
 Riskpolicyn omfattar position, total och nettoexponering, sektor, beroenden, volatilitet, omsättning, kassareserv och maximal tillåten förlust enligt valda mått. Gränser konfigureras före körning. En förtestad regulator får minska risk vid sämre likviditet, dataproblem eller konstaterad försämring. Återgång kräver uttryckliga observationskrav, väntetid och skilda trösklar för stopp och återstart. Den får aldrig höja mandatets tak eller öka risk för att vinna tillbaka förluster. Det finns inga löften om att en stop begränsar förlusten vid gap, avbrott eller avsaknad av likviditet.
 
-Den första börspiloten använder köp och kontanter. Blankning kräver senare verifierade lån, locate, avgifter och mäklarvillkor. Riskgränser i procent eller kronor bestäms när kapital, kontotyp och kostnadsmodell är kända; de ska inte härledas från en språkmodells säkerhetsbetyg.
+Den första aktie-/ETF-piloten använder köp och kontanter. Aktieblankning kräver senare verifierade lån, locate, avgifter och mäklarvillkor. Futures har egen bok: en kort terminsposition är inte ett aktielån, men kräver uttryckligt mandat, marginalkontroll och verifierad mäklarkapacitet. Riskgränser i procent eller kronor bestäms när kapital, kontotyp och kostnadsmodell är kända; de ska inte härledas från en språkmodells säkerhetsbetyg.
 
 Ordermotorn hanterar förslag, riskkontroll, skickad order, kvittens, delavslut, avslut, avbeställning, avvisning och okänd status. Varje order får idempotensnyckel och beständig koppling till beslutet. Vid timeout får motorn inte anta att ingen order finns och skicka en ny utan kontroll.
 
@@ -403,6 +425,7 @@ Gränssnittet byggs för att användaren ska kunna följa bevis och resultat. De
 - Analyskort visar bekräftade uppgifter, relationer, antaganden, motargument och beslut.
 - Bolagsvyn samlar rapporter, nyheter, värdering och en filtrerbar relationskarta.
 - Fondvyn visar andelsklass, avgifter, innehav, överlapp och ordervillkor.
+- Futuresvyn visar underliggande produkt, faktiskt kontrakt och mäklar-ID, förfall, session, tickvärde, nominell exponering, daterad marginal och kommande rullningsgräns.
 - Forskningsvyn jämför baslinjer och modeller på samma tidsperiod och kostnadsantaganden.
 - Traderdata visar verifieringsnivå, täckning och avstämning före eventuell forskningsanvändning.
 - Order och portfölj visar livscykel, delavslut, avgifter och avvikelser mot mäklaren.
@@ -434,7 +457,7 @@ Arkivera den gamla grenen, gör en ren ombyggnadsgren och publicera masterplan, 
 
 ### Fas 1 Instrument och datagrund
 
-Bygg instrumentregister, kalendrar, källregister, råarkiv och första importer för SEC, prisdata och en nyhetskälla. Lägg till NAV-import som separat datakontrakt. Klart när omkörning är idempotent, tvetydigheter hamnar i karantän och split, namnbyte, artikelrevision och tidszon kan återspelas korrekt. Lägg också grunden för artefaktberoenden, utfallsdefinitioner och en separat incidentlogg.
+Bygg instrumentregister, kalendrar, källregister, råarkiv och första importer för SEC, prisdata och en nyhetskälla. Lägg till NAV-import som separat datakontrakt. Klart när omkörning är idempotent, tvetydigheter hamnar i karantän och split, namnbyte, artikelrevision och tidszon kan återspelas korrekt. Lägg också grunden för artefaktberoenden, utfallsdefinitioner och en separat incidentlogg. Futuresdelen kräver egna produkt-/förfallsidentiteter, källbelagda kontraktsvillkor, exakta prissteg, versionshanterade sessioner och tidsbegränsade mäklarmarginaler. En justerad kontinuerlig serie får inte bli orderpris. Avsaknad eller tvetydighet blockerar berörda underlag.
 
 ### Fas 2 Första analyskedjan
 
@@ -442,7 +465,7 @@ Bygg en händelsetyp, en verifierad direkt bolagsrelation och ett källbelagt an
 
 ### Fas 3 Börsmotor och enkel strategi
 
-Gör LEAN-provet med egna normaliserade data och en enkel deterministisk regel. Modellera avgifter, spread, fördröjning och handelstider. Klart när avslut, position och kassa kan avstämmas och samma regel ger förklarlig replay och kandidatens giltighet inte förväxlas med positionens exitpolicy. Demonstrera beständiga driftlägen och kostnadsattribution. Besluta därefter direktdrift eller betald CLI-väg.
+Gör LEAN-provet med egna normaliserade data och en enkel deterministisk regel. Modellera avgifter, spread, fördröjning och handelstider. Klart när avslut, position och kassa kan avstämmas och samma regel ger förklarlig replay och kandidatens giltighet inte förväxlas med positionens exitpolicy. Demonstrera beständiga driftlägen och kostnadsattribution. Besluta därefter direktdrift eller betald CLI-väg. Futuresprovet använder råa förfallande kontrakt, initial-/underhållsmarginal, daglig variation margin, avgifter och rullningskostnader. Avstäm en rullning med delavslut och avvisat andra ben; båda benens samtidiga exponering måste rymmas inom kontots risk. Ett motorbiblioteks stöd räcker inte som verifiering av vår adapter.
 
 ### Fas 4 Forskning och jämförelser
 
@@ -472,6 +495,9 @@ Verifiera aktuellt konto, tillgängliga instrument, feedavtal, riskbudget och m�
 | P0 | Kontrakt för enhet, instrument och notering | Två listningar och ett namnbyte hanteras utan sammanblandning |
 | P0 | Källobjekt och tidsversionering | Ursprunglig och korrigerad artikel kan återspelas separat |
 | P0 | Datakatalog och användningsstatus | Ej verifierat material blockeras för otillåtet användningsfall |
+| P0 | Futuresprodukt och explicit förfall | Mikro-/standardkontrakt, kontinuerlig serie och mäklar-ID kan inte förväxlas |
+| P0 | Futuresvillkor, marginal och session | Fel tick, stängd session, utgången marginal och förfallsgräns blockerar ett öppningsunderlag |
+| P1 | Futuresavräkning och rullningsreplay | Daglig variation och slutavräkning dubbelräknas inte; delavslut och fel i andra benet avstäms |
 | P1 | SEC- och marknadsdataadapter | Täckt period, luckrapport och normaliserade enheter |
 | P1 | Nyhetsadapter och händelsegruppering | Återpubliceringar räknas som samma händelse |
 | P1 | AI-extraktion med källstycken | Testmaterial med siffror, negation och tvetydighet |
@@ -494,6 +520,8 @@ Verifiera aktuellt konto, tillgängliga instrument, feedavtal, riskbudget och m�
 ## 20 Kostnader och beslut som behöver mätas
 
 Budgeten delas mellan historiska data, livefeed, nyheter och estimat, fonddata, mäklaravgifter, lagring, beräkning och modellanalys. Handel för egen räkning och professionell vidareanvändning kan ha olika datavillkor. Budgeten ska därför bygga på faktisk användningsklass och offert.
+
+Futuresbudgeten särredovisar börs-/databehörighet, kontraktsvis historik, orderboksnivå, clearing-/mäklaravgifter och säkerhetslikviditet. Ingen aktuell marginalnivå hårdkodas som ett allmängiltigt belopp.
 
 Första mätningen omfattar kostnad per analyserad händelse, per godkänt analyskort och per simulerad strategidag. Spara tokenåtgång, modellval, cacheträffar, datauttag, lagring och worker-tid. Återanvänd analys för samma dokumentversion; en senare uppdatering får en ny körning. Träningsförsök och felsökningsloopar har tak för tid, antal kandidater och kostnad; ett larm får inte starta obegränsad omträning.
 
@@ -547,3 +575,11 @@ Officiella dokument och projektkällor kontrollerades den 20 oktober 2026. Rekom
 - S34 scikit-learn om kalibrering: https://scikit-learn.org/stable/modules/calibration.html
 
 De första leveransernas verifieringsjournal ska ange faktiska API-prov, datatäckning, kostnader, körningar och resultat. Denna plan är kravbilden som de leveranserna bedöms mot.
+
+Futureskällor tillagda i version 1.2, kontrollerade 20 oktober 2026:
+
+- S35 CME MNQ kontraktsegenskaper: https://www.cmegroup.com/markets/equities/nasdaq/micro-e-mini-nasdaq-100.contractSpecs.html
+- S36 CME förfall och kontraktsrullning: https://www.cmegroup.com/education/courses/introduction-to-futures/understanding-futures-expiration-contract-roll
+- S37 CME marginaler och föränderliga krav: https://www.cmegroup.com/solutions/risk-management/performance-bonds-margins.html
+- S38 CME fysisk leverans: https://www.cmegroup.com/articles/brochures-and-handbooks/101-overview-delivery.html
+- S39 QuantConnect/LEAN kontraktskedjor och mappningsbyten: https://www.quantconnect.com/docs/v2/writing-algorithms/securities/asset-classes/futures/handling-data

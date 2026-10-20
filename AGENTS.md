@@ -1,6 +1,6 @@
 # Project instructions
 
-The user's approved direction is a rebuild for equities, ETFs and ordinary mutual funds. Read docs/MASTERPLAN_SV.md and docs/REBUILD_STATUS.md before implementing a phase.
+The user's approved direction is a rebuild for equities, ETFs, ordinary mutual funds and a separate futures flow. Read docs/MASTERPLAN_SV.md and docs/REBUILD_STATUS.md before implementing a phase.
 
 - This branch starts Phase 1 with a small offline identity/evidence foundation. Do not claim services, strategies, trader-history access, model training or live trading are implemented until they are independently verified.
 - Preserve the archive branch and parent history. Never force-push the default branch or delete private source evidence as part of cleanup.
@@ -8,6 +8,7 @@ The user's approved direction is a rebuild for equities, ETFs and ordinary mutua
 - Store immutable raw evidence, revisions, known-at times, timezones, source classes and usage rights. Unknown values remain unknown.
 - Separate synthetic fixtures, hypothetical strategy history, paper fills and verified brokerage fills. Gate research datasets per intended use and do not silently enable training_ready or full_history_verified.
 - Keep the AI reader unable to place orders or access broker secrets. Deterministic portfolio/risk/execution controls own order submission.
+- Futures use separate products and explicit expiry contracts. Keep continuous series out of execution prices. Version tick/multiplier/price-unit, expiry, delivery boundaries, sessions, broker bindings and account-specific margin evidence. The first futures preview supports linear fixed-tick cash settlement only and cannot authorize live orders. Aggregate risk, variation margin, rolling and reconciliation remain required before execution.
 - Ordinary funds require their own cutoff, forward NAV, subscription/redemption and settlement logic. Do not reuse intraday equity fills for funds.
 - Keep intraday, event/swing and long-term books separate while aggregating account exposure and reconciling with the broker.
 - Record all model trials, use chronological evaluation, prevent label overlap and fit preprocessing only on training data. Register source snapshots, model/prompt/code versions and execution assumptions.

@@ -1,6 +1,6 @@
 # Offline foundation: contracts and limits
 
-This is the first bounded implementation of Phase 1. It uses Python's standard library and SQLite so temporal rules can be checked without paid feeds, credentials or a running service. It does not replace the planned Postgres/object-storage architecture.
+This documents the original identity/evidence slice of Phase 1. Version 0.3.0 adds separate futures contracts, bounded session snapshots and research calculations described in [FUTURES.md](FUTURES.md). It uses Python's standard library and SQLite so temporal rules can be checked without paid feeds, credentials or a running service. It does not replace the planned Postgres/object-storage architecture.
 
 ## Identity
 
@@ -36,7 +36,7 @@ Historical permission queries support audit and replay. They are not a current l
 
 - Append-only behavior is enforced by the package API. Direct database access can alter records; this is not a tamper-proof archive or access-control boundary.
 - SQLite raw BLOBs are for small offline fixtures. Production ingestion needs migrations, concurrency handling, object storage, backups and access separation.
-- There are no market adapters, calendars, corporate-action adjustments, numeric financial calculations, portfolio positions, order or fill simulations.
+- The original cash-asset foundation has no market adapters, authoritative exchange calendar, corporate-action adjustments, portfolio positions or fill simulations. Futures calculations and supplied session segments are separate additions; they are not an execution engine.
 - There are no forecasts, outcome labels, incident workflows, retraining jobs or automated model promotions.
 - Nothing runs on a schedule or connects to an external account.
 
