@@ -45,8 +45,38 @@ def main():
     futures_command.add_argument("--out", type=Path, required=True)
     brokers_command = commands.add_parser("brokers-demo", help="Prepare two invented broker formats without sending orders")
     brokers_command.add_argument("--out", type=Path, required=True)
+    import_command = commands.add_parser("reference-import-demo", help="Normalize invented broker responses into an immutable raw archive")
+    import_command.add_argument("--out", type=Path, required=True)
+    sync = commands.add_parser("alpaca-sync", help="Read paper account/assets only; requires configured source and account")
+    for option in ("database", "connection-id", "account-number", "expected-account-id", "source-id", "import-id"):
+        sync.add_argument("--" + option, required=True)
     args = parser.parse_args()
-    if args.command == "brokers-demo":
+    if args.command == "alpaca-sync":
+        import os
+        from .alpaca_reader import AlpacaReferenceReader
+        from .broker_imports import BrokerImportStore
+        from .brokers import BrokerAccount, Environment
+        from .contracts import ContractError
+        key = os.environ.get("ALPACA_PAPER_API_KEY")
+        secret = os.environ.get("ALPACA_PAPER_SECRET_KEY")
+        if not key or not secret:
+            parser.error("Configure ALPACA_PAPER_API_KEY and ALPACA_PAPER_SECRET_KEY in your local environment")
+        try:
+            route = BrokerAccount("alpaca", args.connection_id, args.account_number, Environment.PAPER)
+            with BrokerImportStore(args.database) as store:
+                imported = store.sync_alpaca(route, import_id=args.import_id, source_id=args.source_id,
+                                             expected_native_id=args.expected_account_id,
+                                             reader=AlpacaReferenceReader(key, secret))
+            result = dict(import_id=imported["import_id"], state=imported["report"]["state"],
+                          available_at=imported["available_at"], normalized_assets=len(imported["report"]["assets"]),
+                          quarantined_rows=len(imported["report"]["quarantined"]),
+                          training_ready=False, orders_sent=0, live_trading=False)
+        except ContractError as error:
+            parser.exit(2, f"Reference import rejected: {error}\n")
+    elif args.command == "reference-import-demo":
+        from .import_demo import reference_import_demo
+        result = reference_import_demo(args.out)
+    elif args.command == "brokers-demo":
         from .broker_demo import broker_demo
         result = broker_demo(args.out)
     elif args.command == "futures-demo":

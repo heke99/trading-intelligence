@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-intelligence"
-version = "0.4.0"
-description = "Offline identity and evidence foundation for equities, funds and futures research"
+version = "0.5.0"
+description = "Identity, evidence and read-only broker reference foundation for trading research"
 requires-python = ">=3.11"
 dependencies = []
 

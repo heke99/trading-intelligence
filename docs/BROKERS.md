@@ -48,3 +48,5 @@ The synthetic demo formats the same canonical listing for two invented brokers, 
 4. Exercise disconnect after send, unknown status, duplicated callbacks, partial fills, cancellations, restarts and unavailable broker; keep late events processing during stops.
 
 Primary API design references reviewed 20 October 2026: [Alpaca order IDs and state](https://docs.alpaca.markets/us/docs/orders-at-alpaca) and [IBKR TWS protocol](https://www.interactivebrokers.com/docs/tws-api/doc/introduction). These explain why provider-specific behavior belongs behind adapters; they do not establish a working connection in this project.
+
+Version 0.5.0 adds a separate Alpaca paper reference GET/import path in [BROKER_IMPORTS.md](BROKER_IMPORTS.md). It does not add an order transport or change these synthetic encoder formats.

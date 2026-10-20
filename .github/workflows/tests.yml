@@ -37,3 +37,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence brokers-demo --out "${RUNNER_TEMP}/ti-brokers-demo"
+      - name: Run offline broker import example
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence reference-import-demo --out "${RUNNER_TEMP}/ti-reference-import-demo"

@@ -2,10 +2,11 @@
 
 The user's approved direction is a rebuild for equities, ETFs, ordinary mutual funds and a separate futures flow. Read docs/MASTERPLAN_SV.md and docs/REBUILD_STATUS.md before implementing a phase.
 
-- This branch starts Phase 1 with a small offline identity/evidence foundation. Do not claim services, strategies, trader-history access, model training or live trading are implemented until they are independently verified.
+- This branch implements early Phase 1 identity/evidence, offline broker/futures contracts and an explicit read-only paper reference reader. Do not claim services, strategies, trader-history access, model training or live trading are implemented until they are independently verified.
 - Preserve the archive branch and parent history. Never force-push the default branch or delete private source evidence as part of cleanup.
 - Broker routes include broker, connection, account and paper/live environment. Never infer account-level capability from a broker name or automatically fail over after an ambiguous order outcome. Offline drafts are audit records, not risk approvals; revalidate before any later real transport.
 - Keep entity, share class, listing and broker instrument identity separate. Ambiguous symbol matches block order routing.
+- Broker reference imports preserve original bytes, route/source lineage and distinct receipt/processed availability. Do not fabricate provider publication/economic time, promote imported flags into trading permissions or call authenticated access verified without an actual permitted account test.
 - Store immutable raw evidence, revisions, known-at times, timezones, source classes and usage rights. Unknown values remain unknown.
 - Separate synthetic fixtures, hypothetical strategy history, paper fills and verified brokerage fills. Gate research datasets per intended use and do not silently enable training_ready or full_history_verified.
 - Keep the AI reader unable to place orders or access broker secrets. Deterministic portfolio/risk/execution controls own order submission.
