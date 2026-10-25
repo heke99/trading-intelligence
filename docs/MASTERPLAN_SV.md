@@ -1,6 +1,8 @@
 # Trading Intelligence masterplan för aktier ETF fonder och futures
 
-Version 1.3 · 20 oktober 2026 · För Hekmat Hourani
+Version 1.4 · 25 oktober 2026 · För Hekmat Hourani
+
+Version 1.4 preciserar mänskliga förhandsbedömningar, portföljhedging och dess livscykel samt flyttar enkel numerisk baslinje och LEAN-replay före det större AI- och grafbygget. Detta är dokumenterade krav; implementationen är fortfarande tidig fas 1 enligt [REBUILD_STATUS.md](REBUILD_STATUS.md). Dokumentuppdateringen ändrar inga handelsmandat eller verifieringsstatusar.
 
 ## 1 Beslut och mål
 
@@ -17,6 +19,9 @@ Prioriterade beslut:
 - Futures ingår genom ett eget kontraktsregister, tidsversionerade villkor och en separat forsknings-/simuleringsbok. Första futurespiloten avgränsas till linjära, kontantavräknade kontrakt med fast tickstorlek; detta ändrar inte aktiepilotens riskmandat.
 - Intradag, händelsestyrd swing och långsiktig allokering får separata strategiböcker, modeller och resultatmått.
 - LEAN utvärderas som första börshandelsmotor. Qlib är ett senare forskningsverktyg. NautilusTrader är ett alternativ, inte en extra motor som installeras samtidigt.
+- En fryst numerisk prisregel och avstämd LEAN-replay kommer före AI:s och bolagsgrafens påverkan på portföljbeslut. Varje senare lager ska visa sitt bidrag på jämförbara möjligheter, risk och kostnader.
+- Human edge får en egen förhandsjournal för mänskliga hypoteser och ingrepp. Modellens ursprungliga förslag bevaras och det mänskliga bidraget utvärderas separat.
+- Hedging får en versionsstyrd policy kopplad till verifierad exponering, målrisk och avslutsregel. Futureshedge, fristående futuresstrategi och minskad aktieexponering utvärderas separat.
 - Traderhistorik blir en kompletterande datakälla. Egen marknads- och händelsehistorik gör att projektet kan fortsätta även när privata orderloggar saknas.
 - Självlärande byggs som en återkopplingsloop med låsta prognoser, verifierade utfall, felklassning, förbättringsförslag och kontrollerade versionsbyten.
 - Automatisk anpassning får ske inom en fastställd policy. Minne, modellträning, riskanpassning och kodändringar har olika behörigheter och tester.
@@ -24,13 +29,13 @@ Prioriterade beslut:
 
 ## 2 Ombyggnad och rensning av projektet
 
-Utgångspunkten är heke99/trading-intelligence vid commit 8c5056112721345540ea1cfbbca1f4c41fa816e8. Den befintliga koden är en läsande Collective2-importör. Dess README anger att modellen, marknadsdatakoppling och handelsmotor ännu saknas. Denna masterplan ersätter projektets tidigare produktinriktning.
+Den tidigare läsande Collective2-importören finns vid commit 8c5056112721345540ea1cfbbca1f4c41fa816e8 och i arkivgrenen archive/collective2-v0.1-before-equities-2026-10-20. Ombyggnadsgrunden infördes redan i main genom PR #10. Den rensningen är genomförd och ska inte upprepas som ett nytt utvecklingssteg.
 
-Rensningen görs som en granskningsbar förändring på en separat gren. Den gamla versionen bevaras i arkivgrenen archive/collective2-v0.1-before-equities-2026-10-20. Git-historik, externa dataarkiv och eventuella privata originalexporter ska inte raderas. Ingen force push behövs.
+Git-historik, externa dataarkiv och eventuella privata originalexporter ska bevaras. Fortsatt arbete sker i avgränsade arbetsgrenar från aktuell main och förs in genom vanlig granskad merge. Ingen force push eller ny totalrensning ingår.
 
-På den nya grenen ersätts den gamla appkoden, dess tester, demonstrationer och Collective2-specifika produktdokument av en ren planeringsgrund. Det innebär inte att en ny fungerande app redan finns. Efter granskning kan samma gren utvecklas enligt byggordningen nedan. Huvudgrenen ändras först genom en vanlig merge.
+Den nya offlinegrunden har återinfört explicita identiteter, oföränderliga källversioner, karantän, exakta decimaler och idempotenta importer, följt av futures- och brokerkontrakt. De konkreta begränsningarna och verifieringsbevisen finns i REBUILD_STATUS.md. Detta innebär ännu inte en färdig analys- eller handelsprodukt.
 
-Det som bör återinföras efter separat kodgranskning är idéerna om oföränderliga rådata, källklassning, versionshistorik, karantän för tvetydiga rader, exakta decimaler, idempotenta importer och tydliga tidszoner. Collective2 blir en valfri adapter. Forex-, CFD- och MT5-antaganden ska inte styra det nya instrumentregistret.
+Collective2 blir fortsatt en valfri adapter. Forex-, CFD- och MT5-antaganden ska inte styra det nya instrumentregistret. Version 1.4 bygger vidare på den befintliga grunden och bevarar dess statusgränser.
 
 Överför inte gamla testantal, syntetiska exempel eller resultat till den nya plattformens verifieringsstatus. Arkivets tester verifierar den gamla importören. De visar inte att den nya produkten fungerar eller att någon verklig traderhistorik har hämtats.
 
@@ -83,6 +88,7 @@ Vi börjar med ett sammanhållet repo, tydliga moduler och ett litet antal drift
 | Lokal analys | DuckDB och Polars | Effektiva frågor och reproducerbara datasetbyggen |
 | AI för dokument | Avgränsad eve-tjänst i TypeScript | Läsning, källutvinning, motargument och strukturerade analyskort |
 | Börssimulering och order | LEAN-worker | Samma strategikontrakt i historisk simulering och kontrollerad exekvering |
+| Portfölj och hedging | Deterministisk portföljpolicy framför ordermotorn | Samlad exponering, kapitalfördelning, hedgemål och kontospecifika riskkontroller |
 | Jobb | En Postgres-baserad jobbkatalog och worker i starten | Schemaläggning, låsning, försök, hjärtslag och återhämtning |
 | Lärande | Avgränsade Python-jobb och modellregister | Mogna utfall, kvalitetskontroll, kandidater och versionsbeslut |
 | Felkorrigering | Incidentregister och separat reparationsmiljö | Orsakshypotes, regressionstest, åtgärd och verifiering |
@@ -175,12 +181,14 @@ Restaterade rapporttal, uppdaterade artiklar och reviderad makrodata blir nya ve
 | Information | documents, document_versions, facts, events, relationships | Källstycke, siffror, enheter, känd tid och ekonomisk exponering |
 | Traderdata | trader_accounts, order_events, fills, fees, cashflows | Verifierad mäklarhistorik, modellhistorik och papper hålls isär |
 | Forskning | opportunities, feature_snapshots, labels, experiments | Beslutstid, egenskapsversion, utfallshorisont och datasnapshot |
+| Mänskliga bedömningar | human_assessments, human_interventions | Aktör, ursprungligt modellförslag, förhandsmotivering, giltighet och versionshistorik |
 | Modeller | model_versions, calibrations, evaluation_runs | Träningsperiod, försökshistorik och godkänd användning |
 | Återkoppling | predictions, label_definitions, outcome_events | Låst prognos, utfallshorisont, tillgänglig tid och etikettversion |
 | Korrigering | incidents, correction_events, artifact_dependencies | Belagd orsak, ursprungsversion och berörda följdartefakter |
 | Lärande | learning_runs, model_candidates, promotion_events | Tillåtna data, jämförelser, kandidatstatus och bytesbeslut |
 | Driftpolicy | promotion_policies, deployment_manifests, monitor_snapshots | Oföränderliga versioner, mandat, larm och återgång |
 | Handel | decisions, risk_checks, orders, executions, reconciliations | Spårbara orderstatusar, kassaflöden och avstämning |
+| Hedging | hedge_policies, hedge_intents, hedge_links, hedge_events | Skyddad exponering, målrisk, kontoroute, storlek, livscykel och hänvisningar till verkliga order/avslut |
 | Fonder | fund_terms, fund_navs, subscriptions, redemptions | Bryttid, kursdag, publicering, accepterad order och likviddag |
 | Futures | future_products, future_contracts, contract_terms, margin_snapshots, roll_events | Produkt, förfall, mäklaridentitet, giltighet, känd tid och avräkningsflöden hålls isär |
 
@@ -226,6 +234,18 @@ Analyskortet innehåller event_id, snapshot_id, beslutstid, instrument, horisont
 Modellnamn, promptversion, verktygsresultat, datahash och beräkningsversion sparas. Modeller ska kunna bytas genom ett leverantörsoberoende kontrakt. Små modeller kan användas för sortering; svårare eller motsägelsefulla fall kan få mer analys inom budgeten. Fler roller eller modeller införs bara om mätningen visar bättre kvalitet per kostnad och fördröjning.
 
 Ett första granskningsmaterial bör innehålla 100–200 händelser med positiva, negativa, tvetydiga och irrelevanta exempel. Mät rätt identifiering, korrekta siffror och enheter, giltiga källhänvisningar, förväxlingar, dubbletter och välmotiverat avstående. Föreslaget första krav är full spårbarhet för fakta som används i en handelskandidat och inga olösta kritiska identitets- eller tidsfel. AI-genererade efterhandsförklaringar är granskningshypoteser. De blir inte korrekta träningsetiketter genom att samma modell upprepar dem. Bekräftade faktakorrigeringar behöver regler, källstöd eller separat granskning.
+
+### 9 1 Human edge och mänsklig förhandsjournal
+
+Human edge betyder här en mänsklig hypotes eller ändring av ett konkret beslutsförslag. Det kan gälla en ekonomisk mekanism, ett källproblem, ett marknadsläge eller ett avstående. Traderhistorik i avsnitt 11 är en separat datakälla. En människas bedömning blir inte ett verifierat faktum eller en träningsetikett enbart genom att den registreras.
+
+Varje human_assessment får assessment_id, actor_id, recorded_at, decision_at, snapshot_id, berörda instrument/böcker, horisont, källor, hypotes, motargument, giltighetstid och villkor för omprövning. Ett ingrepp länkar dessutom till det oförändrade ursprungliga modell- eller regelförslaget med dess version, föreslagen ändring, förhandsmotivering och versionssatt beslutsmandat. Ett avstående är ett möjligt ingrepp. Saknad ursprunglig rekommendation anges uttryckligt för fristående mänskliga förslag.
+
+Journalen låses före det beslut som bedömningen ska påverka. Ändringar skapar nya versioner med egen registreringstid; senare utfall eller efterhandsmotiveringar får inte bakdateras. En utgången bedömning kan inte tyst återanvändas. Kontots auktoritativa portfölj- och riskkontroller gäller även mänskliga förslag. Bedömaren får inte kringgå hårda stopp eller höja riskmandat genom en kommentar.
+
+Utvärderingen bevarar modellens ursprungliga förslag och utförda portföljbeslut separat. Jämför modell/regler ensamma, mänskliga beslut där ett fullständigt förhandsprotokoll finns och kombinationen på samma dokumenterade möjlighetsurval, period, kapital, risk och kostnadsmodell. Registrera även avståenden och uteblivna ingrepp. Urval av enbart lyckade ingrepp eller av efterhandskända vinnare får inte ligga till grund för slutsatsen att människan tillför värde.
+
+Den alternativa modellvägen är en märkt hypotetisk simulering och använder samma regler för tillgänglig information och möjliga avslut. Den får inte bokföras som verklig handel. Visa realiserat resultat, simulerad skillnad, riskförändring och osäkerhet separat; skillnaden mellan två vägar är inte i sig ett säkert kausalt mått. Klart-kriteriet är att ett förhandsregistrerat ingrepp, ett avstående, en utgången bedömning och en senare rättelse kan återskapas utan att skriva om ursprungliga beslut. Datakontraktet kan förberedas i fas 1; ekonomisk utvärdering införs i fas 4.
 
 ## 10 Strategier och algoritmer
 
@@ -322,6 +342,30 @@ En reducerande order kräver verifierad tillgänglig position, hänsyn till öpp
 
 En versionsåtergång återställer kod och modellpaket men aldrig kassa eller externa avslut till en äldre snapshot. Varje position behåller strategy_id, model_version och den körbara exitregelns kodversion tills en explicit överföring genomförts. En kompatibel exithanterare måste finnas kvar så länge den behövs. Väntande fondorder följs färdigt även om en strategi eller kandidat stoppas.
 
+### 13 1 Hedgepolicy och mål för kvarvarande exponering
+
+Varje hedge_intent ska länka till en versionssatt hedge_policy och ett verifierat snapshot av det innehav eller den bok som ska skyddas. Policyn anger kontoroute, skyddad riskfaktor, mål för kvarvarande exponering, tillåtna kontrakt, högsta hedge, beräkningsversion, besluts- och giltighetstid, ombalanseringsband, minsta väntetid och avslutsregel. En fristående futuresstrategi har eget syfte och egen riskbudget; den klassificeras inte automatiskt som hedge för att den är kort.
+
+Första hedgesimuleringen avgränsas till marknadsexponering i en behörig aktie-/ETF-bok mot ett verifierat linjärt, kontantavräknat indexfutureskontrakt. Bolagsspecifik risk och skillnaden i rörelse mellan portföljen och hedgeinstrumentet finns kvar. Automatisk valuta-, ränte- eller fondhedging ingår inte i denna pilot. En senare utvidgning behöver eget exponeringsmått, mandat och prov.
+
+Storleken baseras på nominell exponering, samband med relevant index och önskad kvarvarande risk. Antal kontrakt beräknas med verifierat rått futurespris, multiplikator och förenlig valuta. Portföljbeta eller annan tillåten skattning använder en förregistrerad historik som fanns tillgänglig vid beslutet. Storleken får inte härledas från säkerhetskravet eller från en språkmodells säkerhetsbetyg. Avrundning till hela kontrakt redovisar uppnådd exponering och kvarvarande rest; den får inte överskrida policyns gränser. [S42]
+
+Priser, växelkurser och positionssnapshot behöver förenliga värderingstidpunkter och dokumenterade åldersgränser. En stängd aktiemarknads senaste kurs får inte behandlas som en samtidig livevärdering av ett öppet futuresben. Okänt eller inaktuellt samband, för låg likviditet eller otillräcklig kontantbuffert blockerar nya hedgeben och utlöser den definierade omprövningsrutinen.
+
+Den gemensamma riskkontrollen mäter exponering före och efter föreslagen hedge samt bruttoexponering, öppna order, reserverad marginal och stressat kontantbehov per konto. Daglig variation margin och förändrade säkerhetskrav ska kunna finansieras på det konto där futurespositionen finns. Kontanter hos en annan broker får inte antas omedelbart tillgängliga. Marginal- och avräkningsbetalningar behandlas som verkliga kassaflöden i simulatorn. [S37, S43]
+
+### 13 2 Hedgens livscykel och orderbehörighet
+
+En hedge har beständig identitet och tillstånd för föreslagen, godkänd, under utförande, aktiv, delvis genomförd, omprövning, under avveckling och avslutad; olöst extern status hålls uttryckligt okänd. Varje övergång sparar snapshot, beslut, policyversion, allokering till skyddad bok och hänvisningar till faktiska order och avslut. Första provet använder en explicit skyddad bok per hedge; senare delade hedgar kräver en allokeringsregel som hindrar dubbelräkning.
+
+Det är avstämda avslut, inte den beställda kvantiteten, som bestämmer aktuell exponering. Ändrat huvudinnehav, delavslut, avvisat hedgeben, förfall eller försenad status utlöser omberäkning enligt policyn. Om huvudinnehavet försvinner markeras en kvarvarande futuresposition som saknande skyddad exponering. Motorn ska då följa en förregistrerad avvecklings- eller återhämtningsregel med nya riskkontroller och verifierade kvantiteter. Ett hårt orderstopp behåller företräde; om åtgärden är blockerad synliggörs kvarvarande risk och larm tills tillåten återhämtning kan ske. Positionen får inte tyst byta etikett till en lönsam fristående strategi.
+
+En instrumentbaserad reduce_only-order minskar en befintlig position i just det instrumentet. Att öppna en kort future kan minska portföljbeta men ökar kontrakts- och finansieringsåtaganden. Ett nytt eller utökat hedgeben behöver därför uttryckligt fördefinierat mandat, godkänd kontokapacitet och full kontroll av brutto-/nettorisk, likviditet och marginal. Ordet hedge ger inget undantag från paus, reduce_only eller hårt orderstopp. Första piloten öppnar och utökar hedgar endast i active enligt mandatet; en senare särskild skyddspolicy kräver separat verifiering av tillåtna övergångar.
+
+Underliggande innehav och hedge är inte atomiska över flera instrument eller brokers. Delvis genomförd öppning, stängning och rullning måste ha tidsgräns, högsta tillåtna kvarvarande exponering och en förregistrerad åtgärdsordning. Ingen automatisk broker-failover tillåts vid okänd status. Rullningens gamla och nya ben behåller länken till samma hedgesyfte och följer avsnitt 3 1 utan att skapa ett andra ekonomiskt skydd i rapporteringen.
+
+Acceptansprovet omfattar minst delavslutat huvudinnehav, avvisat hedgeben, stängt huvudinnehav med kvarvarande hedge, okänd orderstatus med sent avslut, ett avvisat rullningsben, förfallsgräns, ändrat samband och ett hårt stopp mitt i avvecklingen. Varje scenario ska visa kvarvarande risk, korrekt kassabok, spårbart åtgärdsbeslut och att inga okända positioner ignoreras.
+
 ## 14 Tester som skiljer resultat från efterhandsanpassning
 
 Tester delas mellan dataintegritet, analyskvalitet, prognosvärde, portföljresultat och operationell funktion. Ett grönt tekniskt test visar inte positiv nettoavkastning.
@@ -343,6 +387,16 @@ Historiska tester med en modern språkmodell kan innehålla kunskap om senare ut
 Rapporten visar avkastning efter modellerade kostnader, drawdown, nedsiderisk, kapitalbindning, turnover, kapacitet, benchmarkexponering och osäkerhet. Resultat räknas i jämförbar valuta med dokumenterad hantering av kapitalflöden och utdelningar. Extraktionskvalitet och sannolikhetskalibrering rapporteras separat från ekonomiskt resultat. Win rate är inte ett huvudbevis. Valda trösklar måste förregistreras per strategi när datatäckning och realistiska kostnader är kända.
 
 Innan live måste varje strategi klara den förregistrerade bedömningen av nettoresultat, risk, osäkerhet och bidrag jämfört med baslinjen på orört testmaterial och framåtriktade observationer. Operationell stabilitet räcker inte. Om underlaget är negativt eller för svagt stannar strategin i forskning eller simulerad handel.
+
+### 14 1 Separat utvärdering av hedging och mänskliga ingrepp
+
+Frys hedgepolicy, mål, skattningsfönster, ombalanseringsregel och primärt riskmått före slututvärdering. Kör samma skyddade portfölj med och utan denna policy. Visa den osäkrade portföljen, futuresbenet och kombinationen separat med resultat, avgifter, spread, slippage, rullning, finansieringskostnader och högsta kontant-/säkerhetsbehov. Variation margin ska stämma mot kassaboken och inte dubbelräknas som både ny kostnad och samma prisförlust.
+
+Mät faktisk förändring av målrisken, kvarvarande exponering, drawdown, nedsida, avstådd uppgång och osäkerhet. En hedge bedöms mot sitt deklarerade riskmål; enbart positiv hedge-PnL eller hög win rate räcker inte. Jämför också med en förregistrerad lägre aktieexponering och större kontantandel, med tydliga skillnader i kapital och risk. En dynamisk hedge får inte vinna jämförelsen genom att få känna till senare marknadsrörelser eller genom tät efterhandsoptimering.
+
+Stressfallen inkluderar samtidig förlust i innehav och hedge, försämrad korrelation, inaktuella eller osamtidiga priser, prisgap, delavslut, stängd underliggande marknad, höjda marginalkrav och otillgängliga kontanter på annat konto. Kostnaden för likviditet och kvarvarande risk vid ett blockerat hedgeben redovisas även när portföljens slutliga nettoresultat ser bra ut.
+
+Human-journalen enligt avsnitt 9 1 får motsvarande jämförelse på förhandsregistrerade möjligheter. Redovisa ingrepp, avståenden, kostnader, resultat och riskförändringar även för misslyckade fall. Det hypotetiska modellresultatet, det faktiska kombinerade resultatet och ett eventuellt komplett mänskligt jämförelseflöde hålls isär. Ingen version av mänsklig bedömning, hedge eller modell får ändras med hjälp av slutperioden och sedan redovisas som ett nytt orört test.
 
 ## 15 Självlärande felkorrigering och kontrollerade uppdateringar
 
@@ -437,12 +491,14 @@ Gränssnittet byggs för att användaren ska kunna följa bevis och resultat. De
 - Översikt visar kontantandel, samlad exponering, datastatus och aktiva strategier.
 - Bevakning visar bolag och instrument, aktuella händelser och källornas ålder.
 - Analyskort visar bekräftade uppgifter, relationer, antaganden, motargument och beslut.
+- Human-journalen visar ursprungligt modellförslag, mänskligt ingrepp/avstående, aktör, förhandsmotivering, giltighet, versioner och separat utvärdering av bidraget.
 - Bolagsvyn samlar rapporter, nyheter, värdering och en filtrerbar relationskarta.
 - Fondvyn visar andelsklass, avgifter, innehav, överlapp och ordervillkor.
 - Futuresvyn visar underliggande produkt, faktiskt kontrakt och mäklar-ID, förfall, session, tickvärde, nominell exponering, daterad marginal och kommande rullningsgräns.
 - Forskningsvyn jämför baslinjer och modeller på samma tidsperiod och kostnadsantaganden.
 - Traderdata visar verifieringsnivå, täckning och avstämning före eventuell forskningsanvändning.
 - Order och portfölj visar livscykel, delavslut, avgifter och avvikelser mot mäklaren.
+- Hedgevyn visar skyddad bok, policy/målrisk, exponering före och efter, faktiskt kontrakt, kvarvarande rest, marginal/kontantbehov, livscykel och larm för hedge utan huvudinnehav. Resultat med och utan hedge hålls åtskilda.
 - Lärandevyn visar väntande och mogna utfall, aktiv modell, kandidater, jämförelser och versionshistorik.
 - Incidentvyn visar felklass, underlag, berörda beslut, rättningar och verifieringsstatus.
 - Driftvyn visar fördröjning, jobb, dataluckor, kostnader, beständigt driftläge och nödstopp.
@@ -465,25 +521,43 @@ För Supabase följs aktuell dokumentation, RLS och nyckelhantering. Databasen s
 
 Varje fas har en leverans som går att demonstrera. Nästa fas ska lösa ett konstaterat behov. Kalenderuppskattningar för utveckling är inte bevis för strategins kvalitet. Återkopplingsloggen byggs före modellträning; det ska gå att lära senare från de första riktiga besluten. Traderdata är en parallell valfri källa och blockerar inte framåtriktad simulering. En separat algoritm, ny modellfamilj eller ny fondtyp införs en i taget när föregående flöde är verifierat.
 
+Version 1.4 ändrar ordningen för fas 2–4: enkel numerisk baslinje och LEAN-replay först, därefter futuresavräkning och hedgesimulering, sedan AI/human edge/graf och utökad forskning. Datakontrakt och en liten dokumentimport kan förberedas parallellt. AI eller ännu obeställd traderhistorik ska inte vara ett beroende för den första prisbaslinjen. Samma krav på tidskorrekt data och oberoende utvärdering gäller i alla spår.
+
 ### Fas 0 Rensning och arkitekturbeslut
 
-Arkivera den gamla grenen, gör en ren ombyggnadsgren och publicera masterplan, ny README och nya projektinstruktioner. Dokumentera motorval, instrumentgränser och dataklassning. Klart när förändringen är granskad, den gamla versionen går att återfinna och inga hemligheter eller originaldata finns i ändringen.
+Genomförd genom PR #10 enligt REBUILD_STATUS.md. Arkivgren, historik och återställningspunkt bevaras. Fortsatt utveckling utgår från aktuell main i avgränsade arbetsgrenar. Dokumentera ändrade arkitekturbeslut och deras bevis utan att upprepa rensningen. Denna planuppdatering inför inga tjänster eller strategier.
 
 ### Fas 1 Instrument och datagrund
 
-Bygg instrumentregister, kalendrar, källregister, råarkiv och första importer för SEC, prisdata och en nyhetskälla. Lägg till NAV-import som separat datakontrakt. Klart när omkörning är idempotent, tvetydigheter hamnar i karantän och split, namnbyte, artikelrevision och tidszon kan återspelas korrekt. Lägg också grunden för artefaktberoenden, utfallsdefinitioner och en separat incidentlogg. Futuresdelen kräver egna produkt-/förfallsidentiteter, källbelagda kontraktsvillkor, exakta prissteg, versionshanterade sessioner och tidsbegränsade mäklarmarginaler. En justerad kontinuerlig serie får inte bli orderpris. Avsaknad eller tvetydighet blockerar berörda underlag.
+Leverera datagrunden i avgränsade delar och märk status per del:
 
-### Fas 2 Första analyskedjan
+- **1a Identitet och offlinekontrakt:** vidareutveckla befintligt instrumentregister, råarkiv, rättighetsdeklarationer och broker-/futureskontrakt. De redan dokumenterade offlineproven räknas inte som autentiserad API- eller marknadsdataverifiering.
+- **1b Första pris- och replaypaketet:** importera verifierade daterade kalendrar, priser och bolagshändelser för ett litet deklarerat aktie-/ETF-urval. Leveransen behöver rådata, mottagnings-/bearbetningstider, käll- och användningsstatus, luckrapport och historiska urvalsregler. Klart när omkörning är idempotent, tvetydigheter hamnar i karantän och split, utdelning, namnbyte och tidszon kan återspelas utan framtida information eller dubbelräkning. Detta är datakravet före aktieprovet i fas 2; fullständigt fond- och nyhetsstöd behöver inte vara klart samtidigt.
+- **1c Dokument och separata instrumentdata:** bygg en auditerbar SEC-adapter, en nyhetsimport med artikelrevisioner och händelsegruppering, samt NAV som separat datakontrakt. Futures kräver egna produkt-/förfallsidentiteter, kontraktsvisa råpriser, källbelagda villkor, exakta prissteg, sessionsimport, avgifter och tidsbegränsade kontomarginaler före sitt motorprov. En justerad kontinuerlig serie får inte bli orderpris. Varje spår godkänns för sitt avsedda bruk; avsaknad eller tvetydighet blockerar berörda underlag.
 
-Bygg en händelsetyp, en verifierad direkt bolagsrelation och ett källbelagt analyskort. Kör samma händelse från rådata till strukturerat resultat. Klart när kvalitetsutvärderingen, källstöd och explicit avstående fungerar även för motsägelsefulla eller irrelevanta dokument. Spara låsta prognoser och avståenden, utfallskö och belagda korrigeringar. Demonstrera att ett ännu inte tillgängligt utfall inte kan bli minne eller träningsdata.
+Bygg artefaktberoenden, utfallsdefinitioner, utfallskö och separat incidentlogg före första modellträningen. Förbered datakontrakt för human-journal och hedgepolicy; de deklareras som planerade tills körbara flöden verifierats. Hela fas 1 markeras inte klar genom att enbart 1b godkänns.
 
-### Fas 3 Börsmotor och enkel strategi
+### Fas 2 Enkel numerisk baslinje och LEAN-replay
 
-Gör LEAN-provet med egna normaliserade data och en enkel deterministisk regel. Modellera avgifter, spread, fördröjning och handelstider. Klart när avslut, position och kassa kan avstämmas och samma regel ger förklarlig replay och kandidatens giltighet inte förväxlas med positionens exitpolicy. Demonstrera beständiga driftlägen och kostnadsattribution. Besluta därefter direktdrift eller betald CLI-väg. Futuresprovet använder råa förfallande kontrakt, initial-/underhållsmarginal, daglig variation margin, avgifter och rullningskostnader. Avstäm en rullning med delavslut och avvisat andra ben; båda benens samtidiga exponering måste rymmas inom kontots risk. Ett motorbiblioteks stöd räcker inte som verifiering av vår adapter.
+Frys en enkel deterministisk prisregel, dess universum, beslutstid, exitpolicy, kostnadsmodell och jämförelse mot kontanter och relevant riskjämförbar benchmark. Gör LEAN-provet med normaliserade data från godkänd fas 1b, utan AI-påverkan på portföljbeslut. Registrera kandidater och avståenden när de uppstår. Modellera avgifter, spread, fördröjning, handelstider, delavslut och möjliga uteblivna avslut; biblioteksstandarder får inte ersätta verifierade antaganden för vårt urval. [S44]
 
-### Fas 4 Forskning och jämförelser
+Klart när samma datamanifest, kod och konfiguration ger reproducerbar replay med avstämda avslut, positioner, utdelningar, split och kassa. Visa att ett avslut inte kan inträffa före möjlig orderankomst, att kandidatens giltighet skiljs från positionens exitpolicy och att driftlägen och kostnadsattribution fungerar. Tidsdelning och försöksjournal ska fungera från första regelvarianten, även utan ML. Teknisk acceptans visar korrekt simulering; lönsamhet prövas separat enligt avsnitt 14.
 
-Bygg kronologisk utvärdering, experimentregister och baslinjer. Testa pris, direkta händelser och graf separat. Lägg till första ML-modellen när datakontraktet är stabilt. Klart när slutperioden är orörd, alla försök är registrerade och rapporten visar kostnadskänslighet samt osäkerhet. Inför modellregister, begränsade kandidatkörningar och deklarerad promotionpolicy i paper_only. Testa hela läranderegeln med fördröjda etiketter och jämför mot en fryst modell. Sluttestet får inte återanvändas som orört efter modellval. Ett negativt resultat är ett giltigt utfall.
+Dokumentera motorprovets resultat, pinnad version och beslut om direktdrift eller betald CLI-väg. LEAN är första provet; byte till NautilusTrader kräver ett dokumenterat problem och jämförbart prov. Qlib blir inte en extra ordermotor.
+
+### Fas 3 Futuresavräkning och hedgesimulering
+
+Efter avstämd kassabok i fas 2 och godkända futuresdata i fas 1c byggs ett avgränsat futuresprov. Använd råa förfallande kontrakt, fulla initial-/underhållskrav, kontospecifik marginalreservation, daglig variation margin, slutavräkning, avgifter och rullningskostnader. Samma prisrörelse får inte bokföras dubbelt. Avstäm en rullning med delavslut och avvisat andra ben; båda benens samtidiga exponering måste rymmas inom kontots risk.
+
+Koppla därefter en deklarerad aktie-/ETF-bok till en fryst indexhedgepolicy enligt avsnitt 13 1–13 2. Klart när exponering före/efter, avrundningsrest, budget och kontantbehov är spårbara och alla livscykelprov i avsnitt 13 2 fungerar. Jämför osäkrad portfölj, hedge, kombination och enklare kontantalternativ enligt avsnitt 14 1, inklusive samtidig förlust och höjda marginalkrav. Ett motorbiblioteks stöd eller gröna fixtures är inte bevis för extern mäklarintegration, ekonomisk fördel eller livebehörighet.
+
+### Fas 4 AI human edge bolagsgraf och utökad forskning
+
+Bygg en händelsetyp, en verifierad direkt bolagsrelation och ett källbelagt analyskort med dokumentdata som godkänts i fas 1c. Kör samma händelse från rådata till strukturerat resultat. Klart för analysdelen när kvalitetsutvärderingen i avsnitt 9, källstöd och explicit avstående fungerar även för motsägelsefulla eller irrelevanta dokument. Demonstrera att ett ännu inte tillgängligt utfall inte kan bli minne eller träningsdata.
+
+Inför human-journalen enligt avsnitt 9 1. Visa att en bedömning registreras före beslutet, att rättelse/utgång inte skriver om historiken och att originalförslag och faktiskt beslut kan jämföras. Håll hypotetiska alternativ skilda från verkliga avslut. AI, direkta händelser, graf och mänskliga ingrepp läggs till ett lager i taget och jämförs mot den frysta prisbaslinjen från fas 2. Långsiktiga strategier behåller egna horisonter och krav på mogna utfall.
+
+Utöka kronologisk utvärdering och experimentregister. Lägg till första ML-modellen först när datakontrakt, artefaktberoenden, utfallskö och incidentlogg är stabila. Klart när slutperioden är orörd, alla försök är registrerade och rapporten visar kostnadskänslighet samt osäkerhet. Inför modellregister, begränsade kandidatkörningar och deklarerad promotionpolicy i paper_only. Testa hela läranderegeln med fördröjda etiketter och jämför mot en fryst modell. Sluttestet får inte återanvändas som orört efter modellval. Ett negativt resultat är ett giltigt utfall.
 
 ### Fas 5 Traderhistorik
 
@@ -492,6 +566,8 @@ Lägg till mäklarexport och valfri Collective2-adapter. Verifiera tidszon, kost
 ### Fas 6 Framåtriktad simulering
 
 Kör skugganalys och därefter simulerade order med separata strategiböcker. Testa återstart, dubbel kvittens, nätverksavbrott, avvisad order, delavslut och nödstopp. Klart när alla kritiska avstämningsfel är lösta och framåtriktade beslut går att rekonstruera. Kör även modellbyte och rollback med öppna positioner och försenade avslut. Fondorder används här som syntetiska kontraktsprov inför nästa fas. Visa att en misslyckad kandidat stannar i simulering och att avstämningen överlever versionsbytet. En bestämd månadslängd bevisar inte alpha.
+
+Första verkliga brokertransporten verifieras i en uttryckligt konfigurerad papermiljö med order-, positions-, fill- och kassaavstämning; den befintliga läsande referensadaptern ersätter inte detta prov. Verifiera därefter en andra mäklaradapter inom dess faktiska kapacitet och håll samma kanoniska strategikontrakt. Upprepa okänd status, sena avslut och konto-isolering utan automatisk failover. Human- och hedgeflöden får påverka paperkonton först efter sina respektive kontrakts-, risk- och livscykelprov; stöd för en tillgång hos första brokern antas inte finnas hos den andra.
 
 ### Fas 7 Fondallokering och mäklarkapacitet
 
@@ -503,35 +579,43 @@ Verifiera varje brokers aktuella konto, anslutningsmiljö, tillgängliga instrum
 
 ## 19 Första konkreta utvecklingsuppgifter
 
-| Prioritet | Uppgift | Bevis för klar leverans |
-| --- | --- | --- |
-| P0 | Arkivgren och ren projektgrund | Granskningsbar diff och återställningspunkt |
-| P0 | Kontrakt för enhet, instrument och notering | Två listningar och ett namnbyte hanteras utan sammanblandning |
-| P0 | Källobjekt och tidsversionering | Ursprunglig och korrigerad artikel kan återspelas separat |
-| P0 | Datakatalog och användningsstatus | Ej verifierat material blockeras för otillåtet användningsfall |
-| P0 | Kontoavgränsad brokeradapter och instrumentmappning | Samma instrument får olika native ID hos två brokers utan korsroutning |
-| P0 | Beständiga orderunderlag per konto | Omstart/återförsök behåller klient-ID och ändrade parametrar blockeras |
-| P0 | Futuresprodukt och explicit förfall | Mikro-/standardkontrakt, kontinuerlig serie och mäklar-ID kan inte förväxlas |
-| P0 | Futuresvillkor, marginal och session | Fel tick, stängd session, utgången marginal och förfallsgräns blockerar ett öppningsunderlag |
-| P1 | Futuresavräkning och rullningsreplay | Daglig variation och slutavräkning dubbelräknas inte; delavslut och fel i andra benet avstäms |
-| P1 | SEC- och marknadsdataadapter | Täckt period, luckrapport och normaliserade enheter |
-| P1 | Nyhetsadapter och händelsegruppering | Återpubliceringar räknas som samma händelse |
-| P1 | AI-extraktion med källstycken | Testmaterial med siffror, negation och tvetydighet |
-| P1 | Direkt bolagsrelation | Tidssatt källa och explicit okänd exponering |
-| P1 | LEAN-replay och kassabok | Avgifter, utdelning, split och delavslut avstämda |
-| P2 | Kronologiska baslinjer | Ingen framtida datapunkt i något ingångssnapshot |
-| P1 | Låsta prognoser och utfallskö | En femdagarsetikett är spärrad tills utfallet är tillgängligt |
-| P1 | Incidenter och härledning | Korrigering markerar rätt följdartefakter utan att skriva om beslut |
-| P2 | Egen opportunity-logg | Kandidater och avståenden sparas vid beslutet |
-| P2 | Modellregister och kandidatjämförelse | Samma möjligheter och kostnader samt oförändrad risk |
-| P2 | Policy för automatisk promotion | Nekad kandidat förblir inaktiv och beslutet är spårbart |
-| P2 | Test av hela läranderegeln | Fördröjt utfall poängsätts före uppdatering |
-| P3 | Isolerad reparationskedja | Fel reproduceras och patch kan testas utan handelshemligheter |
-| P3 | Återgång med verkligt tillstånd | Öppna positioner och sena avslut behålls efter rollback |
-| P2 | Traderexportadapter | Original, delavslut och kapitalhistorik avstämda |
-| P2 | NAV-simulator | Order före och efter bryttid får rätt kursdag |
-| P3 | Paper-mäklaradapter | Återanslutning skapar inga dubbla order |
-| P3 | Drift och återställningsprov | Backup återläst och oberoende stopp demonstrerat |
+Följande grund finns redan enligt REBUILD_STATUS.md. Den ska bevaras och byggas vidare på; uppgifterna ska inte utföras som en ny rensning eller få högre verifieringsstatus genom denna dokumentändring.
+
+| Befintlig grund | Dokumenterat läge och gräns |
+| --- | --- |
+| Arkivgren och ombyggnadsgrund | Genomförd genom PR #10; återställningspunkt och historik bevarade |
+| Enhet, instrument, notering och tidsversionerade källor | Implementerade offline; historiska identifierarfrågor och korrigeringsprov finns, full bolagshändelseimport saknas |
+| Datakatalog och användningsdeklarationer | Standardmässig spärr och metadata finns; verkliga användningsrättigheter och träningsberedskap är inte verifierade |
+| Futuresprodukt, förfall, villkor och öppningsunderlag | Offlineberäkningar med syntetiska sessioner/marginaler; ingen rullning, avräkning eller samlad riskmotor |
+| Kontoavgränsade brokerformat och beständiga underlag | Två syntetiska kodare och idempotenta utkast finns; ingen riktig ordertransport |
+| Alpaca paper referensläsare | GET-läsare för konto/tillgångar finns; autentiserad åtkomst och handelsförmåga är inte verifierade |
+
+Öppna uppgifter följer beroendeordningen i avsnitt 18. P1 för numerisk baslinje är nu tidigare än P2 för större AI-/grafbygge. Datakontrakt för senare flöden kan förberedas parallellt utan att funktionen räknas som implementerad.
+
+| Prioritet | Fas | Uppgift | Bevis för klar leverans |
+| --- | --- | --- | --- |
+| P1 | 1b | Auktoritativa kalendrar, prisimport och bolagshändelser | Täckt period, luckrapport, historiskt urval och replay av split, utdelning, namnbyte och tidszon |
+| P1 | 1c | SEC-adapter, nyhetsimport och separat NAV-kontrakt | Källversioner, enheter, publicerings-/bearbetningstid och artikelrevisioner bevaras; berört bruk prövas separat |
+| P1 | 1 | Artefaktberoenden och incidentlogg | En rättelse markerar rätt följdartefakter utan att skriva om beslut |
+| P1 | 1–2 | Låsta beslut/prognoser, utfallskö och opportunity-logg | Kandidater och avståenden sparas före utfallet; en femdagarsetikett är spärrad tills den är tillgänglig |
+| P1 | 1/4 | Datakontrakt för human-journal | Aktör, förhandsmotivering, originalförslag och giltighet bevaras; körbar jämförelse verifieras i fas 4 |
+| P1 | 1/3 | Datakontrakt för hedgepolicy och kopplingar | Skyddad exponering, målrisk, kontoroute och budget är explicita; simulering verifieras i fas 3 |
+| P1 | 2 | Fryst numerisk baslinje och kronologiskt försöksregister | Urval, regel, exit och kostnader låsta före sluttest; inga framtida ingångsvärden |
+| P1 | 2 | LEAN-replay och kassabok | Avgifter, utdelning, split, delavslut och kassa avstämda; samma manifest ger samma resultat |
+| P1 | 3 | Futuresavräkning och rullningsreplay | Variation/slutavräkning dubbelräknas inte; delavslut och avvisat andra ben avstäms |
+| P1 | 3 | Hedgesimulering och livscykel | Sålt huvudinnehav, sena avslut, förfall och stopp lämnar spårbar kvarvarande risk och tillåten åtgärd |
+| P1 | 3 | Hedgens risk- och resultatattribution | Osäkrad portfölj, hedge, kombination och kontantalternativ jämförs med kontantbehov och samtidiga förlustfall |
+| P2 | 4 | AI-extraktion och händelsegruppering | Källstycken, siffror, negation, avstående och dubbletter klarar avsnitt 9:s prov |
+| P2 | 4 | Direkt bolagsrelation | Tidssatt källa och explicit okänd exponering; extra prognosvärde jämförs mot pris/direkt nyhet |
+| P2 | 4 | Human-journal och jämförelse | Förhandsregistrerat ingrepp/avstående, utgång och rättelse kan rekonstrueras; faktisk och hypotetisk väg skiljs åt |
+| P2 | 4 | Modellregister och kandidatjämförelse | Samma möjligheter och kostnader samt oförändrat riskmandat |
+| P2 | 4 | Policy för automatisk promotion | Nekad kandidat förblir inaktiv; start i paper_only och spårbart versionsbeslut |
+| P2 | 4 | Test av hela läranderegeln | Fördröjt utfall poängsätts före uppdatering och ett förbrukat sluttest återanvänds inte som orört |
+| P2 | 5 | Traderexportadapter | Original, delavslut, avgifter och kapitalhistorik avstämda för tillåtet material |
+| P3 | 6 | Första papertransport och andra brokeradapter | Avstämning, konto-isolering, återanslutning och okänd status ger inga dubbla order |
+| P3 | 6 | Isolerad reparationskedja och versionsåtergång | Fel reproduceras utan handelshemligheter; öppna positioner och sena avslut behålls efter rollback |
+| P2 | 7 | NAV-simulator och fondflöde | Order före/efter bryttid får rätt kursdag; försenad och korrigerad NAV samt väntande order hanteras |
+| P3 | 6–8 | Drift och återställningsprov | Backup återläst, oberoende stopp demonstrerat och realiserat kontotillstånd bevarat |
 
 ## 20 Kostnader och beslut som behöver mätas
 
@@ -545,7 +629,9 @@ De praktiska valen är första mäklarkonto, dataleverantör, månatlig databudg
 
 ## 21 Instruktion till nästa byggagent
 
-Arbeta i ombyggnadsgrenen och läs AGENTS.md och denna plan först. Börja med fas 1 efter att planeringsgrunden granskats. Implementera instrumentregister och oföränderlig källimport före strategier. Håll datahämtning, analys, simulering, återkoppling och orderläggning i separata kontrakt. Bygg utfallskö och incidentlogg innan den första modellen tränas. Implementera avsnitt 15 som en del av varje relevant fas, inte som en senare självlärande-funktion utan indata.
+Läs AGENTS.md, denna plan och REBUILD_STATUS.md först. Arbeta i en avgränsad arbetsgren från aktuell main. Fas 0 är redan genomförd och offlinegrunden ska bevaras. Fortsätt fas 1 med ett avgränsat pris-/kalender-/bolagshändelsepaket och reproducerbar replay. Följ därefter fas 2 med fryst numerisk baslinje och LEAN-provet, före större AI-/grafbygge. SEC-/nyhets- och separata instrumentkontrakt kan utvecklas parallellt enligt fas 1c och blockeras per användningsfall.
+
+Håll datahämtning, analys, simulering, återkoppling och orderläggning i separata kontrakt. Bygg artefaktberoenden, utfallskö och incidentlogg innan den första modellen tränas. Förbered human- och hedgekontrakt utan att märka funktionerna som färdiga. Verifiera human-journalen enligt avsnitt 9 1 och hedgeflödena enligt avsnitt 13–14 innan de påverkar paperhandel. Implementera avsnitt 15 som en del av varje relevant fas, inte som en senare självlärande-funktion utan indata.
 
 Använd aktuella officiella dokument för valda versioner. Bevara licenser när kod återanvänds. Lägg inte in alla föreslagna ramverk. Installera endast vad den aktuella fasen använder och lås versionerna. Genomför inga betalda köp eller liveorder som ett led i ett tekniskt test.
 
@@ -604,3 +690,9 @@ Brokerkällor tillagda i version 1.3, kontrollerade 20 oktober 2026:
 
 - S40 Alpaca order-ID, status och buying power: https://docs.alpaca.markets/us/docs/orders-at-alpaca
 - S41 IBKR TWS socketprotokoll och anslutningsmodell: https://www.interactivebrokers.com/docs/tws-api/doc/introduction
+
+Källor till preciseringarna i version 1.4, kontrollerade 25 oktober 2026. Våra policy-, journal- och acceptanskrav ovan är konstruktionsbeslut, inte färdiga funktioner hos en leverantör:
+
+- S42 CME om aktieindexhedging, beta, kontraktsstorlek och kvarvarande risk: https://www.cmegroup.com/education/whitepapers/hedging-with-e-mini-sp-500-future
+- S43 CME om daglig mark-to-market och kontantbehov: https://www.cmegroup.com/education/courses/introduction-to-futures/mark-to-market
+- S44 QuantConnect om avslutsmodeller, kvantiteter, spread och slippage: https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/trade-fills/key-concepts

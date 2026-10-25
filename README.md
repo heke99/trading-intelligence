@@ -31,7 +31,9 @@ The example writes an ignored local SQLite database with invented records. A lat
 - Futures have separate product/expiry/broker identities, raw prices, tick/multiplier, dated sessions and account margin snapshots. Physical delivery is excluded from the opening-intent pilot.
 - Separate intraday, event/swing and long-term books, with deterministic aggregate risk control in later phases.
 
-Masterplan 1.3 specifies locked predictions, delayed validated outcomes, incident classification, bounded retraining, challenger evaluation and controlled promotion. **Self-learning is planned and has not been implemented.**
+Masterplan 1.4 specifies locked predictions, delayed validated outcomes, incident classification, bounded retraining, challenger evaluation and controlled promotion. **Self-learning is planned and has not been implemented.**
+
+Version 1.4 also requires a pre-outcome human decision journal, exposure-linked hedge policies, hedge lifecycle controls and separate risk/result attribution for the unhedged portfolio, hedge and combination. These are documented requirements, not implemented features. A new hedge requires its own mandate and risk checks; lower portfolio exposure does not make it an instrument-level reduce-only order or permit it to bypass stops.
 
 The futures example uses invented contract terms, margin and sessions. It checks an opening scenario and demonstrates blocked invalid inputs. No orders, fills, margin reservations or actual exchange calendar are produced. See [futures contracts and limits](docs/FUTURES.md).
 
@@ -45,6 +47,8 @@ The previous Collective2 application remains at commit `8c5056112721345540ea1cfb
 
 ## Next build steps
 
-Complete Phase 1 with exchange calendars, authoritative session imports, an auditable SEC adapter, licensed contract-level and equity price/news imports, corporate actions and a separate NAV contract. Add artifact lineage, an outcome queue and incident records before any predictive model is trained. Demonstrate replay and data-quality acceptance checks before strategy work.
+Complete the first bounded Phase 1 data slice with authoritative calendars/reference imports, admitted equity prices and corporate actions, and reproducible data-quality/replay checks. Continue the auditable SEC, news, contract-level futures and separate NAV contracts according to their own source admission requirements. Add artifact lineage, an outcome queue and incident records before any predictive model is trained.
+
+Phase 2 runs a frozen simple numerical baseline through LEAN with reconciled fills, positions, cash and costs before a larger AI/graph build. LEAN remains the first engine trial; NautilusTrader is an alternative and Qlib a later research option. Phase 3 adds futures settlement, rolling and exposure-linked hedge simulation. Phase 4 adds source-backed analysis and the human journal, then compares AI, graph and human contributions chronologically against the frozen baseline. New contracts may be specified earlier; executable features require their phase's acceptance evidence. Later shadow/paper operation and a second broker adapter must establish operational behavior before separately authorized live trading.
 
 See [project instructions](AGENTS.md) before implementation. Test success on synthetic fixtures establishes these local contracts, not investment performance or production readiness.
