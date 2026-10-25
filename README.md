@@ -49,6 +49,14 @@ The previous Collective2 application remains at commit `8c5056112721345540ea1cfb
 
 A new offline Phase 1b slice imports supplied daily sessions, raw OHLCV bars, split ratios and cash-dividend observations with evidence lineage and processing availability. Historical replay requires matching known session/bar records and never invents a missing day. See [market-data contracts and limits](docs/MARKET_DATA.md). This is not a live feed, authoritative calendar import, corporate-action cash ledger or completed Phase 1b.
 
+## Supplied vendor captures and bounded replay
+
+Alpaca-shaped daily-bar responses can now be staged with raw bytes, explicit listing mappings and durable quarantine. Unknown publication/session times stay unknown; staging does not admit a price to historical replay. Multi-day replay over an explicit date list produces a gap report and hashed snapshot manifest. See [market pipeline scope and limits](docs/MARKET_PIPELINE.md).
+
+```bash
+PYTHONPATH=src python3 -m trading_intelligence market-pipeline-demo --out data/market-demo
+```
+
 ## Next build steps
 
 Complete the first bounded Phase 1 data slice with authoritative calendars/reference imports, admitted equity prices and corporate actions, and reproducible data-quality/replay checks. Continue the auditable SEC, news, contract-level futures and separate NAV contracts according to their own source admission requirements. Add artifact lineage, an outcome queue and incident records before any predictive model is trained.

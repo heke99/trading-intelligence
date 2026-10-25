@@ -41,3 +41,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence reference-import-demo --out "${RUNNER_TEMP}/ti-reference-import-demo"
+      - name: Run offline market staging and replay example
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence market-pipeline-demo --out "${RUNNER_TEMP}/ti-market-demo"

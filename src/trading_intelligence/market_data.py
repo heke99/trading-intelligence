@@ -74,7 +74,8 @@ class MarketDataStore(EvidenceStore):
         expected = {'kind', 'listing_id', 'date', 'start', 'end', 'currency', 'values'}
         if set(body) != expected or not isinstance(body['values'], dict):
             raise ContractError('Unexpected normalized fields')
-        kind = body['kind']
+        kind = required(body['kind'], 'kind')
+        required(body['listing_id'], 'listing_id')
         if kind not in {'session', 'bar', 'split', 'cash_dividend'}:
             raise ContractError('Unsupported record kind')
         listing = self.db.execute('SELECT * FROM listings WHERE listing_id=?',

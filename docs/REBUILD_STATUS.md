@@ -10,6 +10,12 @@ The earlier implementation sections and their verification evidence retain the r
 
 This is partial Phase 1b, verified with synthetic fixtures only. Vendor transport, authoritative calendar imports, admitted real prices, durable quarantine and corporate-action accounting remain unimplemented. Splits/dividends are preserved as observations; no adjusted returns, cash ledger or strategy readiness is claimed. The complete local suite passes 176 tests, including 18 new market-record tests.
 
+## Supplied vendor capture and multi-day replay — 2026-10-25
+
+`AlpacaMarketStore` now stages supplied daily-bar response pages with immutable raw capture, explicit listing bindings, exact decimals, receipt/processing availability and durable quarantine. Unknown publication/session timestamps remain unknown and no staged candidate is admitted to market snapshots. `replay_dates` creates a bounded gap report and hashed manifest for an explicit date list; ambiguity, permissions and integrity failures block replay. See [MARKET_PIPELINE.md](MARKET_PIPELINE.md).
+
+The new repeatable `market-pipeline-demo` runs offline and is included in CI. All fixtures remain synthetic. Transport, authenticated data access, authoritative calendar import, real-data admission, corporate-action accounting and complete Phase 1b acceptance remain pending. The earlier 176-test result above belongs to the preceding slice; the current integrated verification is recorded below.
+
 ## Masterplan 1.4 changes
 
 - Require an immutable pre-outcome journal of human hypotheses/interventions, linked to the original model proposal, actor, rationale, sources, decision time and expiry. Compare model-only and model-plus-human contributions on the same opportunities, risk and costs.
@@ -75,7 +81,9 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Alpaca paper reference GET reader and vendor-field normalization | Implemented; authenticated API access not verified |
 | Raw response archive, processed availability and immutable reference batches | Implemented and tested with synthetic responses |
 | Real order transport, positions/fill reconciliation and second vendor reader | Not implemented |
-| SEC, price, news and NAV adapters | Not implemented |
+| Supplied Alpaca daily-bar normalization and quarantine | Implemented offline; no transport or historical admission |
+| Bounded multi-day replay and gap manifests | Implemented for explicit expected-date scopes; not calendar/coverage certification |
+| SEC, price transport, news and NAV adapters | Not implemented |
 | Real equity/fund data entitlement | Not verified |
 | Trader-history completeness or verification | Not implemented or verified |
 | New datasets approved for training | None |
@@ -88,6 +96,9 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Simulated or live orders | Not executed |
 
 ## Verification
+
+Current local verification for the supplied-capture/multi-day slice: **207 synthetic tests passed**, including 31 additions to the preceding 176-test suite (18 vendor staging/quarantine cases, 11 multi-day replay cases, one pipeline-demo case and one structured-input regression). The CLI pipeline demonstration, compileall and git diff --check also passed. Remote CI results are verified separately on the delivery PR; no real-data or market-performance conclusion follows from these checks.
+
 
 The 2026-10-20 record reports 158 offline synthetic regression tests passing locally on Python 3.12.14, including all 115 previous foundation/futures/broker tests. That earlier suite covers HTTP endpoint/method limits, headers/redirect failures, account identity, unknown flags/values, decimal normalization, malformed/duplicate JSON, quarantine, processed availability, import retries/restarts, permissions, partial fetch and integrity failures. Broker cases cover per-account isolation, strict capabilities, native mapping, raw prices/lots, stale/missing references, stable retries, changed-input conflicts, restart persistence, live-route rejection and corrupt archives. Futures cases cover expiry identity, fixed-tick Decimal calculations, raw/adjusted prices, temporal corrections, missing/expired margin, account/currency mismatch, physical exclusion, limits, session breaks, overnight/DST instants, overlapping references and corruption. Existing cash databases remain readable with the additive futures tables. This historical test count is not a new 2026-10-25 verification result and does not cover the newly documented human/hedge requirements.
 
