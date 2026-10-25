@@ -23,6 +23,8 @@ The values and session dates above are invented fixtures, not actual exchange re
 
 Replay verifies raw and snapshot hashes and research-use declarations at the requested cutoff. As in the existing prototype, these declarations are metadata, not independent entitlement verification. Historical replay must not be used to bypass current license revocation in production. SQLite direct writes can bypass append-only APIs; this is not a tamper-proof access boundary.
 
+A later [corporate-action and identity proof](CORPORATE_REPLAY.md) exercises bounded hypothetical split/dividend valuation and symbol renames. It does not turn these observations into a verified live cash ledger.
+
 ## What this slice does not establish
 
 - It is not a complete price feed, authoritative calendar importer or production ingestion service. Processing timestamps remain caller assertions; a production adapter needs a trusted operational clock and durable observations.

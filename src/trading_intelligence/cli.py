@@ -47,6 +47,8 @@ def main():
     brokers_command.add_argument("--out", type=Path, required=True)
     import_command = commands.add_parser("reference-import-demo", help="Normalize invented broker responses into an immutable raw archive")
     import_command.add_argument("--out", type=Path, required=True)
+    corporate = commands.add_parser("corporate-replay-demo", help="Replay invented split, dividend and symbol-rename proofs")
+    corporate.add_argument("--out", type=Path, required=True)
     market = commands.add_parser("market-pipeline-demo", help="Stage invented vendor bars and report bounded replay gaps offline")
     market.add_argument("--out", type=Path, required=True)
     sync = commands.add_parser("alpaca-sync", help="Read paper account/assets only; requires configured source and account")
@@ -75,6 +77,9 @@ def main():
                           training_ready=False, orders_sent=0, live_trading=False)
         except ContractError as error:
             parser.exit(2, f"Reference import rejected: {error}\n")
+    elif args.command == "corporate-replay-demo":
+        from .corporate_demo import corporate_demo
+        result = corporate_demo(args.out)
     elif args.command == "market-pipeline-demo":
         from .market_pipeline_demo import market_pipeline_demo
         result = market_pipeline_demo(args.out)

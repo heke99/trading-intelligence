@@ -45,3 +45,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence market-pipeline-demo --out "${RUNNER_TEMP}/ti-market-demo"
+      - name: Run offline corporate-action and rename proof
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence corporate-replay-demo --out "${RUNNER_TEMP}/ti-corporate-demo"
