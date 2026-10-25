@@ -90,3 +90,14 @@ PYTHONPATH=src python3 -m trading_intelligence research-foundations-demo --out d
 ```
 
 See [four-part scope](docs/RESEARCH_FOUNDATIONS.md), [price transport](docs/PRICE_TRANSPORT.md), [SEC submissions](docs/SEC_FILINGS.md), [artifact registry](docs/ARTIFACT_REGISTRY.md) and [outcome queue](docs/OUTCOME_QUEUE.md). The `price-sync` and `sec-sync` commands require explicit local configuration and predeclared source permissions. No genuine source access, historical price admission, model training or LEAN replay is established by these examples.
+
+## Frozen baseline and LEAN readiness
+
+The next four prerequisites are runnable offline: a verified synthetic replay export with a concrete LEAN `PythonData` reader bridge, a frozen numerical baseline/chronological experiment register, a supplied-simulation cash/position journal with reconciliation, and a read-only configuration diagnostic.
+
+```sh
+PYTHONPATH=src python3 -m trading_intelligence lean-readiness-demo --out data/lean-readiness
+PYTHONPATH=src python3 -m trading_intelligence readiness
+```
+
+See [readiness scope and previous-delivery verification](docs/LEAN_READINESS.md). The rule generates targets and abstentions; the ledger audits separate supplied simulated events. No LEAN runtime was installed/executed, no genuine dataset was admitted and no strategy performance is established. Real-data export stays blocked pending admission/export binding.
