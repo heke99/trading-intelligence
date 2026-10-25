@@ -53,6 +53,16 @@ def main():
     market.add_argument("--out", type=Path, required=True)
     admission = commands.add_parser("admission-demo", help="Demonstrate synthetic calendar staging and fail-closed review gates")
     admission.add_argument("--out", type=Path, required=True)
+    foundations = commands.add_parser("research-foundations-demo", help="Demonstrate four synthetic source and learning foundations")
+    foundations.add_argument("--out", type=Path, required=True)
+    sec = commands.add_parser("sec-sync", help="Read a bounded public SEC submissions capture with identified contact")
+    for option in ("database", "source-id", "import-id", "cik"):
+        sec.add_argument("--" + option, required=True)
+    prices = commands.add_parser("price-sync", help="Read bounded Alpaca raw daily bars; requires configured provider source")
+    for option in ("database", "connection-id", "account-number", "source-id", "import-id", "start-date", "end-date", "symbol-listings"):
+        prices.add_argument("--" + option, required=True)
+    prices.add_argument("--feed", choices=("iex", "sip"), default="iex")
+    prices.add_argument("--max-pages", type=int, default=10)
     calendar = commands.add_parser("calendar-sync", help="Read and stage bounded Alpaca paper Trading calendar; requires source configuration")
     for option in ("database", "connection-id", "account-number", "source-id", "import-id", "start-date", "end-date", "venue"):
         calendar.add_argument("--" + option, required=True)
@@ -82,6 +92,43 @@ def main():
                           training_ready=False, orders_sent=0, live_trading=False)
         except ContractError as error:
             parser.exit(2, f"Reference import rejected: {error}\n")
+    elif args.command == "research-foundations-demo":
+        from .research_foundations_demo import research_foundations_demo
+        result = research_foundations_demo(args.out)
+    elif args.command == "sec-sync":
+        import os
+        from .sec_filings import SecFilingsStore, SecSubmissionsReader, sync_sec
+        from .contracts import ContractError
+        contact = os.environ.get("SEC_USER_AGENT")
+        if not contact:
+            parser.error("Configure SEC_USER_AGENT with application name and contact locally")
+        try:
+            with SecFilingsStore(args.database) as store:
+                result = sync_sec(store, source_id=args.source_id, import_id=args.import_id,
+                    cik=args.cik, reader=SecSubmissionsReader(contact))
+        except ContractError as error:
+            parser.exit(2, f"SEC import rejected: {error}\n")
+    elif args.command == "price-sync":
+        import os
+        from .alpaca_market import AlpacaMarketStore
+        from .alpaca_price_reader import AlpacaPriceReader
+        from .brokers import BrokerAccount, Environment
+        from .price_sync import sync_prices
+        from .contracts import ContractError
+        key = os.environ.get("ALPACA_PAPER_API_KEY")
+        secret = os.environ.get("ALPACA_PAPER_SECRET_KEY")
+        if not key or not secret:
+            parser.error("Configure ALPACA_PAPER_API_KEY and ALPACA_PAPER_SECRET_KEY locally")
+        try:
+            bindings = json.loads(Path(args.symbol_listings).read_text())
+            route = BrokerAccount("alpaca", args.connection_id, args.account_number, Environment.PAPER)
+            with AlpacaMarketStore(args.database) as store:
+                result = sync_prices(store, source_id=args.source_id, import_id=args.import_id,
+                    route=route, symbol_listings=bindings, start_date=args.start_date,
+                    end_date=args.end_date, feed=args.feed, max_pages=args.max_pages,
+                    reader=AlpacaPriceReader(route, key, secret))
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Price import rejected: {error}\n")
     elif args.command == "admission-demo":
         from .admission_demo import admission_demo
         result = admission_demo(args.out)
