@@ -39,7 +39,7 @@ class ReferenceSnapshot:
 
 class ReferenceRepository:
     def __init__(self, store, table: str):
-        if table not in {"futures_snapshots", "broker_snapshots"}:
+        if table not in {"futures_snapshots", "broker_snapshots", "market_snapshots"}:
             raise ContractError("Reference table must be an internal constant")
         self.store = store
         self.table = table

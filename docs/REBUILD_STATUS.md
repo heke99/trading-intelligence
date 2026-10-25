@@ -2,7 +2,13 @@
 
 Documentation updated: 2026-10-25. Masterplan: 1.4. Package: 0.5.0.
 
-The implementation and verification evidence below remains the recorded 2026-10-20 Phase 1 state. The 2026-10-25 change updates planning documents only; it does not add runtime functionality, verify authenticated access or report a new test run.
+The earlier implementation sections and their verification evidence retain the recorded 2026-10-20 state. Masterplan 1.4 was a documentation-only update. The subsequent 2026-10-25 market-record slice below adds offline functionality; authenticated data access remains unverified.
+
+## Normalized daily market records — 2026-10-25
+
+`MarketDataStore` now imports supplied normalized daily sessions, raw OHLCV, split and cash-dividend observations using existing raw evidence plus a new immutable market snapshot table. Replay uses processing availability, correction lineage and explicit listing/source identity. Missing or mismatched records block replay. See [MARKET_DATA.md](MARKET_DATA.md).
+
+This is partial Phase 1b, verified with synthetic fixtures only. Vendor transport, authoritative calendar imports, admitted real prices, durable quarantine and corporate-action accounting remain unimplemented. Splits/dividends are preserved as observations; no adjusted returns, cash ledger or strategy readiness is claimed. The complete local suite passes 176 tests, including 18 new market-record tests.
 
 ## Masterplan 1.4 changes
 
@@ -61,7 +67,8 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Futures identities and dated reference snapshots | Implemented offline |
 | Futures tick/PnL/notional and opening-intent checks | Implemented offline; no live authorization |
 | Supplied session segments, breaks and overnight instants | Implemented offline |
-| Authoritative exchange calendars and corporate actions | Not imported or implemented |
+| Authoritative exchange calendars and corporate actions | Not imported; supplied session/split/dividend observation contracts only |
+| Normalized daily price records and as-of replay | Implemented offline with synthetic tests; vendor imports and full Phase 1b acceptance remain pending |
 | Futures roll, daily/final settlement and aggregate margin engine | Not implemented |
 | Multi-broker canonical intents, account isolation and persisted drafts | Implemented offline |
 | Two synthetic broker format encoders and explicit adapter registry | Implemented offline; no external connection |

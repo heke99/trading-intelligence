@@ -45,6 +45,10 @@ The read-only import keeps raw bytes and receipt/processing times, verifies expe
 
 The previous Collective2 application remains at commit `8c5056112721345540ea1cfbbca1f4c41fa816e8` and branch `archive/collective2-v0.1-before-equities-2026-10-20`. The clean reset was merged in PR #10 and the first offline data foundation in PR #11. Futures reference support was merged in PR #12 and the multi-broker draft foundation in PR #13. Git history is preserved; no external datasets or accounts were deleted.
 
+## Normalized daily market records
+
+A new offline Phase 1b slice imports supplied daily sessions, raw OHLCV bars, split ratios and cash-dividend observations with evidence lineage and processing availability. Historical replay requires matching known session/bar records and never invents a missing day. See [market-data contracts and limits](docs/MARKET_DATA.md). This is not a live feed, authoritative calendar import, corporate-action cash ledger or completed Phase 1b.
+
 ## Next build steps
 
 Complete the first bounded Phase 1 data slice with authoritative calendars/reference imports, admitted equity prices and corporate actions, and reproducible data-quality/replay checks. Continue the auditable SEC, news, contract-level futures and separate NAV contracts according to their own source admission requirements. Add artifact lineage, an outcome queue and incident records before any predictive model is trained.
