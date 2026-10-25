@@ -135,3 +135,10 @@ class MarketTests(unittest.TestCase):
         self.put()
         self.s.db.execute("UPDATE market_snapshots SET body='{}'"); self.s.db.commit()
         with self.assertRaises(EvidenceIntegrityError): self.put()
+
+    def test_structured_kind_and_identity_are_contract_errors(self):
+        for field in ('kind', 'listing_id'):
+            for value in ({}, [], None, True):
+                body = self.body(); body[field] = value
+                with self.subTest(field=field, value=value), self.assertRaises(ContractError):
+                    self.put(body=body)
