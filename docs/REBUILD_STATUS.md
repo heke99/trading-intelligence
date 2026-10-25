@@ -93,16 +93,19 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Alpaca paper reference GET reader and vendor-field normalization | Implemented; authenticated API access not verified |
 | Raw response archive, processed availability and immutable reference batches | Implemented and tested with synthetic responses |
 | Real order transport, positions/fill reconciliation and second vendor reader | Not implemented |
-| Supplied Alpaca daily-bar normalization and quarantine | Implemented offline; no transport or historical admission |
+| Supplied Alpaca daily-bar normalization and quarantine | Implemented with bounded read-only GET pagination and durable partial captures; authenticated access/historical admission unverified |
 | Bounded multi-day replay and gap manifests | Implemented for explicit expected-date scopes; not calendar/coverage certification |
 | Split/dividend valuation and symbol-rename proofs | Implemented offline for explicit hypothetical scope; no actual broker accounting or action completeness |
 | Paper calendar GET transport and legacy capture staging | Implemented with offline transport/format tests; authenticated account access unverified |
 | Scoped rights/provenance/temporal/coverage review gate | Implemented as declared eligibility reports; no actual dataset promotion or independent certification |
-| SEC, price transport, news and NAV adapters | Not implemented |
+| SEC submissions and raw daily-price GET transport | Implemented with injected-response tests; genuine source access not verified |
+| News and NAV adapters | Not implemented |
+| Artifact dependencies and append-only incident lineage | Implemented offline with source/hash/cutoff checks and downstream impact |
+| Locked predictions and matured outcome revisions | Implemented offline for declared evaluation labels; no training authorization |
 | Real equity/fund data entitlement | Not verified |
 | Trader-history completeness or verification | Not implemented or verified |
 | New datasets approved for training | None |
-| AI analysis, forecasts, labels and self-learning | Not implemented |
+| AI analysis, predictive models and self-learning | Not implemented; evaluation queue is an offline foundation only |
 | Pre-outcome human decision journal and intervention attribution | Required by masterplan 1.4; not implemented |
 | Exposure-linked hedge policy, lifecycle and risk/result attribution | Required by masterplan 1.4; not implemented |
 | Frozen numerical baseline and LEAN replay | Planned Phase 2; not implemented |
@@ -110,9 +113,17 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | UI, broker or fund order adapters | Not implemented |
 | Simulated or live orders | Not executed |
 
+## Four source and research foundations
+
+The current delivery adds four distinct capabilities: bounded read-only price GET pagination with persistent raw pages and partial-run reports; public SEC recent-submissions capture/normalization; immutable artifact dependencies and append-only incident/correction lineage; and locked pre-horizon predictions with matured, validated, revision-aware outcome selection. See [RESEARCH_FOUNDATIONS.md](RESEARCH_FOUNDATIONS.md) and its source-specific documents. All four have a runnable combined synthetic CLI example.
+
+Source configuration was checked without exposing values: Alpaca paper credentials and an identified SEC_USER_AGENT were absent. No external GET was performed. Provider rights, real feed/calendar quality, historical publication/vintage and authenticated account identity remain unverified. SEC acceptance time remains distinct from unknown publication. Artifact/outcome availability includes operational registration time; current revocations and confirmed data incidents cannot be bypassed by selecting an older cutoff. No admitted real dataset, training job, LEAN baseline, fills or orders were produced.
+
 ## Verification
 
-Current local verification for the calendar/admission slice: **303 synthetic tests passed**, adding 58 cases to the preceding 245 (24 calendar-format, 10 bounded transport, 19 admission-gate, four synchronization and one integrated demo cases). CLI admission-demo, compileall, git diff --check and independent code/docs review passed. No authenticated API call was made; tests use injected transport and clocks. Remote CI is verified separately on the delivery PR.
+Current local verification for the four source/research foundations: **386 synthetic tests passed**, adding 83 cases to the previous 303 (20 price transport/pagination, 22 SEC, 20 artifact/incident, 20 prediction/outcome and one combined restart/demo case). The combined four-part CLI demo, compileall, git diff --check and independent code/docs review passed. External source access was not tested because credentials/contact configuration was absent. Remote CI is verified separately on the delivery PR.
+
+Previous local verification for the calendar/admission slice: **303 synthetic tests passed**, adding 58 cases to the preceding 245 (24 calendar-format, 10 bounded transport, 19 admission-gate, four synchronization and one integrated demo cases). CLI admission-demo, compileall, git diff --check and independent code/docs review passed. No authenticated API call was made; tests use injected transport and clocks. Remote CI is verified separately on the delivery PR.
 
 
 Previous local verification for the corporate-action/identity slice: **245 synthetic tests passed**, adding 38 cases to the preceding 207 (21 corporate-action cases, 16 identity cases and one combined demo). The CLI corporate-replay demo, compileall, git diff --check and independent code review passed. Opening-to-scope event gaps and actions after session open have explicit rejecting regression tests. Remote CI is verified separately on the delivery PR.

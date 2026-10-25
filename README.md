@@ -2,7 +2,7 @@
 
 Rebuild for equities, ETFs, ordinary mutual funds and futures with source-backed AI analysis, reproducible research and independently controlled execution.
 
-**Current status: identity/evidence, futures, multi-broker drafts and a read-only broker reference importer in Phase 1.** The package implements explicit identities, versioned evidence, declared source-use permissions and historical identifier lookup, versioned futures reference snapshots and offline opening-intent previews and persistent broker-specific drafts. The Alpaca paper reference reader is implemented but has not been tested against an authenticated account. Market feeds, AI models, backtesting, UI and broker order submission remain unimplemented.
+**Current status: identity/evidence, futures, multi-broker drafts and a read-only broker reference importer in Phase 1.** The package implements explicit identities, versioned evidence, declared source-use permissions and historical identifier lookup, versioned futures reference snapshots and offline opening-intent previews and persistent broker-specific drafts. The Alpaca paper reference reader is implemented but has not been tested against an authenticated account. Bounded read-only price/calendar and SEC capture adapters are implemented with injected-response tests; genuine feed admission, AI models, backtesting, UI and broker order submission remain unverified or unimplemented.
 
 Read the [Swedish masterplan](docs/MASTERPLAN_SV.md), [implemented contracts and limitations](docs/FOUNDATION.md) and [rebuild status](docs/REBUILD_STATUS.md).
 
@@ -31,7 +31,7 @@ The example writes an ignored local SQLite database with invented records. A lat
 - Futures have separate product/expiry/broker identities, raw prices, tick/multiplier, dated sessions and account margin snapshots. Physical delivery is excluded from the opening-intent pilot.
 - Separate intraday, event/swing and long-term books, with deterministic aggregate risk control in later phases.
 
-Masterplan 1.4 specifies locked predictions, delayed validated outcomes, incident classification, bounded retraining, challenger evaluation and controlled promotion. **Self-learning is planned and has not been implemented.**
+Locked predictions, delayed reviewer-validated outcomes, artifact dependencies and incident lineage now have an offline foundation. Masterplan 1.4 also specifies bounded retraining, challenger evaluation and controlled promotion. **Self-learning is planned and has not been implemented.**
 
 Version 1.4 also requires a pre-outcome human decision journal, exposure-linked hedge policies, hedge lifecycle controls and separate risk/result attribution for the unhedged portfolio, hedge and combination. These are documented requirements, not implemented features. A new hedge requires its own mandate and risk checks; lower portfolio exposure does not make it an instrument-level reduce-only order or permit it to bypass stops.
 
@@ -80,3 +80,13 @@ Complete the first bounded Phase 1 data slice with authoritative calendars/refer
 Phase 2 runs a frozen simple numerical baseline through LEAN with reconciled fills, positions, cash and costs before a larger AI/graph build. LEAN remains the first engine trial; NautilusTrader is an alternative and Qlib a later research option. Phase 3 adds futures settlement, rolling and exposure-linked hedge simulation. Phase 4 adds source-backed analysis and the human journal, then compares AI, graph and human contributions chronologically against the frozen baseline. New contracts may be specified earlier; executable features require their phase's acceptance evidence. Later shadow/paper operation and a second broker adapter must establish operational behavior before separately authorized live trading.
 
 See [project instructions](AGENTS.md) before implementation. Test success on synthetic fixtures establishes these local contracts, not investment performance or production readiness.
+
+## Source and research foundations
+
+Four bounded capabilities now connect source capture to the prerequisites for later evaluation: raw daily-price GET pagination with durable partial captures, a public SEC submissions reader, immutable artifact/incident lineage and locked predictions with matured revision-aware outcomes. Run the four synthetic examples together:
+
+```sh
+PYTHONPATH=src python3 -m trading_intelligence research-foundations-demo --out data/research-foundations
+```
+
+See [four-part scope](docs/RESEARCH_FOUNDATIONS.md), [price transport](docs/PRICE_TRANSPORT.md), [SEC submissions](docs/SEC_FILINGS.md), [artifact registry](docs/ARTIFACT_REGISTRY.md) and [outcome queue](docs/OUTCOME_QUEUE.md). The `price-sync` and `sec-sync` commands require explicit local configuration and predeclared source permissions. No genuine source access, historical price admission, model training or LEAN replay is established by these examples.

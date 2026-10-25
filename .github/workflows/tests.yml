@@ -53,3 +53,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence admission-demo --out "${RUNNER_TEMP}/ti-admission-demo"
+      - name: Run four source and research foundation examples
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence research-foundations-demo --out "${RUNNER_TEMP}/ti-research-foundations-demo"
