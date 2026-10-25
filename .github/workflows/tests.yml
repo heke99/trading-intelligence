@@ -49,3 +49,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence corporate-replay-demo --out "${RUNNER_TEMP}/ti-corporate-demo"
+      - name: Run offline calendar and admission-gate example
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence admission-demo --out "${RUNNER_TEMP}/ti-admission-demo"

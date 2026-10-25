@@ -65,6 +65,14 @@ Bounded offline proofs now cover temporal identifier schedules and raw-price cor
 PYTHONPATH=src python3 -m trading_intelligence corporate-replay-demo --out data/corporate-demo
 ```
 
+## Calendar capture and declared admission reviews
+
+A bounded paper GET calendar adapter and `calendar-sync` CLI are now implemented, with strict legacy-format staging and durable quarantine. Persistent review gates separate rights, provenance, temporal basis and coverage; current denials cannot be bypassed with historical cutoffs. Unknown publication still blocks historical replay. See [calendar/admission configuration and limits](docs/CALENDAR_ADMISSION.md). No authenticated account or real dataset has been approved.
+
+```bash
+PYTHONPATH=src python3 -m trading_intelligence admission-demo --out data/admission-demo
+```
+
 ## Next build steps
 
 Complete the first bounded Phase 1 data slice with authoritative calendars/reference imports, admitted equity prices and corporate actions, and reproducible data-quality/replay checks. Continue the auditable SEC, news, contract-level futures and separate NAV contracts according to their own source admission requirements. Add artifact lineage, an outcome queue and incident records before any predictive model is trained.

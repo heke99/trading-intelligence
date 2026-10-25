@@ -51,6 +51,11 @@ def main():
     corporate.add_argument("--out", type=Path, required=True)
     market = commands.add_parser("market-pipeline-demo", help="Stage invented vendor bars and report bounded replay gaps offline")
     market.add_argument("--out", type=Path, required=True)
+    admission = commands.add_parser("admission-demo", help="Demonstrate synthetic calendar staging and fail-closed review gates")
+    admission.add_argument("--out", type=Path, required=True)
+    calendar = commands.add_parser("calendar-sync", help="Read and stage bounded Alpaca paper Trading calendar; requires source configuration")
+    for option in ("database", "connection-id", "account-number", "source-id", "import-id", "start-date", "end-date", "venue"):
+        calendar.add_argument("--" + option, required=True)
     sync = commands.add_parser("alpaca-sync", help="Read paper account/assets only; requires configured source and account")
     for option in ("database", "connection-id", "account-number", "expected-account-id", "source-id", "import-id"):
         sync.add_argument("--" + option, required=True)
@@ -77,6 +82,32 @@ def main():
                           training_ready=False, orders_sent=0, live_trading=False)
         except ContractError as error:
             parser.exit(2, f"Reference import rejected: {error}\n")
+    elif args.command == "admission-demo":
+        from .admission_demo import admission_demo
+        result = admission_demo(args.out)
+    elif args.command == "calendar-sync":
+        import os
+        from .alpaca_calendar import AlpacaCalendarStore
+        from .alpaca_calendar_reader import AlpacaCalendarReader
+        from .brokers import BrokerAccount, Environment
+        from .calendar_sync import sync_calendar
+        from .contracts import ContractError
+        key = os.environ.get("ALPACA_PAPER_API_KEY")
+        secret = os.environ.get("ALPACA_PAPER_SECRET_KEY")
+        if not key or not secret:
+            parser.error("Configure ALPACA_PAPER_API_KEY and ALPACA_PAPER_SECRET_KEY locally")
+        try:
+            route = BrokerAccount("alpaca", args.connection_id, args.account_number, Environment.PAPER)
+            with AlpacaCalendarStore(args.database) as store:
+                captured = sync_calendar(store, source_id=args.source_id, import_id=args.import_id,
+                    route=route, start_date=args.start_date, end_date=args.end_date, venue=args.venue,
+                    reader=AlpacaCalendarReader(route, key, secret))
+            result = dict(import_id=captured["import_id"], candidates=len(captured["candidates"]),
+                quarantined_rows=len(captured["quarantined"]), available_at=captured["available_at"],
+                capture_origin=captured["capture_origin"], authenticated_account_verified=False,
+                calendar_complete=False, training_ready=False, live_trading=False, orders_sent=0)
+        except ContractError as error:
+            parser.exit(2, f"Calendar import rejected: {error}\n")
     elif args.command == "corporate-replay-demo":
         from .corporate_demo import corporate_demo
         result = corporate_demo(args.out)
