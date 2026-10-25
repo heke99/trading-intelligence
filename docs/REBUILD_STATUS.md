@@ -22,6 +22,12 @@ A bounded hypothetical corporate-action proof now values a fixed opening long ho
 
 `resolve_schedule` now demonstrates exact temporal symbol changes with mapping/evidence/listing/instrument lineage and verified raw hashes. Fixed-cutoff corrected snapshots are distinguished from per-request decision cutoffs. The repeatable `corporate-replay-demo` is in CI. See [CORPORATE_REPLAY.md](CORPORATE_REPLAY.md). Real event/calendar admission, complete action coverage, actual broker accounting and LEAN remain pending.
 
+## Calendar adapter and declared admission gate — 2026-10-25
+
+A bounded paper Trading `/v2/calendar` GET reader and `calendar-sync` CLI now preserve raw response bytes and explicit route/query provenance. The strict legacy-calendar importer preserves DST/early-close instants, request bounds, unknown publication and durable quarantine. No paper credentials are configured here; authenticated response access and account identity remain unverified.
+
+Persistent reviews now bind rights, provenance, temporal basis and coverage to exact capture hashes and scope. The gate checks both historical and operational current state; a later denial or revoked permission cannot be bypassed with an old `as_of`. Unknown publication, incomplete pages, quarantined rows, mismatched scopes and bars captured before session close remain blocking. Reports perform no promotion and confer no training/live rights. See [CALENDAR_ADMISSION.md](CALENDAR_ADMISSION.md).
+
 ## Masterplan 1.4 changes
 
 - Require an immutable pre-outcome journal of human hypotheses/interventions, linked to the original model proposal, actor, rationale, sources, decision time and expiry. Compare model-only and model-plus-human contributions on the same opportunities, risk and costs.
@@ -79,7 +85,7 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Futures identities and dated reference snapshots | Implemented offline |
 | Futures tick/PnL/notional and opening-intent checks | Implemented offline; no live authorization |
 | Supplied session segments, breaks and overnight instants | Implemented offline |
-| Authoritative exchange calendars and corporate actions | Not imported; supplied session/split/dividend observation contracts only |
+| Authoritative exchange calendars and corporate actions | Calendar GET/legacy-format adapter implemented; authenticated source/calendar admission and real action data not verified |
 | Normalized daily price records and as-of replay | Implemented offline with synthetic tests; vendor imports and full Phase 1b acceptance remain pending |
 | Futures roll, daily/final settlement and aggregate margin engine | Not implemented |
 | Multi-broker canonical intents, account isolation and persisted drafts | Implemented offline |
@@ -90,6 +96,8 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Supplied Alpaca daily-bar normalization and quarantine | Implemented offline; no transport or historical admission |
 | Bounded multi-day replay and gap manifests | Implemented for explicit expected-date scopes; not calendar/coverage certification |
 | Split/dividend valuation and symbol-rename proofs | Implemented offline for explicit hypothetical scope; no actual broker accounting or action completeness |
+| Paper calendar GET transport and legacy capture staging | Implemented with offline transport/format tests; authenticated account access unverified |
+| Scoped rights/provenance/temporal/coverage review gate | Implemented as declared eligibility reports; no actual dataset promotion or independent certification |
 | SEC, price transport, news and NAV adapters | Not implemented |
 | Real equity/fund data entitlement | Not verified |
 | Trader-history completeness or verification | Not implemented or verified |
@@ -104,7 +112,10 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 
 ## Verification
 
-Current local verification for the corporate-action/identity slice: **245 synthetic tests passed**, adding 38 cases to the preceding 207 (21 corporate-action cases, 16 identity cases and one combined demo). The CLI corporate-replay demo, compileall, git diff --check and independent code review passed. Opening-to-scope event gaps and actions after session open have explicit rejecting regression tests. Remote CI is verified separately on the delivery PR.
+Current local verification for the calendar/admission slice: **303 synthetic tests passed**, adding 58 cases to the preceding 245 (24 calendar-format, 10 bounded transport, 19 admission-gate, four synchronization and one integrated demo cases). CLI admission-demo, compileall, git diff --check and independent code/docs review passed. No authenticated API call was made; tests use injected transport and clocks. Remote CI is verified separately on the delivery PR.
+
+
+Previous local verification for the corporate-action/identity slice: **245 synthetic tests passed**, adding 38 cases to the preceding 207 (21 corporate-action cases, 16 identity cases and one combined demo). The CLI corporate-replay demo, compileall, git diff --check and independent code review passed. Opening-to-scope event gaps and actions after session open have explicit rejecting regression tests. Remote CI is verified separately on the delivery PR.
 
 
 Previous local verification for the supplied-capture/multi-day slice: **207 synthetic tests passed**, including 31 additions to the preceding 176-test suite (18 vendor staging/quarantine cases, 11 multi-day replay cases, one pipeline-demo case and one structured-input regression). The CLI pipeline demonstration, compileall and git diff --check also passed. Remote CI results are verified separately on the delivery PR; no real-data or market-performance conclusion follows from these checks.
