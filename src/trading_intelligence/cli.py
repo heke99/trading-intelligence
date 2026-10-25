@@ -53,6 +53,14 @@ def main():
     market.add_argument("--out", type=Path, required=True)
     admission = commands.add_parser("admission-demo", help="Demonstrate synthetic calendar staging and fail-closed review gates")
     admission.add_argument("--out", type=Path, required=True)
+    lean_demo = commands.add_parser("lean-readiness-demo", help="Run four synthetic LEAN readiness and baseline examples")
+    lean_demo.add_argument("--out", type=Path, required=True)
+    doctor = commands.add_parser("readiness", help="Read-only configuration/source/runtime diagnostic; never connects")
+    doctor.add_argument("--database", type=Path)
+    doctor.add_argument("--source-id", action="append", default=[])
+    export = commands.add_parser("lean-export", help="Export a verified synthetic replay bundle; real dataset admission remains required")
+    for option in ("database", "source-id", "listing-id", "dates-file", "as-of", "out"):
+        export.add_argument("--" + option, required=True)
     foundations = commands.add_parser("research-foundations-demo", help="Demonstrate four synthetic source and learning foundations")
     foundations.add_argument("--out", type=Path, required=True)
     sec = commands.add_parser("sec-sync", help="Read a bounded public SEC submissions capture with identified contact")
@@ -92,6 +100,30 @@ def main():
                           training_ready=False, orders_sent=0, live_trading=False)
         except ContractError as error:
             parser.exit(2, f"Reference import rejected: {error}\n")
+    elif args.command == "lean-readiness-demo":
+        from .lean_readiness_demo import lean_readiness_demo
+        result = lean_readiness_demo(args.out)
+    elif args.command == "readiness":
+        from .readiness import diagnostic
+        from .contracts import ContractError
+        try:
+            result = diagnostic(database=args.database, source_ids=args.source_id)
+        except ContractError as error:
+            parser.exit(2, f"Diagnostic rejected: {error}\n")
+    elif args.command == "lean-export":
+        from .lean_export import export_bundle
+        from .market_data import MarketDataStore
+        from .contracts import ContractError
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("An existing evidence database is required")
+            dates = json.loads(Path(args.dates_file).read_text())
+            cutoff = datetime.fromisoformat(args.as_of.replace("Z", "+00:00"))
+            with MarketDataStore(args.database) as store:
+                result = export_bundle(store, args.source_id, args.listing_id, dates,
+                    as_of=cutoff, directory=Path(args.out))
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Export rejected: {error}\n")
     elif args.command == "research-foundations-demo":
         from .research_foundations_demo import research_foundations_demo
         result = research_foundations_demo(args.out)
@@ -172,7 +204,7 @@ def main():
         result = futures_demo(args.out)
     else:
         result = demo(args.out)
-    print(json.dumps(result, indent=2, default=str))
+    print(json.dumps(result, indent=2, default=str, sort_keys=True))
 
 
 if __name__ == "__main__":

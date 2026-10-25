@@ -108,7 +108,11 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | AI analysis, predictive models and self-learning | Not implemented; evaluation queue is an offline foundation only |
 | Pre-outcome human decision journal and intervention attribution | Required by masterplan 1.4; not implemented |
 | Exposure-linked hedge policy, lifecycle and risk/result attribution | Required by masterplan 1.4; not implemented |
-| Frozen numerical baseline and LEAN replay | Planned Phase 2; not implemented |
+| Frozen numerical baseline and chronological experiment register | Implemented offline for synthetic target/abstention evaluation; no fills or performance |
+| LEAN own-data export/reader bridge | Synthetic bundle and parser/API mechanics implemented; real admission binding/runtime trial pending |
+| Supplied-simulation cash/position ledger | Implemented offline with fees/actions/reconciliation; no broker/LEAN event verification |
+| Read-only readiness diagnostic | Implemented; configuration presence is not credential/source verification |
+| Full LEAN replay and reconciled engine acceptance | Not executed |
 | Backtesting and strategy profitability | Not implemented or established |
 | UI, broker or fund order adapters | Not implemented |
 | Simulated or live orders | Not executed |
@@ -119,9 +123,17 @@ The current delivery adds four distinct capabilities: bounded read-only price GE
 
 Source configuration was checked without exposing values: Alpaca paper credentials and an identified SEC_USER_AGENT were absent. No external GET was performed. Provider rights, real feed/calendar quality, historical publication/vintage and authenticated account identity remain unverified. SEC acceptance time remains distinct from unknown publication. Artifact/outcome availability includes operational registration time; current revocations and confirmed data incidents cannot be bypassed by selecting an older cutoff. No admitted real dataset, training job, LEAN baseline, fills or orders were produced.
 
+## Verification of PR #20 and four further readiness prerequisites
+
+On 26 October, remote main `182d9bbe0e461a7f4adcf87e3d0144f96297ba7d` and tree `d216310c7130f4c987b0e24ea38fbaf20b3c6de4` were checked. An independent isolated copy passed all 386 tests, including negative rights, origin, cutoff and incident cases. The preceding four-part CLI reproduced its semantic results across a process restart; CLI key ordering was subsequently stabilized and covered by a byte-level restart regression.
+
+Four additional distinct capabilities now prepare the Phase 2 trial: verified synthetic export/custom-data reader, a frozen baseline/experiment journal, supplied-simulation cash/position reconciliation, and read-only operational configuration diagnostics. See [LEAN_READINESS.md](LEAN_READINESS.md). The actual diagnostic found no Alpaca paper credentials, no SEC contact and no LEAN executable. It performed no network call or executable launch. Real admission/export binding and genuine engine execution remain pending. Neither target generation nor a ledger fixture completes Phase 2.
+
 ## Verification
 
-Current local verification for the four source/research foundations: **386 synthetic tests passed**, adding 83 cases to the previous 303 (20 price transport/pagination, 22 SEC, 20 artifact/incident, 20 prediction/outcome and one combined restart/demo case). The combined four-part CLI demo, compileall, git diff --check and independent code/docs review passed. External source access was not tested because credentials/contact configuration was absent. Remote CI is verified separately on the delivery PR.
+Current local verification for the four LEAN-readiness prerequisites: **441 synthetic tests passed**, adding 55 to the preceding 386 (10 export/reader, 16 baseline/experiment, 17 cash-ledger, nine diagnostic, two prior-CLI verification regressions and one combined-demo case). Both the old and new four-part demos pass fresh-process restart checks; the new combined CLI, actual read-only diagnostic, compileall, link checks and git diff --check passed. Parallel code work and independent cross-review resolved current-rights, clock/sequence, late-action, next-session timing and concurrent final-consumption findings. No external source or LEAN runtime was exercised. Remote CI is verified separately on the delivery PR.
+
+Previous local verification for the four source/research foundations: **386 synthetic tests passed**, adding 83 cases to the previous 303 (20 price transport/pagination, 22 SEC, 20 artifact/incident, 20 prediction/outcome and one combined restart/demo case). The combined four-part CLI demo, compileall, git diff --check and independent code/docs review passed. External source access was not tested because credentials/contact configuration was absent. Remote CI is verified separately on the delivery PR.
 
 Previous local verification for the calendar/admission slice: **303 synthetic tests passed**, adding 58 cases to the preceding 245 (24 calendar-format, 10 bounded transport, 19 admission-gate, four synchronization and one integrated demo cases). CLI admission-demo, compileall, git diff --check and independent code/docs review passed. No authenticated API call was made; tests use injected transport and clocks. Remote CI is verified separately on the delivery PR.
 

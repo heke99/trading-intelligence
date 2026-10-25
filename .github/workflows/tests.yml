@@ -57,3 +57,11 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence research-foundations-demo --out "${RUNNER_TEMP}/ti-research-foundations-demo"
+      - name: Run four offline LEAN readiness prerequisites
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence lean-readiness-demo --out "${RUNNER_TEMP}/ti-lean-readiness-demo"
+      - name: Inventory configuration without external access
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence readiness
