@@ -1,6 +1,16 @@
 # Rebuild status
 
-Date: 2026-10-20. Masterplan: 1.3. Package: 0.5.0.
+Documentation updated: 2026-10-25. Masterplan: 1.4. Package: 0.5.0.
+
+The implementation and verification evidence below remains the recorded 2026-10-20 Phase 1 state. The 2026-10-25 change updates planning documents only; it does not add runtime functionality, verify authenticated access or report a new test run.
+
+## Masterplan 1.4 changes
+
+- Require an immutable pre-outcome journal of human hypotheses/interventions, linked to the original model proposal, actor, rationale, sources, decision time and expiry. Compare model-only and model-plus-human contributions on the same opportunities, risk and costs.
+- Define exposure-linked hedge policies with residual-risk targets, instrument selection, rebalancing, expiry/exit rules and dedicated mandates. Track the protected exposure and hedge together through partial fills, rejected legs, sales and rolls; instrument reduce_only is distinct from reduced portfolio risk and does not authorize a new hedge or bypass a stop.
+- Evaluate unhedged portfolio, hedge and combination separately, including costs, remaining risk, simultaneous adverse moves, higher margin requirements and account-specific cash needs.
+- Put a frozen simple numerical baseline and LEAN replay in Phase 2, futures settlement/hedge simulation in Phase 3, and larger source-backed AI/human/graph comparisons in Phase 4. LEAN remains the first engine trial, with NautilusTrader an alternative and Qlib a later research option.
+- Retain artifact dependencies, outcome definitions/queue and incident lineage before predictive model training. All new human/hedge requirements remain unimplemented.
 
 ## Reset completed
 
@@ -63,22 +73,27 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Trader-history completeness or verification | Not implemented or verified |
 | New datasets approved for training | None |
 | AI analysis, forecasts, labels and self-learning | Not implemented |
+| Pre-outcome human decision journal and intervention attribution | Required by masterplan 1.4; not implemented |
+| Exposure-linked hedge policy, lifecycle and risk/result attribution | Required by masterplan 1.4; not implemented |
+| Frozen numerical baseline and LEAN replay | Planned Phase 2; not implemented |
 | Backtesting and strategy profitability | Not implemented or established |
 | UI, broker or fund order adapters | Not implemented |
 | Simulated or live orders | Not executed |
 
 ## Verification
 
-158 offline synthetic regression tests passed locally on Python 3.12.14, including all 115 previous foundation/futures/broker tests. New tests cover HTTP endpoint/method limits, headers/redirect failures, account identity, unknown flags/values, decimal normalization, malformed/duplicate JSON, quarantine, processed availability, import retries/restarts, permissions, partial fetch and integrity failures. Broker cases cover per-account isolation, strict capabilities, native mapping, raw prices/lots, stale/missing references, stable retries, changed-input conflicts, restart persistence, live-route rejection and corrupt archives. New cases cover expiry identity, fixed-tick Decimal calculations, raw/adjusted prices, temporal corrections, missing/expired margin, account/currency mismatch, physical exclusion, limits, session breaks, overnight/DST instants, overlapping references and corruption. Existing cash databases remain readable with the additive futures tables.
+The 2026-10-20 record reports 158 offline synthetic regression tests passing locally on Python 3.12.14, including all 115 previous foundation/futures/broker tests. That earlier suite covers HTTP endpoint/method limits, headers/redirect failures, account identity, unknown flags/values, decimal normalization, malformed/duplicate JSON, quarantine, processed availability, import retries/restarts, permissions, partial fetch and integrity failures. Broker cases cover per-account isolation, strict capabilities, native mapping, raw prices/lots, stale/missing references, stable retries, changed-input conflicts, restart persistence, live-route rejection and corrupt archives. Futures cases cover expiry identity, fixed-tick Decimal calculations, raw/adjusted prices, temporal corrections, missing/expired margin, account/currency mismatch, physical exclusion, limits, session breaks, overnight/DST instants, overlapping references and corruption. Existing cash databases remain readable with the additive futures tables. This historical test count is not a new 2026-10-25 verification result and does not cover the newly documented human/hedge requirements.
 
 The original foundation, futures and multi-broker slices passed remote CI on Python 3.11, 3.12 and 3.13. The reference-import slice defines the same matrix with all four offline CLI examples; check its associated PR for remote results. Tests do not establish investment performance or end-to-end production readiness.
 
 ## Next milestones and acceptance
 
-1. Add authoritative calendar/reference imports, broker-capability data, processing-availability timestamps, immutable receipt observations and a SEC adapter with synthetic replay fixtures. First real ingestion remains gated on source terms and operational configuration.
-2. Select a market-data feed against coverage, timestamps, corporate actions, delisted securities and storage rights. Add price/news adapters, raw futures-expiry data and a separate NAV contract. Do not assume that public access permits model training.
-3. Demonstrate split, rename, article-revision and timezone replay. For futures, add contract-level fees, margin reservation, roll legs, variation/final settlement and aggregate exposure. Add artifact dependencies, an outcome queue and incident lineage before the first model.
-4. Implement source-backed analysis and simple frozen strategy baselines; then evaluate chronologically with costs before introducing candidate learning.
-5. Add shadow/paper operation, portfolio risk and reconciliation. Live trading requires the separate scope and evidence in the masterplan.
+1. Complete a bounded Phase 1 equity data slice: authoritative calendar/reference imports, processing-availability timestamps, immutable receipt observations, admitted prices and corporate actions. Select the feed against coverage, timestamps, delisted securities and storage rights. Prove idempotent imports, quarantine, split/rename and timezone replay before consuming that slice in a strategy. First real ingestion remains gated on source terms and operational configuration.
+2. Continue the auditable SEC and news adapters, article-revision replay, raw futures-expiry data, broker-capability imports and a separate NAV contract with per-source acceptance. Add artifact dependencies, outcome definitions/queue and incident lineage before predictive model training. Human/hedge schemas can be specified now without claiming their workflows work. Public access does not establish model-training permission.
+3. Phase 2: run a frozen simple numerical baseline through the first LEAN engine trial using admitted normalized data. Model fees, spread, delay and sessions; reconcile fills, positions and cash; demonstrate deterministic replay and compare with a risk-comparable reference. Larger AI/graph development follows this baseline rather than blocking it.
+4. Phase 3: add futures contract-level fees, margin reservation, variation/final settlement, roll legs and aggregate exposure before hedge simulation. Verify exposure-linked hedge sizing/lifecycle, partial or rejected legs, sale of the protected holding, simultaneous losses, increased margin and unavailable cash at another broker. Report unhedged portfolio, hedge and combination separately. No hedge can bypass configured mandates or stops.
+5. Phase 4: add source-backed analysis and the immutable human journal, then compare direct events, graph information and model-plus-human decisions against the frozen baseline on the same opportunities, risk and costs. Preserve chronological evaluation, trial registration and untouched final tests. Introduce candidate learning only after its outcome/incident data foundation and evaluation gates are verified.
+6. Keep trader-history admission as the optional Phase 5 stream. Phase 6 verifies forward shadow/paper operation, portfolio risk, restart/failure cases and reconciliation; a second verified broker adapter then demonstrates broker independence under the same contracts. Phase 7 retains the separate fund/NAV flow.
+7. Phase 8 live trading still requires separately configured scope, account/data entitlements, strategy evidence, risk budget and verified broker behavior. Documentation, synthetic fixtures and paper access alone do not authorize live orders.
 
-Masterplan 1.3's learning cycle, incident categories, adaptive evaluation, model-promotion bounds and state-preserving rollback remain requirements for those later phases.
+Masterplan 1.4 retains the learning cycle, incident categories, adaptive evaluation, model-promotion bounds and state-preserving rollback as requirements for those later phases. The planning update does not change implemented capability status.
