@@ -8,7 +8,7 @@ Read the [Swedish masterplan](docs/MASTERPLAN_SV.md), [implemented contracts and
 
 ## Run the offline example
 
-Use Python 3.11 or later from the repository root. The four demos and tests need no runtime dependencies, API keys or network calls. The separate alpaca-sync command requires configured paper credentials and an explicitly permitted source.
+Use Python 3.11 or later from the repository root. The offline demos and tests need no runtime dependencies, API keys or network calls. The separate alpaca-sync command requires configured paper credentials and an explicitly permitted source.
 
 ```bash
 PYTHONPATH=src python3 -m trading_intelligence demo --out data/demo
@@ -55,6 +55,14 @@ Alpaca-shaped daily-bar responses can now be staged with raw bytes, explicit lis
 
 ```bash
 PYTHONPATH=src python3 -m trading_intelligence market-pipeline-demo --out data/market-demo
+```
+
+## Corporate-action and identity replay proofs
+
+Bounded offline proofs now cover temporal identifier schedules and raw-price corporate-action valuation with explicit opening inputs. Rename mappings preserve listing/instrument lineage, and later corrections stay separate from earlier knowledge snapshots. See [corporate replay scope and limits](docs/CORPORATE_REPLAY.md). These proofs do not establish real-data admission or a broker cash ledger.
+
+```bash
+PYTHONPATH=src python3 -m trading_intelligence corporate-replay-demo --out data/corporate-demo
 ```
 
 ## Next build steps
