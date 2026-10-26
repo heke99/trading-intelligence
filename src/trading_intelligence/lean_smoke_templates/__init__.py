@@ -17,7 +17,7 @@ def make_config(input_root='/Smoke/input',output_root='/Smoke/output',data_folde
         'environments':{'backtesting':{'live-mode':False}},
         'debugging':False,'close-automatically':True,'show-missing-data-logs':True,
         'job-user-id':'0','api-access-token':'','job-organization-id':'',
-        'parameters':{'bundle_path':input_root+'/bundle','observer_output':output_root+'/observer-evidence.json'},
+        'parameters':{'bundle_path':input_root+'/bundle','observer_output':output_root+'/observer-evidence.json','inspection_bundle':'false'},
         'log-handler':'QuantConnect.Logging.CompositeLogHandler',
         'messaging-handler':'QuantConnect.Messaging.Messaging','job-queue-handler':'QuantConnect.Queues.JobQueue',
         'api-handler':'QuantConnect.Api.Api','map-file-provider':'QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider',

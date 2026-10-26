@@ -105,3 +105,5 @@ See [readiness scope and previous-delivery verification](docs/LEAN_READINESS.md)
 ## Isolated LEAN observer smoke
 
 A single prepared Docker smoke can now observe two synthetic custom-data points using the exact pinned ARM64 image, with networking disabled and only dedicated input/output mounts. See [one-command Mac run and acceptance evidence](docs/LEAN_SMOKE.md). Harness tests do not establish actual engine success; that status requires the generated container log, observer evidence and LEAN final summary.
+
+The next [captured observation inspection](docs/CAPTURED_OBSERVATIONS.md) command reads the already captured price job and separate calendar source, groups identical availability times without fake timestamp offsets, and reuses the pinned LEAN observer. Its output remains explicitly NOT admitted for historical research/training and submits no orders.
