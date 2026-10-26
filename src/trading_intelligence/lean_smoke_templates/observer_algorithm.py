@@ -6,6 +6,7 @@ import json
 from trading_intelligence.lean_export import verify_bundle
 from trading_intelligence.lean_custom_data import parse_bundle_line
 from trading_intelligence.market_data import timestamp
+from trading_intelligence.lean_smoke_templates import engine_utc
 
 BUNDLE=None
 DIRECTORY=None
@@ -50,8 +51,9 @@ class ObservedFixtureSmoke(QCAlgorithm):
         if not data.contains_key(self._symbol):return
         point=data[self._symbol]
         available=str(point['available_at']);economic=str(point['economic_date'])
-        if self.utc_time<timestamp(available).replace(tzinfo=None):raise ValueError('Future information emitted early')
-        self._observed.append({'economic_date':economic,'available_at':available,'close':str(point['raw_close']),'currency':str(point['currency']),'observed_engine_utc':self.utc_time.isoformat()})
+        observed_at=engine_utc(self.utc_time)
+        if observed_at<timestamp(available):raise ValueError('Future information emitted early')
+        self._observed.append({'economic_date':economic,'available_at':available,'close':str(point['raw_close']),'currency':str(point['currency']),'observed_engine_utc':observed_at.isoformat()})
 
     def on_order_event(self,event):
         self._events+=1

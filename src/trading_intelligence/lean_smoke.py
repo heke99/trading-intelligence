@@ -21,6 +21,12 @@ PLATFORM = 'linux/arm64'
 LAUNCHER = '/Lean/Launcher/bin/Debug/QuantConnect.Lean.Launcher.dll'
 
 
+class SmokeFailure(ContractError):
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+
+
 def encoded(value):
     return (json.dumps(value, sort_keys=True, indent=2)+'\n').encode()
 
@@ -125,24 +131,31 @@ def verify_inputs(directory):
 def validate_result(directory,returncode):
     root=Path(directory).resolve();manifest=verify_inputs(root)
     log=(root/'output'/'engine.log').read_text(errors='replace')
-    summary=json.loads((root/'output'/'observer-evidence.json').read_bytes())
+    error_line=next((line.strip()[:1000] for line in log.splitlines()
+        if re.search(r'ERROR::|Runtime Error|Unhandled exception|Traceback \(most recent call last\)',line,re.I)),None)
+    if error_line:
+        raise SmokeFailure('engine_log_error','LEAN engine failure: '+error_line)
     if returncode!=0:
-        raise ContractError('LEAN container did not exit successfully; inspect output/engine.log')
-    if re.search(r'ERROR::|Runtime Error|Unhandled exception|Traceback \(most recent call last\)',log,re.I):
-        raise ContractError('LEAN log contains an error; inspect output/engine.log')
+        raise SmokeFailure('container_exit_nonzero',f'LEAN container exit {returncode}; inspect output/engine.log')
     result_paths=list((root/'output').glob('*-summary.json'))
     if len(result_paths)!=1:
         raise ContractError('Exactly one final LEAN summary is required')
     final=json.loads(result_paths[0].read_bytes())
-    if not isinstance(summary,dict) or not isinstance(final,dict):
-        raise ContractError('Observer and LEAN results must be JSON objects')
+    if not isinstance(final,dict):
+        raise SmokeFailure('invalid_final_summary','LEAN final result must be a JSON object')
     state=final.get('state',{})
     if not isinstance(state,dict):
         raise ContractError('LEAN final state must be an object')
     if (state.get('Status')!='Completed' or state.get('RuntimeError')!=''
             or state.get('StackTrace')!='' or str(state.get('OrderCount'))!='0'
             or not state.get('EndTime')):
-        raise ContractError('LEAN final state was not clean Completed with zero orders')
+        raise SmokeFailure('engine_final_state_failed','LEAN final state failed: '+str(state.get('Status'))+'; '+str(state.get('RuntimeError',''))[:1000])
+    observer_path=root/'output'/'observer-evidence.json'
+    if not observer_path.is_file():
+        raise SmokeFailure('observer_evidence_missing','LEAN completed without observer-evidence.json')
+    summary=json.loads(observer_path.read_bytes())
+    if not isinstance(summary,dict):
+        raise SmokeFailure('invalid_observer_evidence','Observer evidence must be a JSON object')
     observed=summary.get('observed',[])
     if not isinstance(observed,list) or any(not isinstance(row,dict) for row in observed):
         raise ContractError('Observer rows must be a list of objects')
@@ -181,22 +194,30 @@ def run_prepared(directory,*,timeout=180,runner=None):
     if runner is None and shutil.which('docker') is None:
         (root/'run-result.json').write_bytes(encoded(dict(status='blocked',reason='docker_unavailable',engine_observation_verified=False,live_trading=False)))
         raise ContractError('Docker is unavailable; prepared inputs are not engine evidence')
+    returncode=None
     try:
         with (root/'output'/'engine.log').open('w') as log:
             process=(runner or subprocess.run)(command,stdout=log,stderr=subprocess.STDOUT,timeout=timeout,check=False)
-        result=validate_result(root,process.returncode)
+        returncode=process.returncode
+        result=validate_result(root,returncode)
     except (ContractError, OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
-        # Killing the Docker client alone does not stop the daemon-owned job.
-        # This random name belongs only to this fresh dedicated smoke run.
-        cleanup_ok=False
-        try:
-            with (root/'output'/'engine.log').open('a') as cleanup_log:
+        cleanup_status='not_needed_no_timeout'
+        if isinstance(error,subprocess.TimeoutExpired):
+            # A timed-out Docker client can leave its daemon-owned job running.
+            # Keep cleanup diagnostics separate from the actual engine log.
+            cleanup_status='failed'
+            try:
                 cleanup=(runner or subprocess.run)(['docker','rm','--force',command[3]],
-                    stdout=cleanup_log,stderr=subprocess.STDOUT,timeout=30,check=False)
-            cleanup_ok=cleanup.returncode==0
-        except (OSError,subprocess.SubprocessError):
-            pass
-        result=dict(status='failed',engine_observation_verified=False,reason=str(error),live_trading=False,container_cleanup_succeeded=cleanup_ok,
+                    stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=30,check=False)
+                message=getattr(cleanup,'stdout',b'') or b''
+                if isinstance(message,bytes):message=message.decode(errors='replace')
+                if cleanup.returncode==0:cleanup_status='removed'
+                elif 'no such container' in message.lower():cleanup_status='already_removed'
+            except (OSError,subprocess.SubprocessError):
+                pass
+        result=dict(status='failed',engine_observation_verified=False,reason=str(error),
+                    error_code=getattr(error,'code','container_timeout' if isinstance(error,subprocess.TimeoutExpired) else 'artifact_or_process_error'),
+                    container_returncode=returncode,live_trading=False,container_cleanup_status=cleanup_status,
                     log_file=str(root/'output'/'engine.log'))
         (root/'run-result.json').write_bytes(encoded(result))
         raise ContractError('Smoke did not pass; inspect run-result.json and output/engine.log') from error

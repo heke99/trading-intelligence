@@ -64,7 +64,9 @@ class SmokeHarnessTests(unittest.TestCase):
         with self.assertRaises(ContractError):run_prepared(self.root,runner=self.runner)
         result=json.loads((self.root/'run-result.json').read_text())
         self.assertFalse(result['engine_observation_verified'])
-        self.assertEqual(self.calls[-1],['docker','rm','--force',self.prepared['docker_command'][3]])
+        self.assertEqual(len(self.calls),1)
+        self.assertEqual(result['container_cleanup_status'],'not_needed_no_timeout')
+        self.assertEqual(result['error_code'],'container_exit_nonzero')
 
     def test_runtime_error_in_final_engine_state_is_rejected(self):
         def mutate(summary,final,log):final['state']['Status']='RuntimeError'
@@ -103,7 +105,7 @@ class SmokeHarnessTests(unittest.TestCase):
             raise subprocess.TimeoutExpired(command,30)
         with self.assertRaises(ContractError):run_prepared(self.root,runner=runner,timeout=30)
         self.assertEqual(self.calls[-1],['docker','rm','--force',self.prepared['docker_command'][3]])
-        self.assertTrue(json.loads((self.root/'run-result.json').read_text())['container_cleanup_succeeded'])
+        self.assertEqual(json.loads((self.root/'run-result.json').read_text())['container_cleanup_status'],'removed')
 
     def test_invalid_result_shape_is_reported_as_failure(self):
         def runner(command,**kwargs):
@@ -121,3 +123,33 @@ class SmokeHarnessTests(unittest.TestCase):
         result=json.loads((self.root/'run-result.json').read_text())
         self.assertEqual(result['status'],'blocked')
         self.assertFalse(result['engine_observation_verified'])
+
+    def test_engine_log_error_precedes_missing_observer_artifact(self):
+        def runner(command,**kwargs):
+            self.calls.append(command)
+            kwargs['stdout'].write("ERROR:: TypeError: can't compare offset-naive and offset-aware datetimes\n")
+            return SimpleNamespace(returncode=0)
+        with self.assertRaises(ContractError):run_prepared(self.root,runner=runner)
+        result=json.loads((self.root/'run-result.json').read_text())
+        self.assertEqual(result['error_code'],'engine_log_error')
+        self.assertIn('offset-naive',result['reason'])
+        self.assertNotIn('No such container',(self.root/'output'/'engine.log').read_text())
+        self.assertEqual(len(self.calls),1)
+
+    def test_nonzero_exit_precedes_missing_observer_artifact(self):
+        def runner(command,**kwargs):return SimpleNamespace(returncode=7)
+        with self.assertRaises(ContractError):run_prepared(self.root,runner=runner)
+        result=json.loads((self.root/'run-result.json').read_text())
+        self.assertEqual(result['error_code'],'container_exit_nonzero')
+        self.assertEqual(result['container_returncode'],7)
+
+    def test_timeout_already_removed_is_not_a_cleanup_failure_or_log_error(self):
+        def runner(command,**kwargs):
+            if command[1]=='rm':return SimpleNamespace(returncode=1,stdout=b'Error: No such container: scoped-name')
+            kwargs['stdout'].write('original engine output\n')
+            raise subprocess.TimeoutExpired(command,30)
+        with self.assertRaises(ContractError):run_prepared(self.root,runner=runner,timeout=30)
+        result=json.loads((self.root/'run-result.json').read_text())
+        self.assertEqual(result['container_cleanup_status'],'already_removed')
+        self.assertEqual(result['error_code'],'container_timeout')
+        self.assertEqual((self.root/'output'/'engine.log').read_text(),'original engine output\n')
