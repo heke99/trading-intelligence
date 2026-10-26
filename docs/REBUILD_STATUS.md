@@ -167,3 +167,9 @@ A subsequent permitted public SEC GET on 26 October succeeded with an identified
 Actual source access in this narrow permitted test supersedes the earlier statement that SEC access had not been exercised; it does not establish complete history, source/filing quality, dissemination timestamps or training permission. Original user/capture files remain outside the repository.
 
 SEC-fix validation: all 446 synthetic tests passed, including 27 SEC cases and five new path/diagnostic/legacy-version regressions. Independent review, compileall and git diff --check passed. The separate real-response comparison was performed outside committed test fixtures.
+
+## Pinned isolated LEAN observer harness
+
+A single `python -m trading_intelligence.lean_smoke prepare-run` command now prepares two synthetic observations and runs the pinned ARM64 Docker image with network disabled, read-only dedicated input and writable dedicated output. Input hashes, algorithm callback observations, engine UTC times, zero orders, container exit/log and LEAN final Completed/error state must all agree. Fresh output and scoped timeout cleanup prevent stale evidence or an abandoned container from being treated as success. See [LEAN_SMOKE.md](LEAN_SMOKE.md).
+
+Development validation: 464 synthetic tests passed (13 harness mechanics and five algorithm/config cases added to 446), plus compileall, diff checks and independent code review. Docker is absent here; preparation/mocked artifacts do not verify an engine run. The user-provided pinned-image/runtime installation facts are prerequisites, not an accepted smoke result. Actual Mac log/result acceptance remains pending. This observation-only smoke does not implement a full strategy backtest, native equity fill/accounting model or profitability proof.
