@@ -42,3 +42,40 @@ PYTHONPATH=src python -m trading_intelligence sec-sync \
 ```
 
 This command fetches only the bounded recent-submissions response and inventories any archive references. It does not follow those references or download filing documents.
+
+## Relative document-path correction (normalizer v2)
+
+`sec-submissions-recent-2` preserves legitimate relative primary-document paths such as `xslF345X05/ownership.xml` and `xslF345X06/form4.xml`. SEC itself publishes ownership documents under these subdirectories, for example https://www.sec.gov/Archives/edgar/data/1792580/000191567226000011/xslF345X05/ownership.xml . The previous basename-only restriction incorrectly quarantined such rows.
+
+Each ASCII segment permits letters, digits, underscore, hyphen and dot, with no empty, `.` or `..` segments. The path is bounded to 1,024 characters, 16 segments and 255 characters per segment. Absolute paths, URLs, backslashes, percent encodings, query/fragment syntax and unsupported characters remain quarantined. This is a metadata validator; it does not download, decode, resolve or open the selected document path.
+
+Rejected rows now retain `row_index`, a fixed first `reason`/`field`, and `issues` listing all independently detected field errors. Invalid document paths no longer hide invalid dates or acceptance times. No rejected raw value is copied into diagnostic messages. Duplicate accessions retain their own cause. Envelope errors remain distinct from row errors.
+
+Old capture IDs retain their original normalizer version, bytes and normalized report. An unchanged direct retry or `sec-sync` retry returns that archived result; upgrading the code does not repair or overwrite old reports. Use a **new import ID** to normalize another capture with v2. Changed immutable inputs under an existing ID still conflict.
+
+### Actual public-response verification
+
+On 26 October 2026, a permitted identified read-only SEC submissions GET succeeded. Its raw SHA-256 was `5891cf875f690e38f26ca628f7091184c9d73ca34ca7646b9cecd5013aeac4ab`, exactly matching the user's Mac capture. On these identical bytes and the original receipt cutoff, v1 produced 328 accepted rows and 674 quarantined rows. Every quarantined index matched a nested document path. V2 produced 1,002 accepted rows and zero quarantined rows. The original response and user report were not committed to the repository. This verifies the identified compatibility bug for that response; it does not certify future responses, filing completeness, economic correctness, publication/vintage or training eligibility.
+
+### Rerun and inspect a compact summary
+
+After `git pull --ff-only`, keep the existing permitted database and configured `SEC_USER_AGENT`; select a new import ID:
+
+```sh
+PYTHONPATH=src python3 -m trading_intelligence sec-sync \
+  --database "$SEC_DATABASE" --source-id sec-edgar \
+  --import-id apple-submissions-002-v2 --cik 0000320193 \
+  > apple-submissions-002-v2.json
+python3 - <<'PY'
+import json
+from collections import Counter
+r = json.load(open('apple-submissions-002-v2.json'))
+p = r['report']
+print({'version': r['version'], 'import_id': r['import_id'], 'raw_sha': r['raw_sha'],
+       'accepted': len(p['filings']), 'quarantined': len(p['quarantined']),
+       'reasons': dict(Counter(x['reason'] for x in p['quarantined']))})
+print('first_issues:', p['quarantined'][:5])
+PY
+```
+
+Set `SEC_DATABASE` to the same database path used for the first import. The summary deliberately shows any remaining quarantine rather than promising zero errors on a newly fetched response.

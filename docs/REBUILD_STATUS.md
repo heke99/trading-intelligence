@@ -159,3 +159,11 @@ The original foundation, futures and multi-broker slices passed remote CI on Pyt
 7. Phase 8 live trading still requires separately configured scope, account/data entitlements, strategy evidence, risk budget and verified broker behavior. Documentation, synthetic fixtures and paper access alone do not authorize live orders.
 
 Masterplan 1.4 retains the learning cycle, incident categories, adaptive evaluation, model-promotion bounds and state-preserving rollback as requirements for those later phases. The planning update does not change implemented capability status.
+
+## SEC relative-document compatibility fix
+
+A subsequent permitted public SEC GET on 26 October succeeded with an identified User-Agent. Its raw hash matched the user's Mac capture exactly. The previous basename validator reproduced 328 accepted/674 quarantined rows; all 674 rejected indices corresponded to nested primary-document paths. Normalizer v2 preserves safe relative segments and accepts all 1,002 rows on those exact bytes, retaining unknown publication and existing admission limits. Row diagnostics now identify fields and all independently found issues. Existing capture versions are not rewritten; a new import ID is required to obtain v2 normalization. See [SEC rerun instructions](SEC_FILINGS.md).
+
+Actual source access in this narrow permitted test supersedes the earlier statement that SEC access had not been exercised; it does not establish complete history, source/filing quality, dissemination timestamps or training permission. Original user/capture files remain outside the repository.
+
+SEC-fix validation: all 446 synthetic tests passed, including 27 SEC cases and five new path/diagnostic/legacy-version regressions. Independent review, compileall and git diff --check passed. The separate real-response comparison was performed outside committed test fixtures.
