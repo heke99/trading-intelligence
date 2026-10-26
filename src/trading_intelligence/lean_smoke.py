@@ -83,7 +83,7 @@ def docker_command(directory, container_name=None):
         '--config','/Smoke/input/config.json']
 
 
-def prepare(directory):
+def prepare(directory, *, inspection_report=None):
     root = Path(directory).resolve()
     container_name="ti-lean-smoke-"+uuid4().hex
     command = docker_command(root,container_name)
@@ -101,16 +101,32 @@ def prepare(directory):
     algorithm = source/'lean_smoke_templates'/'observer_algorithm.py'
     (root/'input'/'algorithm.py').write_bytes(algorithm.read_bytes())
     (root/'input'/'config.json').write_bytes(encoded(make_config()))
-    bundle = _fixture(root/'input'/'bundle')
+    if inspection_report is None:
+        bundle = _fixture(root/'input'/'bundle')
+        expected=[dict(economic_date=b['date'],available_at=b['available_at'],close=b['close'],currency=b['currency']) for b in bundle['bars']]
+        origin='synthetic_fixture';groups_count=len(expected)
+    else:
+        from .captured_observations import verify_inspection
+        verify_inspection(inspection_report)
+        folder=root/'input'/'bundle';folder.mkdir()
+        (folder/'inspection.json').write_bytes(encoded(inspection_report))
+        groups=[dict(available_at=g['available_at'],observations=[inspection_report['observations'][i] for i in g['indices']]) for g in inspection_report['observation_groups']]
+        (folder/'groups.jsonl').write_bytes(b''.join(encoded(g).replace(b'\n',b'')+b'\n' for g in groups))
+        expected=[row for group in groups for row in group['observations']]
+        origin='captured_inspection';groups_count=len(groups)
+        config=make_config();config['parameters']['inspection_bundle']='true'
+        (root/'input'/'config.json').write_bytes(encoded(config))
     manifest = dict(schema='lean-observer-input-1',image=IMAGE,platform=PLATFORM,container_name=container_name,
-        launcher=LAUNCHER,api_reference_commit=REFERENCE_COMMIT,origin='synthetic_fixture',
-        expected_observations=[dict(economic_date=b['date'],available_at=b['available_at'],close=b['close'],currency=b['currency']) for b in bundle['bars']],
+        launcher=LAUNCHER,api_reference_commit=REFERENCE_COMMIT,origin=origin,
+        inspection_only=inspection_report is not None,dataset_admitted=False,expected_group_count=groups_count,
+        inspection_report_sha256=inspection_report['inspection_sha256'] if inspection_report is not None else None,
+        observation_fields=sorted(expected[0]),expected_observations=expected,
         files=_input_hashes(root/'input'),engine_execution_verified=False,live_trading=False)
     (root/'input-manifest.json').write_bytes(encoded(manifest))
     (root/'docker-command.json').write_bytes(encoded(command))
     (root/'docker-command.sh').write_text('#!/bin/sh\nset -eu\nexec '+shlex.join(command)+'\n')
     return dict(status='prepared',directory=str(root),image=IMAGE,platform=PLATFORM,
-        input_manifest_sha256=digest(encoded(manifest)),expected_count=len(bundle['bars']),
+        input_manifest_sha256=digest(encoded(manifest)),expected_count=len(expected),
         docker_command=command,engine_execution_verified=False,live_trading=False)
 
 
@@ -121,8 +137,22 @@ def verify_inputs(directory):
         raise ContractError('Unexpected smoke input manifest')
     if _input_hashes(root/'input')!=manifest['files']:
         raise ContractError('Smoke inputs changed after preparation')
-    bundle=verify_bundle(root/'input'/'bundle')
-    expected=[dict(economic_date=b['date'],available_at=b['available_at'],close=b['close'],currency=b['currency']) for b in bundle['bars']]
+    if manifest.get('origin')=='captured_inspection':
+        from .captured_observations import verify_inspection
+        report=json.loads((root/'input'/'bundle'/'inspection.json').read_bytes())
+        verify_inspection(report)
+        groups=[dict(available_at=g['available_at'],observations=[report['observations'][i] for i in g['indices']]) for g in report['observation_groups']]
+        data=b''.join(encoded(g).replace(b'\n',b'')+b'\n' for g in groups)
+        if (root/'input'/'bundle'/'groups.jsonl').read_bytes()!=data:
+            raise ContractError('Captured group data differs from inspection report')
+        expected=[row for group in groups for row in group['observations']]
+        if manifest.get('inspection_only') is not True or manifest.get('dataset_admitted') is not False:
+            raise ContractError('Capture propagation cannot promote dataset admission')
+    elif manifest.get('origin')=='synthetic_fixture':
+        bundle=verify_bundle(root/'input'/'bundle')
+        expected=[dict(economic_date=b['date'],available_at=b['available_at'],close=b['close'],currency=b['currency']) for b in bundle['bars']]
+    else:
+        raise ContractError('Unknown smoke observation mode')
     if manifest['expected_observations']!=expected:
         raise ContractError('Smoke observations differ from input bundle')
     return manifest
@@ -159,16 +189,19 @@ def validate_result(directory,returncode):
     observed=summary.get('observed',[])
     if not isinstance(observed,list) or any(not isinstance(row,dict) for row in observed):
         raise ContractError('Observer rows must be a list of objects')
-    actual=[];previous=None
+    actual=[];previous=None;previous_available=None
     for row in observed:
-        actual.append({key:row[key] for key in ('economic_date','available_at','close','currency')})
+        actual.append({key:row[key] for key in manifest.get('observation_fields',('economic_date','available_at','close','currency'))})
         engine=datetime.fromisoformat(row['observed_engine_utc'].replace('Z','+00:00'))
         if engine.tzinfo is None:engine=engine.replace(tzinfo=timezone.utc)
         available=datetime.fromisoformat(row['available_at'].replace('Z','+00:00'))
-        if engine<available or (previous is not None and engine<=previous):
-            raise ContractError('Engine observation time is early or not increasing')
-        previous=engine
-    if summary.get('schema')!='lean-observer-smoke-1' or summary.get('origin')!='synthetic_fixture':
+        if engine<available:
+            raise ContractError('Engine observation time is early')
+        if previous is not None:
+            valid=(engine==previous if manifest.get('inspection_only') and available==previous_available else engine>previous)
+            if not valid:raise ContractError('Engine group observation time is not consistent/increasing')
+        previous=engine;previous_available=available
+    if summary.get('schema')!='lean-observer-smoke-1' or summary.get('origin')!=manifest.get('origin'):
         raise ContractError('Unexpected observer evidence schema')
     if (summary.get('status')!='completed' or summary.get('verdict') is not True
             or summary.get('lean_observer_ran') is not True or summary.get('exact_observations_match') is not True
@@ -177,9 +210,13 @@ def validate_result(directory,returncode):
             or summary.get('observed_count')!=len(manifest['expected_observations'])
             or summary.get('orders_count')!=0 or summary.get('order_events')!=0):
         raise ContractError('Observer count/time/value/order checks failed')
-    return dict(status='passed',scope='synthetic_custom_data_observation_only',
+    if manifest.get('inspection_only') and summary.get('observed_group_count')!=manifest['expected_group_count']:
+        raise ContractError('Captured observation group count differs')
+    return dict(status='passed',scope='captured_data_inspection_only' if manifest.get('inspection_only') else 'synthetic_custom_data_observation_only',
         image=IMAGE,platform=PLATFORM,input_manifest_sha256=digest(encoded(manifest)),
-        observed_count=summary['observed_count'],orders_sent=0,engine_observation_verified=True,
+        observed_count=summary['observed_count'],observed_group_count=summary.get('observed_group_count'),orders_sent=0,engine_observation_verified=True,
+        inspection_only=manifest.get('inspection_only',False),dataset_admitted=False,training_ready=False,publication_verified=False,
+        inspection_report_sha256=manifest.get('inspection_report_sha256'),
         real_dataset_admitted=False,strategy_profitability_verified=False,live_trading=False,
         evidence_files={str(p.relative_to(root)):digest(p.read_bytes()) for p in sorted((root/'output').rglob('*')) if p.is_file()})
 
