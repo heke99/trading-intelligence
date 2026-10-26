@@ -1,6 +1,6 @@
 """Offline smoke configuration/templates; actual LEAN run required for verification."""
 from pathlib import PurePosixPath
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 REFERENCE_COMMIT='f3d841e60dfd010ee5fc293ea893e56952484108'
 
@@ -43,3 +43,21 @@ def engine_utc(value):
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
+
+
+def backtest_window(availability, *, now=None):
+    """LEAN's public SetEndDate caps UTC backtests at the previous UTC day."""
+    times=[engine_utc(datetime.fromisoformat(value.replace('Z','+00:00'))) if isinstance(value,str)
+           else engine_utc(value) for value in availability]
+    if not times:
+        raise ValueError('Observation availability is required')
+    current=engine_utc(now if now is not None else datetime.now(timezone.utc))
+    latest=max(times)
+    earliest=datetime.combine(latest.date()+timedelta(days=1),datetime.min.time(),timezone.utc)
+    return dict(replayable=latest.date()<current.date(),
+        code='ready' if latest.date()<current.date() else 'observation_day_not_closed',
+        checked_at_utc=current.isoformat(),latest_available_at=latest.isoformat(),
+        earliest_eligible_utc=earliest.isoformat(),
+        requested_start_date=(min(times).date()-timedelta(days=1)).isoformat(),
+        requested_end_date=latest.date().isoformat(),
+        engine_contract='SetEndDate_previous_algorithm_day',time_zone='UTC')

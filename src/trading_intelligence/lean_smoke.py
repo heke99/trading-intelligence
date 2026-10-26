@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from .contracts import AssetKind, ContractError, DataOrigin, Entity, Instrument, Listing, Use
 from .lean_export import export_bundle, verify_bundle
-from .lean_smoke_templates import make_config, REFERENCE_COMMIT
+from .lean_smoke_templates import make_config, REFERENCE_COMMIT, backtest_window
 from .market_data import MarketDataStore
 
 IMAGE = 'quantconnect/lean@sha256:afc3a126d3ba294784a3f11dff38cdfed020672f021e02df7b24f7e2335ba0ca'
@@ -221,12 +221,21 @@ def validate_result(directory,returncode):
         evidence_files={str(p.relative_to(root)):digest(p.read_bytes()) for p in sorted((root/'output').rglob('*')) if p.is_file()})
 
 
-def run_prepared(directory,*,timeout=180,runner=None):
+def run_prepared(directory,*,timeout=180,runner=None,clock=None):
     if type(timeout) is not int or not 30<=timeout<=900:
         raise ContractError('Timeout must be 30 to 900 seconds')
-    root=Path(directory).resolve();verify_inputs(root)
+    root=Path(directory).resolve();manifest=verify_inputs(root)
     if any((root/'output').iterdir()):
         raise ContractError('Smoke output must be empty; stale evidence cannot be reused')
+    window=backtest_window([row['available_at'] for row in manifest['expected_observations']],
+        now=(clock() if clock is not None else None))
+    if not window['replayable']:
+        result=dict(status='not_yet_replayable',error_code='observation_day_not_closed',
+                    engine_observation_verified=False,orders_sent=0,live_trading=False,
+                    backtest_window=window,container_started=False)
+        (root/'run-result.json').write_bytes(encoded(result))
+        raise SmokeFailure('observation_day_not_closed',
+            'NOT_YET_REPLAYABLE: LEAN accepts this observation day from '+window['earliest_eligible_utc'])
     command=docker_command(root)
     if runner is None and shutil.which('docker') is None:
         (root/'run-result.json').write_bytes(encoded(dict(status='blocked',reason='docker_unavailable',engine_observation_verified=False,live_trading=False)))

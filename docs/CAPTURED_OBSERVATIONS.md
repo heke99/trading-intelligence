@@ -38,3 +38,24 @@ The result requires exact expanded observations and group count, no early engine
 The user reported that the Mac synthetic smoke `ti-lean-smoke-002` passed with two observations, zero orders, the pinned ARM64 image and input-manifest SHA256 `8b3dd050dadf3f134282a2579f3e675c72075a772f42b6cd4815739e8968e6b9`. These are user-reported runtime results; the Mac files were not independently copied/reverified in this development environment. That synthetic success does not certify the provider captures.
 
 This new capture-inspection path has offline mocked/invented regression coverage. Docker is unavailable here. Acceptance of the actual 17-row capture run remains pending its own Mac result and logs. Full real-data admission still needs independent source rights/provenance/coverage/temporal review and must not fabricate publication from bar timestamps or receipt.
+
+## LEAN's completed-day limit: captured observer001
+
+The actual Mac captured observer001 started LEAN and loaded its local file, but its effective backtest ended on 25 October while every captured observation arrived on 26 October. It processed no observation group and failed acceptance. This is not a passed capture run or a missing-row repair opportunity.
+
+The pinned upstream public `QCAlgorithm.SetEndDate` overloads clamp the end to the previous day in the algorithm's timezone. This observer deliberately uses UTC. There is no supported same-day override in that contract. The harness now checks before Docker: latest observation UTC day must be strictly earlier than the operational UTC day. Otherwise it writes `run-result.json` with `status=not_yet_replayable`, `container_started=false` and `backtest_window.earliest_eligible_utc`. The algorithm independently verifies the actual end returned by LEAN and saves `output/window-evidence.json`, detecting a host/container clock mismatch before subscribing.
+
+For the existing captures known on **26 October**, earliest eligibility is **27 October 2026 at 00:00 UTC (01:00 Stockholm)**. Do not fetch new prices/calendar first: a new capture would move availability to the new day and restart this completed-day restriction. Preserve directory001. At or after that boundary, run the same existing captures in a fresh directory:
+
+```sh
+git pull --ff-only
+PYTHONPATH=src python3 -m trading_intelligence.captured_smoke prepare-run \
+  --database "$EVIDENCE_DATABASE" \
+  --price-source alpaca-prices --price-import apple-october-prices-001 \
+  --calendar-source alpaca-calendar --calendar-import calendar-october-001 \
+  --listing apple-xnas --out "$HOME/ti-captured-observer-002" --timeout 300
+```
+
+No observation is backdated, no epsilon is added, and no private field, fake clock, timezone workaround or live-mode bypass is used. The requested end is the original latest availability date; actual engine coverage is checked. If a premature invocation already created a blocked directory, use another new dedicated directory rather than overwriting evidence.
+
+Primary contract: https://github.com/QuantConnect/Lean/blob/f3d841e60dfd010ee5fc293ea893e56952484108/Algorithm/QCAlgorithm.cs (`SetEndDate(DateTime)` and its integer wrapper). Tests simulate the real yesterday clamp, exact UTC midnight eligibility and clock skew. Docker remains unavailable here; the next Mac acceptance remains unverified.

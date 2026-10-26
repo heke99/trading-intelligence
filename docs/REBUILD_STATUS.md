@@ -187,3 +187,11 @@ The user reported a passed Mac synthetic smoke002: two observations, zero orders
 A new single captured_smoke prepare-run path reads an explicit price synchronization job and a separate calendar capture from the existing read-only database. Current storage/research declarations, raw/journal/provenance hashes, receipt timing, identity, pagination and exact date join are verified independently per source. A hash-bound inspection-only report preserves raw OHLCV, unknown publication, separate calendar/listing venues and original availability. Equal-availability observations are one custom-data event with an ordered row group; no fake time offsets or historical trading availability are introduced. It reuses the pinned isolated observer harness and never mounts the database or sends orders.
 
 Validation: 486 synthetic tests pass, including ten capture-inspection and six grouped integration cases. Compileall/diff checks and independent code review passed. The actual 17-row Mac capture-inspection engine run remains pending; no new runtime success, historical backtest, admitted real dataset or training readiness is claimed. See [CAPTURED_OBSERVATIONS.md](CAPTURED_OBSERVATIONS.md) for the single command and scope.
+
+## Captured observer001 completed-day blocker
+
+Actual Mac captured observer001 failed: LEAN ran only through 25 October, excluding all observations known on 26 October. Pinned public SetEndDate clamps backtests to the previous algorithm day; its overload/config paths do not provide a supported same-day bypass. New preflight blocks Docker with NOT_YET_REPLAYABLE and the next eligible UTC midnight. Initialize independently validates actual engine end coverage and writes window evidence. Original observations/timestamps, no-order and acceptance checks remain unchanged.
+
+The existing 26 October captures become eligible on 27 October 2026 at00:00 UTC (01:00 Stockholm). They must be reused without a new fetch. The next directory is ti-captured-observer-002. No private-field, clock, timezone or live-mode bypass is introduced, and no successful captured engine run is claimed.
+
+Validation:491 synthetic tests passed, including five exact-boundary/no-Docker/public-setter-clamp regressions. Independent primary-source/code review, compileall and diff checks passed; corrected captured engine acceptance remains pending the eligible Mac run.
