@@ -65,3 +65,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence readiness
+      - name: Prepare pinned isolated LEAN smoke without executing Docker
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence.lean_smoke prepare-run --out "${RUNNER_TEMP}/ti-observer-smoke" --prepare-only

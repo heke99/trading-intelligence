@@ -101,3 +101,7 @@ PYTHONPATH=src python3 -m trading_intelligence readiness
 ```
 
 See [readiness scope and previous-delivery verification](docs/LEAN_READINESS.md). The rule generates targets and abstentions; the ledger audits separate supplied simulated events. No LEAN runtime was installed/executed, no genuine dataset was admitted and no strategy performance is established. Real-data export stays blocked pending admission/export binding.
+
+## Isolated LEAN observer smoke
+
+A single prepared Docker smoke can now observe two synthetic custom-data points using the exact pinned ARM64 image, with networking disabled and only dedicated input/output mounts. See [one-command Mac run and acceptance evidence](docs/LEAN_SMOKE.md). Harness tests do not establish actual engine success; that status requires the generated container log, observer evidence and LEAN final summary.

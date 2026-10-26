@@ -1,0 +1,32 @@
+"""Offline smoke configuration/templates; actual LEAN run required for verification."""
+from pathlib import PurePosixPath
+
+REFERENCE_COMMIT='f3d841e60dfd010ee5fc293ea893e56952484108'
+
+def make_config(input_root='/Smoke/input',output_root='/Smoke/output',data_folder='/Lean/Data'):
+    for value in (input_root,output_root,data_folder):
+        p=PurePosixPath(value)
+        if not p.is_absolute() or '..' in p.parts:raise ValueError('Explicit absolute container paths required')
+    return {'environment':'backtesting','live-mode':False,'algorithm-type-name':'ObservedFixtureSmoke',
+        'algorithm-language':'Python','algorithm-location':input_root+'/algorithm.py',
+        'data-folder':data_folder,'results-destination-folder':output_root,
+        'python-additional-paths':[input_root+'/python','/Lean/Launcher/bin/Debug'],
+        'composer-dll-directory':'/Lean/Launcher/bin/Debug',
+        'object-store-root':output_root+'/storage','log-file':output_root+'/lean.log',
+        'environments':{'backtesting':{'live-mode':False}},
+        'debugging':False,'close-automatically':True,'show-missing-data-logs':True,
+        'job-user-id':'0','api-access-token':'','job-organization-id':'',
+        'parameters':{'bundle_path':input_root+'/bundle','observer_output':output_root+'/observer-evidence.json'},
+        'log-handler':'QuantConnect.Logging.CompositeLogHandler',
+        'messaging-handler':'QuantConnect.Messaging.Messaging','job-queue-handler':'QuantConnect.Queues.JobQueue',
+        'api-handler':'QuantConnect.Api.Api','map-file-provider':'QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider',
+        'factor-file-provider':'QuantConnect.Data.Auxiliary.LocalDiskFactorFileProvider',
+        'data-provider':'QuantConnect.Lean.Engine.DataFeeds.DefaultDataProvider',
+        'data-channel-provider':'DataChannelProvider','object-store':'QuantConnect.Lean.Engine.Storage.LocalObjectStore',
+        'data-aggregator':'QuantConnect.Lean.Engine.DataFeeds.AggregationManager',
+        'setup-handler':'QuantConnect.Lean.Engine.Setup.BacktestingSetupHandler',
+        'result-handler':'QuantConnect.Lean.Engine.Results.BacktestingResultHandler',
+        'data-feed-handler':'QuantConnect.Lean.Engine.DataFeeds.FileSystemDataFeed',
+        'real-time-handler':'QuantConnect.Lean.Engine.RealTime.BacktestingRealTimeHandler',
+        'history-provider':['QuantConnect.Lean.Engine.HistoricalData.SubscriptionDataReaderHistoryProvider'],
+        'transaction-handler':'QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler'}
