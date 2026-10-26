@@ -176,3 +176,74 @@ class SecTests(unittest.TestCase):
     def test_archive_inventory_rejects_reversed_range(self):
         b=fixture();b['filings']['files']=[dict(name='CIK0000000001-submissions-001.json',filingFrom='2024-01-01',filingTo='1994-01-01')]
         r=self.put(b)['report'];self.assertTrue(r['quarantined']);self.assertEqual(r['archive_files'],[])
+
+
+class RelativeDocumentTests(unittest.TestCase):
+    def normalize(self, path='xslF345X06/form4.xml', **changes):
+        body = fixture()
+        body['filings']['recent']['primaryDocument'] = [path]
+        for field, value in changes.items():
+            body['filings']['recent'][field] = [value]
+        return normalize_submissions(json.dumps(body).encode(), CIK, T)
+
+    def test_nested_sec_ownership_paths_are_preserved_verbatim(self):
+        for path in ('xslF345X05/ownership.xml', 'xslF345X06/form4.xml',
+                     'folder/sub-folder/file_1.xml', 'invented.htm'):
+            with self.subTest(path=path):
+                result = self.normalize(path)
+                self.assertEqual(result['quarantined'], [])
+                self.assertEqual(result['filings'][0]['primary_document'], path)
+                self.assertIsNone(result['filings'][0]['published_at'])
+
+    def test_unsafe_paths_stay_quarantined_with_field_reason(self):
+        for path in ('', '/', '/form4.xml', '//host/form4.xml', '../form4.xml',
+                     'x/../form4.xml', 'x/./form4.xml', 'x//form4.xml', 'x/',
+                     'https://sec.gov/form4.xml', 'C:/form4.xml', 'x\\form4.xml',
+                     'x/%2e%2e/form4.xml', '%252e%252e/form4.xml', 'x%2fform4.xml',
+                     'x/form4.xml?query=1', 'x/form4.xml#fragment', 'x/@file.xml',
+                     'x/file\n.xml', 'x/filé.xml', './file.xml', '.', '..',
+                     'x/' + 'a'*256, '/'.join(['x']*17), 'x'*1025, None, 3):
+            with self.subTest(path=path):
+                result = self.normalize(path)
+                self.assertEqual(result['filings'], [])
+                issue = result['quarantined'][0]
+                self.assertEqual(issue['reason'], 'invalid_primary_document_path')
+                self.assertEqual(issue['field'], 'primaryDocument')
+                self.assertEqual(issue['row_index'], 0)
+
+    def test_multiple_independent_errors_remain_visible_for_one_row(self):
+        result = self.normalize('../bad', accessionNumber='invalid',
+                                acceptanceDateTime='naive', filingDate='bad', reportDate='bad', form='')
+        issues = result['quarantined'][0]['issues']
+        self.assertEqual({x['field'] for x in issues}, {
+            'accessionNumber','primaryDocument','acceptanceDateTime','filingDate','reportDate','form'})
+        self.assertNotIn('../bad', json.dumps(issues))
+
+    def test_future_acceptance_is_not_hidden_by_valid_document_path(self):
+        result = self.normalize(acceptanceDateTime='2027-01-01T00:00:00Z')
+        self.assertEqual(result['quarantined'][0]['reason'], 'acceptance_after_receipt')
+        self.assertEqual(result['quarantined'][0]['field'], 'acceptanceDateTime')
+
+    def test_legacy_import_retry_preserves_archived_normalization(self):
+        from unittest.mock import patch
+        import trading_intelligence.sec_filings as sec
+        with tempfile.TemporaryDirectory() as directory:
+            with SecFilingsStore(Path(directory)/'legacy.sqlite') as store:
+                store.register_source('fixture', DataOrigin.SYNTHETIC)
+                store.set_permissions('fixture', known_at=T-timedelta(days=1), uses={Use.STORAGE,Use.RESEARCH})
+                body=fixture();body['filings']['recent']['primaryDocument']=['xslF345X05/ownership.xml']
+                payload=json.dumps(body).encode();capture=SecRead(payload,T,endpoint(CIK),CIK)
+                legacy=normalize_submissions(payload,CIK,T)
+                legacy['filings']=[];legacy['quarantined']=[dict(row_index=0,reason='invalid_recent_filing')]
+                legacy['recent_rows_valid']=False
+                with patch.object(sec,'VERSION','sec-submissions-recent-1'), patch.object(sec,'normalize_submissions',return_value=legacy):
+                    first=store.import_submissions(source_id='fixture',import_id='old',captured=capture,processed_at=T)
+                archived=dict(store.db.execute('SELECT * FROM sec_submission_captures WHERE import_id=?',('old',)).fetchone())
+                self.assertEqual(first,store.import_submissions(source_id='fixture',import_id='old',captured=capture,processed_at=T))
+                second=store.import_submissions(source_id='fixture',import_id='new-v2',captured=capture,processed_at=T)
+                self.assertEqual(second['version'],'sec-submissions-recent-2')
+                self.assertEqual(len(second['report']['filings']),1)
+                self.assertEqual(archived,dict(store.db.execute('SELECT * FROM sec_submission_captures WHERE import_id=?',('old',)).fetchone()))
+                self.assertEqual(first['raw_sha'],second['raw_sha'])
+                with self.assertRaises(RecordConflict):
+                    store.import_submissions(source_id='fixture',import_id='old',captured=capture,processed_at=T+timedelta(seconds=1))

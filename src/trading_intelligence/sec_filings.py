@@ -19,7 +19,8 @@ from .market_data import timestamp
 from .store import EvidenceStore
 
 MAX_BYTES = 10_000_000
-VERSION = 'sec-submissions-recent-1'
+VERSION = 'sec-submissions-recent-2'
+SUPPORTED_VERSIONS = {'sec-submissions-recent-1', VERSION}
 _LOCK = Lock()
 _LAST = 0.0
 SCHEMA = '''CREATE TABLE IF NOT EXISTS sec_submission_captures (
@@ -129,6 +130,54 @@ def _day(value, *, optional=False):
     return value
 
 
+
+def valid_primary_document(value):
+    """Bounded relative ASCII path, preserved verbatim; never a URL or fetch."""
+    if not isinstance(value, str) or not 1 <= len(value) <= 1024:
+        return False
+    segments = value.split('/')
+    return len(segments) <= 16 and all(
+        segment not in {'', '.', '..'} and len(segment) <= 255
+        and re.fullmatch(r'[A-Za-z0-9_.-]+', segment) is not None
+        for segment in segments)
+
+
+def _normalize_recent_row(row, received, index):
+    issues = []
+    def issue(field, reason):
+        issues.append(dict(field=field, reason=reason))
+    accession = row['accessionNumber']
+    if not isinstance(accession, str) or not re.fullmatch(r'[0-9]{10}-[0-9]{2}-[0-9]{6}', accession):
+        issue('accessionNumber', 'invalid_accession')
+    try:
+        required(row['form'], 'form')
+    except ContractError:
+        issue('form', 'invalid_form')
+    if not valid_primary_document(row['primaryDocument']):
+        issue('primaryDocument', 'invalid_primary_document_path')
+    accepted = None
+    try:
+        accepted = utc(timestamp(row['acceptanceDateTime']))
+        if accepted > received:
+            issue('acceptanceDateTime', 'acceptance_after_receipt')
+    except (ContractError, TypeError, ValueError):
+        issue('acceptanceDateTime', 'invalid_acceptance_datetime')
+    dates = {}
+    for field, optional in [('filingDate', False), ('reportDate', True)]:
+        try:
+            dates[field] = _day(row[field], optional=optional)
+        except (ContractError, TypeError, ValueError):
+            issue(field, 'invalid_filing_date' if field == 'filingDate' else 'invalid_report_date')
+    if issues:
+        return None, dict(row_index=index, reason=issues[0]['reason'],
+                          field=issues[0]['field'], issues=issues)
+    return dict(accession_number=accession, form=row['form'],
+                filing_date=dates['filingDate'], report_date=dates['reportDate'],
+                acceptance_datetime_raw=row['acceptanceDateTime'], accepted_at=accepted,
+                published_at=None, primary_document=row['primaryDocument'],
+                state='staged_unknown_dissemination', row_index=index), None
+
+
 def normalize_submissions(payload, cik, received_at):
     rows, quarantine, files = [], [], []
     received = utc(received_at)
@@ -163,24 +212,12 @@ def normalize_submissions(payload, cik, received_at):
                 raise ContractError('reversed_archive_range')
             files.append(dict(name=item['name'],filingFrom=start,filingTo=end))
         for index in range(length):
-            try:
-                row = {key:recent[key][index] for key in names}
-                accession = row['accessionNumber']
-                if not isinstance(accession,str) or not re.fullmatch(r'[0-9]{10}-[0-9]{2}-[0-9]{6}',accession):
-                    raise ContractError('invalid_accession')
-                required(row['form'],'form'); required(row['primaryDocument'],'primary document')
-                if not re.fullmatch(r'[A-Za-z0-9_.-]+',row['primaryDocument']) or row['primaryDocument'] in {'.','..'}:
-                    raise ContractError('invalid_primary_document')
-                accepted = timestamp(row['acceptanceDateTime'])
-                if utc(accepted) > received:
-                    raise ContractError('acceptance_after_receipt')
-                rows.append(dict(accession_number=accession, form=row['form'],
-                                 filing_date=_day(row['filingDate']),report_date=_day(row['reportDate'],optional=True),
-                                 acceptance_datetime_raw=row['acceptanceDateTime'],accepted_at=utc(accepted),
-                                 published_at=None,primary_document=row['primaryDocument'],
-                                 state='staged_unknown_dissemination',row_index=index))
-            except (ContractError,TypeError,ValueError):
-                quarantine.append(dict(row_index=index,reason='invalid_recent_filing'))
+            row = {key:recent[key][index] for key in names}
+            normalized, rejected = _normalize_recent_row(row, received, index)
+            if rejected:
+                quarantine.append(rejected)
+            else:
+                rows.append(normalized)
     except (ContractError,NormalizationError):
         return dict(cik=cik,filings=[],quarantined=[dict(row_index=None,reason='invalid_submissions_envelope')],
                     archive_files=[],recent_rows_valid=False,publication_verified=False,full_history_verified=False,
@@ -189,7 +226,8 @@ def normalize_submissions(payload, cik, received_at):
     accepted = []
     for row in rows:
         if counts[row['accession_number']] > 1:
-            quarantine.append(dict(row_index=row['row_index'],reason='duplicate_accession'))
+            quarantine.append(dict(row_index=row['row_index'], reason='duplicate_accession',
+                                   field='accessionNumber', issues=[dict(field='accessionNumber', reason='duplicate_accession')]))
         else:
             accepted.append(row)
     return dict(cik=cik,filings=accepted,quarantined=quarantine,archive_files=files,
@@ -220,9 +258,15 @@ class SecFilingsStore(EvidenceStore):
                                 received_at=received,processed_at=known,raw_sha=raw_sha,transport=captured.transport))
         old = self.db.execute('SELECT input_json FROM sec_submission_captures WHERE source_id=? AND import_id=?',(source_id,import_id)).fetchone()
         if old:
-            if old[0] != inputs:
+            # Retry the archived normalizer version; never silently reprocess it.
+            original = self.submissions_as_of(source_id,import_id,as_of=processed_at)
+            if original is None or original['version'] not in SUPPORTED_VERSIONS:
+                raise EvidenceIntegrityError('Unsupported archived SEC normalizer version')
+            expected = json.loads(inputs)
+            expected['version'] = original['version']
+            if old[0] != canonical(expected):
                 raise RecordConflict('SEC import ID belongs to changed input')
-            return self.submissions_as_of(source_id,import_id,as_of=processed_at)
+            return original
         report = normalize_submissions(captured.payload,captured.cik,captured.received_at)
         result = dict(version=VERSION,source_id=source_id,import_id=import_id,cik=captured.cik,
                       source_url=captured.source_url,raw_sha=raw_sha,received_at=received,available_at=known,
