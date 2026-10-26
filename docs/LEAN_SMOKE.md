@@ -33,7 +33,7 @@ Files remain together under the dedicated directory:
 - `output/*-summary.json`: LEAN's final saved result, independently checked by the host harness.
 - `run-result.json`: passed, failed or blocked verdict after a run attempt.
 
-Success requires unchanged input hashes, fresh output, Docker exit zero, no engine error markers, exact economic-date/availability/close/currency observations, increasing engine times that never precede availability, exactly two observations and zero orders/order events. LEAN's final summary must also have `state.Status == Completed`, empty `RuntimeError`/`StackTrace`, `OrderCount == 0` and a populated `EndTime`. An algorithm's end callback alone cannot establish success. A unique scoped container name allows timeout/failure cleanup without touching other containers.
+Success requires unchanged input hashes, fresh output, Docker exit zero, no engine error markers, exact economic-date/availability/close/currency observations, increasing engine times that never precede availability, exactly two observations and zero orders/order events. LEAN's final summary must also have `state.Status == Completed`, empty `RuntimeError`/`StackTrace`, `OrderCount == 0` and a populated `EndTime`. An algorithm's end callback alone cannot establish success. A unique scoped container name allows timeout cleanup without touching other containers. Completed containers use Docker’s `--rm`; a failed completed run does not trigger a redundant removal. Cleanup diagnostics remain separate from the original engine log.
 
 A passed result verifies only this synthetic custom-data observation path. It does not establish admitted historical data, native equity sessions/actions, broker fills, fee models, full cash reconciliation, strategy quality or live readiness. The custom observer never submits orders and has no external price subscription or default SPY benchmark feed.
 
@@ -52,3 +52,21 @@ Compatibility reference `f3d841e60dfd010ee5fc293ea893e56952484108` is an upstrea
 - https://www.quantconnect.com/docs/v2/writing-algorithms/importing-data/streaming-data/custom-securities/csv-format-example
 
 The wrapper and algorithm are own-written; no upstream implementation is vendored.
+
+## First Mac runtime attempt and UTC correction
+
+The first actual Mac attempt started LEAN and successfully loaded the local custom-data file, but failed on its first observation: the CLR/Python engine clock was offset-aware while the comparison expected a naive datetime. That attempt is **failed**, not accepted engine evidence.
+
+The observer now materializes a native Python datetime from the engine value's ISO representation before comparison. Aware offsets are converted to UTC without changing the instant; a naive `utc_time` explicitly follows LEAN's UTC convention. The same native UTC value is used for the no-early-information comparison and serialized once. Tests exercise native naive/aware/non-UTC values and a wrapper whose comparison operator must never run; early data still fails.
+
+Host validation checks container/log/final-state errors before requiring observer evidence. Thus an algorithm failure is reported as `engine_log_error`, `container_exit_nonzero` or `engine_final_state_failed` instead of being hidden by a missing observer file. Failure results include the return code and separate cleanup status. Timeout cleanup tolerates an already-removed container without appending that diagnostic to `engine.log`.
+
+After updating, preserve the failed first directory and run a fresh attempt:
+
+```sh
+git pull --ff-only
+PYTHONPATH=src python3 -m trading_intelligence.lean_smoke prepare-run \
+  --out "$HOME/ti-lean-smoke-002" --timeout 300
+```
+
+This correction is verified with offline Python/CLR-boundary regression mechanics. Docker remains unavailable in the development environment; successful engine acceptance still requires the new Mac result, not the code fix alone.

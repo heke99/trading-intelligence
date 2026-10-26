@@ -1,5 +1,6 @@
 """Offline smoke configuration/templates; actual LEAN run required for verification."""
 from pathlib import PurePosixPath
+from datetime import datetime, timezone
 
 REFERENCE_COMMIT='f3d841e60dfd010ee5fc293ea893e56952484108'
 
@@ -30,3 +31,15 @@ def make_config(input_root='/Smoke/input',output_root='/Smoke/output',data_folde
         'real-time-handler':'QuantConnect.Lean.Engine.RealTime.BacktestingRealTimeHandler',
         'history-provider':['QuantConnect.Lean.Engine.HistoricalData.SubscriptionDataReaderHistoryProvider'],
         'transaction-handler':'QuantConnect.Lean.Engine.TransactionHandlers.BacktestingTransactionHandler'}
+
+
+def engine_utc(value):
+    """Materialize a native Python UTC datetime before comparing CLR wrappers.
+
+    LEAN utc_time's naive representation explicitly denotes UTC. An aware
+    representation retains its instant; an offset is converted, never dropped.
+    """
+    parsed = datetime.fromisoformat(str(value.isoformat()).replace('Z', '+00:00'))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
