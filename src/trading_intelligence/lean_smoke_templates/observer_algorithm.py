@@ -6,7 +6,7 @@ import json
 from trading_intelligence.lean_export import verify_bundle
 from trading_intelligence.lean_custom_data import parse_bundle_line
 from trading_intelligence.market_data import timestamp
-from trading_intelligence.lean_smoke_templates import engine_utc
+from trading_intelligence.lean_smoke_templates import engine_utc, backtest_window
 
 BUNDLE=None
 DIRECTORY=None
@@ -65,8 +65,19 @@ class ObservedFixtureSmoke(QCAlgorithm):
         self._expected=expected;self._inspection_mode=INSPECTION;self._group_count=0
         if not times or times!=sorted(times) or len(set(times))!=len(times):raise ValueError('Smoke requires unique increasing availability times')
         self.set_time_zone(TimeZones.UTC)
-        start=(min(times)-timedelta(days=1)).date();end=(max(times)+timedelta(days=1)).date()
-        self.set_start_date(start.year,start.month,start.day);self.set_end_date(end.year,end.month,end.day)
+        window=backtest_window(times)
+        diagnostic=Path(self.get_parameter('observer_output')).parent/'window-evidence.json'
+        if not window['replayable']:
+            diagnostic.write_text(json.dumps(window,sort_keys=True,indent=2)+'\n')
+            raise ValueError('NOT_YET_REPLAYABLE: earliest_eligible_utc='+window['earliest_eligible_utc'])
+        self.set_start_date(*[int(v) for v in window['requested_start_date'].split('-')])
+        self.set_end_date(*[int(v) for v in window['requested_end_date'].split('-')])
+        actual_end=engine_utc(self.end_date)
+        window['actual_engine_end_utc']=actual_end.isoformat()
+        window['covers_observations']=actual_end>=max(times)
+        diagnostic.write_text(json.dumps(window,sort_keys=True,indent=2)+'\n')
+        if not window['covers_observations']:
+            raise ValueError('UNSUPPORTED_BACKTEST_WINDOW: engine end excludes observed availability')
         self.set_cash(100000)
         self.set_benchmark(lambda _time:1)
         security=self.add_data(ObservedFixture,'OBSERVED_FIXTURE',Resolution.MINUTE,TimeZones.UTC,False,1)
