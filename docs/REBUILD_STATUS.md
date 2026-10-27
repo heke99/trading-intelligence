@@ -201,3 +201,19 @@ Validation:491 synthetic tests passed, including five exact-boundary/no-Docker/p
 The user-reported eligible Mac run `ti-captured-observer-20261027T074754Z` failed with `Future information emitted early`. Upstream Python.NET's Python-to-CLR conversion truncates sub-millisecond microseconds. Custom-data delivery now conservatively ceils to a millisecond while keeping original source availability and strict callback/host checks exact. Distinct groups that would collide are rejected; original ties remain one group. Completed-day and actual engine-window checks include transport rollover. Both compared timestamps are included in future early-delivery errors. See [CAPTURED_OBSERVATIONS.md](CAPTURED_OBSERVATIONS.md).
 
 Validation: 497 synthetic tests pass, including six precision regressions modeling the lossy boundary, exact source preservation, 17 tied rows, collisions, midnight rollover and every microsecond remainder. Docker is unavailable here; successful corrected Mac capture observation remains unverified. No dataset admission, training readiness, profitability or live-trading claim changes.
+
+## Reported Mac captured inspection passed — 27 October 2026
+
+After pulling PR #27 (`d18bf7354992546a984e05cf7015a77c68a35500`), the user supplied a fresh Mac result with `status=passed`, `engine_observation_verified=true`, `observed_count=17`, `observed_group_count=1` and `orders_sent=0`. The reported scope is `captured_data_inspection_only`, using the pinned ARM64 image `quantconnect/lean@sha256:afc3a126d3ba294784a3f11dff38cdfed020672f021e02df7b24f7e2335ba0ca`. This supersedes the pending actual-run result above as user-reported runtime evidence. The underlying Mac files have not been independently copied or hash-reverified here.
+
+Reported SHA256 evidence identifiers:
+
+- Input manifest: `53418847e69a57110f482c386f244c8461a865be873890b87ba9c8b4fd513472`.
+- Inspection report: `074c9f2d4c71c35d3a3bec366d4931117db34bf2ca1a48b754a6006d2b89f373`.
+- Observer evidence: `27cd5b693ac0450e59dcbff3b08f81b321055249d19c486cefa5497b238d6db1`.
+- Engine log: `26eef2498fd1a87fef56eca426546aed2a4798760e2814803a62c7d73c1d354a`.
+- Window evidence: `1d89e677d52e3bf9d1e99a0cfad2c3542e0c48921e01aa8286e0d1d9783564c2`.
+
+Preserve the successful local run directory and original database/captures. This verifies the reported propagation of 17 captured observations through the observer, with exact source/time/count and zero-order acceptance checks; it does not establish provider publication times, historical strategy replay, source entitlements, dataset admission, training readiness or profitability. All of `dataset_admitted`, `real_dataset_admitted`, `publication_verified`, `training_ready`, `strategy_profitability_verified` and `live_trading` remain false in the supplied result.
+
+The next masterplan dependency is an explicit admitted slice: resolve source-use rights, provenance, listing/calendar applicability, publication/availability basis, coverage and corporate-action evidence for a bounded intended use. Unknown historical publication must remain unknown. Only after that gate passes should the frozen simple numerical baseline be exported and evaluated through LEAN with its cash/cost accounting. Successful observer inspection alone cannot authorize either step. This entry changes documentation only; no new code or engine run was performed.
