@@ -195,3 +195,9 @@ Actual Mac captured observer001 failed: LEAN ran only through 25 October, exclud
 The existing 26 October captures become eligible on 27 October 2026 at00:00 UTC (01:00 Stockholm). They must be reused without a new fetch. The next directory is ti-captured-observer-002. No private-field, clock, timezone or live-mode bypass is introduced, and no successful captured engine run is claimed.
 
 Validation:491 synthetic tests passed, including five exact-boundary/no-Docker/public-setter-clamp regressions. Independent primary-source/code review, compileall and diff checks passed; corrected captured engine acceptance remains pending the eligible Mac run.
+
+## Captured observer transport precision — 27 October 2026
+
+The user-reported eligible Mac run `ti-captured-observer-20261027T074754Z` failed with `Future information emitted early`. Upstream Python.NET's Python-to-CLR conversion truncates sub-millisecond microseconds. Custom-data delivery now conservatively ceils to a millisecond while keeping original source availability and strict callback/host checks exact. Distinct groups that would collide are rejected; original ties remain one group. Completed-day and actual engine-window checks include transport rollover. Both compared timestamps are included in future early-delivery errors. See [CAPTURED_OBSERVATIONS.md](CAPTURED_OBSERVATIONS.md).
+
+Validation: 497 synthetic tests pass, including six precision regressions modeling the lossy boundary, exact source preservation, 17 tied rows, collisions, midnight rollover and every microsecond remainder. Docker is unavailable here; successful corrected Mac capture observation remains unverified. No dataset admission, training readiness, profitability or live-trading claim changes.

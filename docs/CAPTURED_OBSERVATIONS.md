@@ -59,3 +59,13 @@ PYTHONPATH=src python3 -m trading_intelligence.captured_smoke prepare-run \
 No observation is backdated, no epsilon is added, and no private field, fake clock, timezone workaround or live-mode bypass is used. The requested end is the original latest availability date; actual engine coverage is checked. If a premature invocation already created a blocked directory, use another new dedicated directory rather than overwriting evidence.
 
 Primary contract: https://github.com/QuantConnect/Lean/blob/f3d841e60dfd010ee5fc293ea893e56952484108/Algorithm/QCAlgorithm.cs (`SetEndDate(DateTime)` and its integer wrapper). Tests simulate the real yesterday clamp, exact UTC midnight eligibility and clock skew. Docker remains unavailable here; the next Mac acceptance remains unverified.
+
+## Sub-millisecond transport boundary — 27 October 2026
+
+The user-reported run `ti-captured-observer-20261027T074754Z` reached the eligible observation day, then failed the strict no-early-information check. It is failed engine evidence. The upstream Python.NET converter constructs CLR `DateTime` with `microsecond / 1000`, discarding the remaining microseconds. Directly assigning exact Python availability can therefore schedule an event before its original availability. Whole-second synthetic fixtures did not expose this boundary.
+
+Both custom-data readers now **ceil only the transport delivery instant to the next millisecond**, adding at most 999 microseconds. Original `available_at`, row grouping, source captures and hashes remain unchanged. This is conservative transport quantization, not an invented source receipt/publication time or an offset used to distinguish tied rows. The exact original no-early-information check remains in both callback and host validation. Distinct original groups that would collide at transport precision are explicitly rejected, rather than silently collapsed or shifted further. Window checks include the delivery instant, including a possible UTC midnight rollover.
+
+The failure message now includes both exact compared timestamps. Preserve the failed run. After pulling the fix, reuse the existing imports in a fresh directory; do not refetch the captures. Synthetic tests model the lossy setter, exercise all 1,000 microsecond remainders, preserve all 17 invented tied rows and prove the old truncated clock still fails. They do not certify an actual Mac engine run.
+
+Primary conversion source: https://github.com/QuantConnect/pythonnet/blob/31ccaf36c77d7e03b1ceed0c9d09843980780696/src/runtime/Converter.cs (`ToPrimitive`, `TypeCode.DateTime`). LEAN's reference project declares `QuantConnect.pythonnet` 2.0.66; the user's installed package binary was not inspected here.
