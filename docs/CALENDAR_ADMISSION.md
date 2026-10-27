@@ -28,6 +28,8 @@ Each capture retains request bounds, raw SHA-256, format/version, staged candida
 
 ## Persistent review gate
 
+For separate real price/calendar sources and synchronization jobs with multiple pages, use the [captured admission assessment](CAPTURED_ADMISSION.md). It binds an exact version-2 inspection scope and reuses the immutable review records without treating a declared review as dataset promotion. The legacy single-source `assess` contract below remains unchanged.
+
 `DataAdmissionStore` inherits both price and calendar capture stores. `record_review(...)` appends immutable, evidence-linked assertions for four separate axes: rights, provenance, temporal basis and coverage. Each review binds purpose, reviewer, operational recording time, expiry and an exact scope: bar/calendar import IDs and raw hashes, listing, venue, date range and feed. Corrections use a new review ID and later recording time. A review cannot be backdated or written in a caller transaction.
 
 `assess(source_id=..., scope=..., intended_use=..., as_of=...)` evaluates the historical snapshot and a separate current operational clock. Current storage/research declarations and the latest nonexpired reviews are required as well as historically appropriate ones. A later denial, expired review or revoked source permission cannot be bypassed with an old dataset cutoff. Production must protect review identities, clock and write permissions; this offline store does not independently certify a reviewer or legal entitlement.

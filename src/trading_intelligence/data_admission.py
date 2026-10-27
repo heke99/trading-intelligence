@@ -15,6 +15,9 @@ AXES = ('rights', 'provenance', 'temporal', 'coverage')
 PURPOSES = {'synthetic_validation', 'forward_observation', 'historical_replay'}
 SCOPE_KEYS = {'bar_import_id', 'calendar_import_id', 'bar_raw_sha', 'calendar_raw_sha',
               'listing_id', 'venue', 'start_date', 'end_date', 'feed'}
+CAPTURED_SCOPE_KEYS = {'schema', 'price_source_id', 'price_import_id', 'calendar_source_id',
+                       'calendar_import_id', 'listing_id', 'start_date', 'end_date', 'feed',
+                       'capture_snapshot_sha256'}
 SCHEMA = '''CREATE TABLE IF NOT EXISTS data_admission_reviews (
  review_id TEXT PRIMARY KEY, source_id TEXT NOT NULL REFERENCES sources,
  axis TEXT NOT NULL, purpose TEXT NOT NULL, scope_sha TEXT NOT NULL,
@@ -24,10 +27,14 @@ SCHEMA = '''CREATE TABLE IF NOT EXISTS data_admission_reviews (
 
 
 def _scope(scope):
-    if not isinstance(scope, dict) or set(scope) != SCOPE_KEYS:
+    if not isinstance(scope, dict) or set(scope) not in (SCOPE_KEYS, CAPTURED_SCOPE_KEYS):
         raise ContractError('Exact capture/identity/date/feed review scope required')
+    captured = set(scope) == CAPTURED_SCOPE_KEYS
     for key, value in scope.items():
         required(value, key)
+    if captured and (scope['schema'] != 'captured-admission-scope-2'
+                     or scope['price_source_id'] == scope['calendar_source_id']):
+        raise ContractError('Distinct explicit sources and captured scope schema required')
     for key in ('start_date', 'end_date'):
         try:
             if date.fromisoformat(scope[key]).isoformat() != scope[key]:
@@ -36,7 +43,7 @@ def _scope(scope):
             raise ContractError('Canonical scope dates required') from exc
     if scope['start_date'] > scope['end_date'] or scope['feed'] not in {'iex', 'sip'}:
         raise ContractError('Invalid scope interval/feed')
-    for key in ('bar_raw_sha', 'calendar_raw_sha'):
+    for key in (('capture_snapshot_sha256',) if captured else ('bar_raw_sha', 'calendar_raw_sha')):
         if len(scope[key]) != 64 or any(c not in '0123456789abcdef' for c in scope[key]):
             raise ContractError('Exact SHA256 capture hashes required')
     return hashlib.sha256(canonical(scope).encode()).hexdigest()
@@ -81,6 +88,8 @@ class DataAdmissionStore(AlpacaCalendarStore):
         elif declared_rights is not None:
             raise ContractError('Declared rights belong only to rights review')
         scope_sha = _scope(scope)
+        if set(scope) == CAPTURED_SCOPE_KEYS and source_id not in (scope['price_source_id'], scope['calendar_source_id']):
+            raise ContractError('Review source must belong to captured scope')
         recorded = utc(self._clock())
         known = recorded if known_at is None else utc(known_at)
         if known != recorded:
@@ -132,6 +141,8 @@ class DataAdmissionStore(AlpacaCalendarStore):
 
     def assess(self, *, source_id, scope, intended_use, as_of):
         """Eligibility report only. Current rights cannot be bypassed by old as_of."""
+        if isinstance(scope,dict) and set(scope)==CAPTURED_SCOPE_KEYS:
+            raise ContractError('Use captured_admission.assess_captured for a two-source job scope')
         required(intended_use, 'intended_use')
         if intended_use not in PURPOSES:
             raise ContractError('Unsupported intended use')
