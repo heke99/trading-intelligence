@@ -6,7 +6,7 @@ import json
 from trading_intelligence.lean_export import verify_bundle
 from trading_intelligence.lean_custom_data import parse_bundle_line
 from trading_intelligence.market_data import timestamp
-from trading_intelligence.lean_smoke_templates import engine_utc, backtest_window
+from trading_intelligence.lean_smoke_templates import engine_utc, delivery_utc, backtest_window
 
 BUNDLE=None
 DIRECTORY=None
@@ -31,14 +31,14 @@ class ObservedFixture(PythonData):
             group=json.loads(line)
             if group not in GROUPS:raise ValueError('Unknown captured observation group')
             point=ObservedFixture();point.symbol=config.symbol
-            point.time=timestamp(group['available_at']).replace(tzinfo=None);point.end_time=point.time
+            point.time=delivery_utc(group['available_at']).replace(tzinfo=None);point.end_time=point.time
             point.value=1.0
             point['available_at']=group['available_at'];point['group_json']=line
             return point
         parsed=parse_bundle_line(line,BUNDLE)
         if parsed is None:return None
         point=ObservedFixture();point.symbol=config.symbol
-        point.time=parsed['event_time'].replace(tzinfo=None);point.end_time=point.time
+        point.time=delivery_utc(parsed['event_time']).replace(tzinfo=None);point.end_time=point.time
         # LEAN's documented PythonData Value conversion uses Python float.
         # Exact original prices remain immutable CSV strings, never executable fills.
         point.value=float(parsed['value'])
@@ -74,7 +74,7 @@ class ObservedFixtureSmoke(QCAlgorithm):
         self.set_end_date(*[int(v) for v in window['requested_end_date'].split('-')])
         actual_end=engine_utc(self.end_date)
         window['actual_engine_end_utc']=actual_end.isoformat()
-        window['covers_observations']=actual_end>=max(times)
+        window['covers_observations']=actual_end>=max(delivery_utc(t) for t in times)
         diagnostic.write_text(json.dumps(window,sort_keys=True,indent=2)+'\n')
         if not window['covers_observations']:
             raise ValueError('UNSUPPORTED_BACKTEST_WINDOW: engine end excludes observed availability')
@@ -89,7 +89,8 @@ class ObservedFixtureSmoke(QCAlgorithm):
         point=data[self._symbol]
         available=str(point['available_at'])
         observed_at=engine_utc(self.utc_time)
-        if observed_at<timestamp(available):raise ValueError('Future information emitted early')
+        if observed_at<timestamp(available):
+            raise ValueError('Future information emitted early: observed_engine_utc='+observed_at.isoformat()+' available_at='+available)
         if getattr(self,'_inspection_mode',False):
             group=json.loads(str(point['group_json']))
             if group['available_at']!=available:raise ValueError('Group availability mismatch')

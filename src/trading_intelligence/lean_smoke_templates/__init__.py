@@ -45,18 +45,40 @@ def engine_utc(value):
     return parsed.astimezone(timezone.utc)
 
 
+def delivery_utc(value):
+    """Ceil transport time to the Python.NET millisecond boundary.
+
+    Python -> CLR DateTime conversion discards sub-millisecond microseconds.
+    Rounding upward prevents early delivery; source availability stays exact.
+    """
+    parsed=engine_utc(datetime.fromisoformat(value.replace('Z','+00:00')) if isinstance(value,str) else value)
+    remainder=parsed.microsecond % 1000
+    return parsed+timedelta(microseconds=1000-remainder) if remainder else parsed
+
+
+def delivery_schedule(availability):
+    """Reject distinct instants that the transport could otherwise collapse."""
+    original=[engine_utc(datetime.fromisoformat(v.replace('Z','+00:00')) if isinstance(v,str) else v) for v in availability]
+    delivered=[delivery_utc(v) for v in original]
+    if len(set(delivered))!=len(set(original)):
+        raise ValueError('UNSUPPORTED_TIME_PRECISION: distinct availability groups share a LEAN delivery millisecond')
+    return delivered
+
+
 def backtest_window(availability, *, now=None):
     """LEAN's public SetEndDate caps UTC backtests at the previous UTC day."""
     times=[engine_utc(datetime.fromisoformat(value.replace('Z','+00:00'))) if isinstance(value,str)
            else engine_utc(value) for value in availability]
     if not times:
         raise ValueError('Observation availability is required')
+    delivery=delivery_schedule(times)
     current=engine_utc(now if now is not None else datetime.now(timezone.utc))
-    latest=max(times)
+    latest=max(delivery)
     earliest=datetime.combine(latest.date()+timedelta(days=1),datetime.min.time(),timezone.utc)
     return dict(replayable=latest.date()<current.date(),
         code='ready' if latest.date()<current.date() else 'observation_day_not_closed',
-        checked_at_utc=current.isoformat(),latest_available_at=latest.isoformat(),
+        checked_at_utc=current.isoformat(),latest_available_at=max(times).isoformat(),
+        latest_delivery_at=latest.isoformat(),delivery_time_policy='ceil_millisecond',
         earliest_eligible_utc=earliest.isoformat(),
         requested_start_date=(min(times).date()-timedelta(days=1)).isoformat(),
         requested_end_date=latest.date().isoformat(),

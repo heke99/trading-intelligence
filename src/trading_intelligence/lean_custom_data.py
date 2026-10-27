@@ -5,6 +5,7 @@ from pathlib import Path
 from .contracts import ContractError,EvidenceIntegrityError
 from .lean_export import FIELDS,verify_bundle
 from .market_data import timestamp
+from .lean_smoke_templates import delivery_utc, delivery_schedule
 
 # Documentation/API compatibility checkpoint, not an installed runtime version.
 LEAN_REFERENCE_COMMIT='f3d841e60dfd010ee5fc293ea893e56952484108'
@@ -26,12 +27,14 @@ def lean_data_type(directory):
     """Create a PythonData subclass only inside an installed LEAN environment.
 
     Subscribe with UTC data timezone, fill_forward=False, and no live mode.
-    Time and EndTime represent observed availability; economic times are fields.
+    Time and EndTime conservatively ceil availability to transport milliseconds;
+    economic times are fields and original bundle availability remains exact.
     This custom stream must not be used as executable equity prices or fills.
     """
     verified=verify_bundle(directory)
     availability=[timestamp(row['available_at']) for row in verified['bars']]
     if availability!=sorted(availability):raise ContractError('LEAN input rows must be ordered by information availability')
+    delivery_schedule(availability)
     from AlgorithmImports import PythonData,SubscriptionDataSource,SubscriptionTransportMedium
     source=str((Path(directory)/'bars.csv').resolve())
     class ObservedBundleBar(PythonData):
@@ -45,7 +48,7 @@ def lean_data_type(directory):
             parsed=parse_bundle_line(line,verified)
             if parsed is None:return None
             datum=ObservedBundleBar();datum.symbol=config.symbol
-            datum.time=parsed['event_time'].replace(tzinfo=None);datum.end_time=datum.time
+            datum.time=delivery_utc(parsed['event_time']).replace(tzinfo=None);datum.end_time=datum.time
             datum.value=parsed['value']
             datum['economic_start']=parsed['economic_start'].isoformat()
             datum['economic_end']=parsed['economic_end'].isoformat()
