@@ -1,6 +1,6 @@
 # Rebuild status
 
-Documentation updated: 2026-10-25. Masterplan: 1.4. Package: 0.5.0.
+Documentation updated: 2026-10-27. Masterplan: 1.5. Package: 0.5.0.
 
 The earlier implementation sections and their verification evidence retain the recorded 2026-10-20 state. Masterplan 1.4 was a documentation-only update. The subsequent 2026-10-25 market-record slice below adds offline functionality; authenticated data access remains unverified.
 
@@ -251,3 +251,12 @@ Added independent Decimal risk sizing and sample hedge ratio, chronological labe
 `quant_research` now calls scikit-learn 1.8.0 LedoitWolf and arch 8.0.0 Hansen SPA, with separate pinned research requirements and a dedicated CI job. Supplied-data helpers report component volatility, paired circular-block mean-difference intervals and turnover-based cost/drawdown stress. No upstream source is vendored; installed license metadata identifies scikit-learn as BSD-3-Clause and arch as NCSA. See [reuse decisions and limitations](OPEN_SOURCE_QUANT_SV.md).
 
 Local verification: **542 tests passed**, including six new statistical/integration tests and the preceding four quant/execution cases. The invented-data demo fits 60 earlier rows and evaluates 20 later rows; at assumed 20 bps cost its compounded return is -0.4219%, the paired interval spans zero, and SPA consistent p-value is 0.496. These are fixture diagnostics, not strategy results. Compileall and diff checks passed. The demo was run with actual installed upstream dependencies. Source admission, registered real strategy evaluation, full-family completeness verification, LEAN fill/ledger integration and real multi-broker transport remain pending. The frozen forward pilot is untouched. Remote CI must be verified separately.
+
+
+## Competitive quant specification — 27 October 2026
+
+Masterplan 1.5 adds [concrete A–H acceptance packages](QUANT_COMPETITIVE_PLAN_SV.md) for admitted data, LEAN event/ledger acceptance, campaign-bound statistics, source-span event extraction, temporal economic relations, aggregate risk/account reservation, two real paperbrokers and delayed adaptive evaluation. It explicitly separates ownership from economic dependence, LLM historical-document cutoffs from parametric contamination, and route names from canonical external account identity. LangExtract, Qlib/RD-Agent, CVXPY and optional graph retrieval are evaluated candidates, not newly installed integrations. Cvxportfolio GPL-3.0 is distinguished from permissive CVXPY.
+
+This delivery changes documentation/instructions only. Existing code, frozen pilot and reported 542-test local result retain their previous scope; no new model training, graph, admission, broker transport or trading advantage is claimed. Markdown link and diff checks apply to this delivery; no artificial product tests are added.
+
+Remote verification of the preceding executable delivery: PR #32 head `bb96a7cfade94e72ff71bee15ba1dca1a991fa6d` passed both Offline foundation run `40516621100` and Optional quant research run `40516620762`. This verifies that preceding commit only, not later documentation commits or external broker/data access.

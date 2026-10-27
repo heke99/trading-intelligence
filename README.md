@@ -117,3 +117,5 @@ The [forward observation pilot](docs/FORWARD_PILOT.md) now freezes the existing 
 [Swedish scope and mathematical roadmap](docs/QUANT_EXECUTION_SV.md) documents independent risk-sizing, sample hedge-ratio and label-purging utilities, plus a durable supplied-synthetic-execution audit. These do not change the frozen pilot, generate fills, connect a second broker or authorize submission.
 
 The optional [open-source quant research integration](docs/OPEN_SOURCE_QUANT_SV.md) calls upstream scikit-learn LedoitWolf and arch SPA with pinned research dependencies. Run `PYTHONPATH=src python -m trading_intelligence.quant_research_demo` after installing `requirements-quant.txt`. All demonstration inputs are invented; no strategy or portfolio is promoted.
+
+Masterplan 1.5 adds a [concrete competitive quant plan](docs/QUANT_COMPETITIVE_PLAN_SV.md): source-grounded event reasoning, temporal economic relations, model contamination controls, campaign-bound statistics and account-level execution acceptance. These are specified requirements; no new trading capability is established by the documentation.
