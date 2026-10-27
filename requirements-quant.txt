@@ -1,0 +1,6 @@
+# Optional research environment; core CLI retains zero runtime dependencies.
+# Tested together on Python 3.11. No upstream source is vendored.
+numpy==2.3.5
+scipy==1.17.0
+scikit-learn==1.8.0
+arch==8.0.0

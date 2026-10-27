@@ -696,3 +696,7 @@ Källor till preciseringarna i version 1.4, kontrollerade 25 oktober 2026. Våra
 - S42 CME om aktieindexhedging, beta, kontraktsstorlek och kvarvarande risk: https://www.cmegroup.com/education/whitepapers/hedging-with-e-mini-sp-500-future
 - S43 CME om daglig mark-to-market och kontantbehov: https://www.cmegroup.com/education/courses/introduction-to-futures/mark-to-market
 - S44 QuantConnect om avslutsmodeller, kvantiteter, spread och slippage: https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/trade-fills/key-concepts
+
+## 23 Open source och kvantitativ forskningsfördjupning — 27 oktober 2026
+
+[Återanvändningsbeslut, faktisk upstream-integration och matematisk utvecklingsordning](OPEN_SOURCE_QUANT_SV.md) kompletterar planen. Isolerade syntetiska prov använder nu scikit-learns LedoitWolf och arch:s SPA. Dessa forskningsverktyg ändrar inte pilotens låsta regel, dataadmission eller fasernas acceptanskrav. Verkliga tränings- och strategiförsök kräver fortsatt registrering och kronologisk utvärdering. LEAN förblir första motor, och flera brokers verifieras genom kontospecifika adapterprov.
