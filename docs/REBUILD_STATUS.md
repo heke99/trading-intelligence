@@ -260,3 +260,11 @@ Masterplan 1.5 adds [concrete A–H acceptance packages](QUANT_COMPETITIVE_PLAN_
 This delivery changes documentation/instructions only. Existing code, frozen pilot and reported 542-test local result retain their previous scope; no new model training, graph, admission, broker transport or trading advantage is claimed. Markdown link and diff checks apply to this delivery; no artificial product tests are added.
 
 Remote verification of the preceding executable delivery: PR #32 head `bb96a7cfade94e72ff71bee15ba1dca1a991fa6d` passed both Offline foundation run `40516621100` and Optional quant research run `40516620762`. This verifies that preceding commit only, not later documentation commits or external broker/data access.
+
+## Synthetic temporal relation evidence — 27 October 2026
+
+A bounded `RelationEvidenceStore` reuses the existing artifact/evidence, research-rights and incident machinery for supplied synthetic UTF-8 relation assertions. It requires registered entities and exact Unicode source spans, keeps actual registration separate from declared knowledge/economic validity, and supports append-only reviewed correction/denial chains. Historical queries select the visible version before testing validity; unknown source spans, identity changes and branched replacements block.
+
+Verification: 11 focused regression tests cover restart, duplicate/conflicting writes, Unicode offsets, historical cutoffs, closure, denial, invalid identities, current rights/incident blocking, provider-source rejection and corrupt bytes. The repeatable invented-data demo preserves the earlier knowledge view while applying a later closure. See [scope and limits](RELATION_EVIDENCE.md). The proof needs externally serialized writes, scans artifacts and does not implement a concurrent graph service, automatic source-revision invalidation, LLM extraction, semantic review certification, real-data admission, model prediction or orders. The frozen forward pilot is unchanged.
+
+Integrated local verification: all 553 tests passed (542 preceding plus 11 relation cases); compileall and diff checks passed. Fresh-store demo comparison uses semantic output without generated evidence UUIDs/hashes; those remain available in the store/query API.

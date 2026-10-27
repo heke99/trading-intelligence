@@ -119,3 +119,5 @@ The [forward observation pilot](docs/FORWARD_PILOT.md) now freezes the existing 
 The optional [open-source quant research integration](docs/OPEN_SOURCE_QUANT_SV.md) calls upstream scikit-learn LedoitWolf and arch SPA with pinned research dependencies. Run `PYTHONPATH=src python -m trading_intelligence.quant_research_demo` after installing `requirements-quant.txt`. All demonstration inputs are invented; no strategy or portfolio is promoted.
 
 Masterplan 1.5 adds a [concrete competitive quant plan](docs/QUANT_COMPETITIVE_PLAN_SV.md): source-grounded event reasoning, temporal economic relations, model contamination controls, campaign-bound statistics and account-level execution acceptance. These are specified requirements; no new trading capability is established by the documentation.
+
+A [synthetic relation-evidence proof](docs/RELATION_EVIDENCE.md) now stores reviewer-declared source spans, temporal validity and immutable corrections using the existing artifact/rights/incident registry. Run `PYTHONPATH=src python -m trading_intelligence.relation_evidence_demo`. No real-data admission, automatic extraction, graph traversal or forecast is implemented.
