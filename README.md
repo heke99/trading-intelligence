@@ -111,3 +111,13 @@ The next [captured observation inspection](docs/CAPTURED_OBSERVATIONS.md) comman
 After the reported 17-row Mac observer pass, the [two-source captured admission assessment](docs/CAPTURED_ADMISSION.md) creates an exact review packet from those existing imports. It checks each source's current scoped reviews and binds all pages without writing to the database. Unknown historical publication, venue mismatch and the remaining baseline data/accounting dependencies stay explicit blockers; no review is automatically approved.
 
 The [forward observation pilot](docs/FORWARD_PILOT.md) now freezes the existing numerical rule configuration and captures subsequent paper-account-matched calendar/prices with an immutable attempt/abstention journal. It collects prospective evidence while admission is unresolved; it does not execute the real-data strategy, simulate fills or place orders.
+
+## Isolated execution and quant checks
+
+[Swedish scope and mathematical roadmap](docs/QUANT_EXECUTION_SV.md) documents independent risk-sizing, sample hedge-ratio and label-purging utilities, plus a durable supplied-synthetic-execution audit. These do not change the frozen pilot, generate fills, connect a second broker or authorize submission.
+
+The optional [open-source quant research integration](docs/OPEN_SOURCE_QUANT_SV.md) calls upstream scikit-learn LedoitWolf and arch SPA with pinned research dependencies. Run `PYTHONPATH=src python -m trading_intelligence.quant_research_demo` after installing `requirements-quant.txt`. All demonstration inputs are invented; no strategy or portfolio is promoted.
+
+Masterplan 1.5 adds a [concrete competitive quant plan](docs/QUANT_COMPETITIVE_PLAN_SV.md): source-grounded event reasoning, temporal economic relations, model contamination controls, campaign-bound statistics and account-level execution acceptance. These are specified requirements; no new trading capability is established by the documentation.
+
+A [synthetic relation-evidence proof](docs/RELATION_EVIDENCE.md) now stores reviewer-declared source spans, temporal validity and immutable corrections using the existing artifact/rights/incident registry. Run `PYTHONPATH=src python -m trading_intelligence.relation_evidence_demo`. No real-data admission, automatic extraction, graph traversal or forecast is implemented.

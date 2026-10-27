@@ -1,6 +1,6 @@
 # Project instructions
 
-The user's approved direction is a rebuild for equities, ETFs, ordinary mutual funds and a separate futures flow. Read docs/MASTERPLAN_SV.md and docs/REBUILD_STATUS.md before implementing a phase.
+The user's approved direction is a rebuild for equities, ETFs, ordinary mutual funds and a separate futures flow. Read docs/MASTERPLAN_SV.md and docs/REBUILD_STATUS.md before implementing a phase. Masterplan 1.5 also includes docs/QUANT_COMPETITIVE_PLAN_SV.md; its A–H packages clarify dependencies and acceptance, not completed capabilities.
 
 - This branch implements early Phase 1 identity/evidence, offline broker/futures contracts and an explicit read-only paper reference reader. Do not claim services, strategies, trader-history access, model training or live trading are implemented until they are independently verified.
 - Preserve the archive branch and parent history. Never force-push the default branch or delete private source evidence as part of cleanup.
@@ -29,3 +29,10 @@ The user's approved direction is a rebuild for equities, ETFs, ordinary mutual f
 - Run checks appropriate to the changed phase. Add regression coverage for meaningful defects; do not fabricate product tests for documentation-only changes.
 - Paid subscriptions, data purchases, account modifications and live order activation require explicit scope and configuration; do not perform them as incidental verification.
 - Report implemented, tested, simulated and planned work separately, with concrete evidence and remaining limitations.
+
+## Competitive quant evidence requirements
+
+- Register model/checkpoint and possible parametric look-ahead contamination. Historical document cutoffs alone do not establish uncontaminated LLM forecasts. Use prospective locked outcomes or a verified point-in-time model protocol for confirmatory claims.
+- Bind confirmatory family statistics to the complete registered campaign and verified aligned losses. Free arrays, omitted failed candidates or unknown family completeness cannot authorize promotion.
+- Keep relation evidence, economic mechanism and forecast separate. Common ownership is not proof of supply-chain dependence or causal impact; grounded text spans are not truth certificates.
+- Map connection aliases to canonical external accounts before aggregate reservation or sending. A namespace is not proof that two routes represent different economic accounts.

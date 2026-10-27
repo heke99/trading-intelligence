@@ -1,6 +1,8 @@
 # Trading Intelligence masterplan för aktier ETF fonder och futures
 
-Version 1.4 · 25 oktober 2026 · För Hekmat Hourani
+Version 1.5 · 27 oktober 2026 · För Hekmat Hourani
+
+Version 1.5 kompletterar planen med [konkurrenskraftig quant, källbelagt resonemang och konkreta acceptanspaket](QUANT_COMPETITIVE_PLAN_SV.md). Den skiljer ekonomisk effekt från gemensamt ägande, inför krav på modellens möjliga framtidskunskap, fullständig försöksfamilj och samma verkliga konto över flera anslutningar. Detta är en planskärpning, inte ny körbar intelligens eller tradingfunktion. Den frysta forward-piloten ändras inte.
 
 Version 1.4 preciserar mänskliga förhandsbedömningar, portföljhedging och dess livscykel samt flyttar enkel numerisk baslinje och LEAN-replay före det större AI- och grafbygget. Detta är dokumenterade krav; implementationen är fortfarande tidig fas 1 enligt [REBUILD_STATUS.md](REBUILD_STATUS.md). Dokumentuppdateringen ändrar inga handelsmandat eller verifieringsstatusar.
 
@@ -696,3 +698,12 @@ Källor till preciseringarna i version 1.4, kontrollerade 25 oktober 2026. Våra
 - S42 CME om aktieindexhedging, beta, kontraktsstorlek och kvarvarande risk: https://www.cmegroup.com/education/whitepapers/hedging-with-e-mini-sp-500-future
 - S43 CME om daglig mark-to-market och kontantbehov: https://www.cmegroup.com/education/courses/introduction-to-futures/mark-to-market
 - S44 QuantConnect om avslutsmodeller, kvantiteter, spread och slippage: https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/trade-fills/key-concepts
+
+## 23 Open source och kvantitativ forskningsfördjupning — 27 oktober 2026
+
+[Återanvändningsbeslut, faktisk upstream-integration och matematisk utvecklingsordning](OPEN_SOURCE_QUANT_SV.md) kompletterar planen. Isolerade syntetiska prov använder nu scikit-learns LedoitWolf och arch:s SPA. Dessa forskningsverktyg ändrar inte pilotens låsta regel, dataadmission eller fasernas acceptanskrav. Verkliga tränings- och strategiförsök kräver fortsatt registrering och kronologisk utvärdering. LEAN förblir första motor, och flera brokers verifieras genom kontospecifika adapterprov.
+
+
+## 24 Konkurrenskraftig quant och verifierad beslutsintelligens
+
+[Den konkreta fördjupningen](QUANT_COMPETITIVE_PLAN_SV.md) är en del av denna masterplan. Bygg paket A–H enligt deras fasberoenden: godkänt dataurval, avstämd LEAN, kampanjbunden statistik, spanförankrad dokumenttolkning, direkt ekonomisk relation, samlad risk och kontoreservation, två riktiga paperbrokers samt utvärderad adaptiv uppdatering. Historisk språkmodellanalys måste hantera inlärd framtidskunskap; aktuell bolagsgraf eller promptinstruktion räcker inte. Behåll första baslinjen och pilotprotokollet.
