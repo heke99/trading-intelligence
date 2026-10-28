@@ -119,3 +119,5 @@ The [forward observation pilot](docs/FORWARD_PILOT.md) now freezes the existing 
 The separate [synthetic LEAN accounting trial](docs/LEAN_BASELINE_SMOKE.md) now connects frozen rule decisions, four intended engine-simulated fills, modeled costs and independent cash/position reconciliation. It uses authored prices only; actual Mac engine acceptance is required and does not admit the real forward dataset.
 
 The [event price/exposure sensitivity layer](docs/EVENT_OPPORTUNITY.md) compares source-cited cards with supplied bid/ask, costs and account snapshots. It is a hypothetical research comparison, not an expected-return model or order approval. Run `event-opportunity-demo --out data/opportunity-demo` offline.
+
+The [hedge research layer](docs/HEDGE_RESEARCH.md) compares a protected book, one new canonical futures hedge and cash reduction under supplied stress/cash/factor limits. Partial/orphan monitoring remains symbolic research. Run `hedge-research-demo --out data/hedge-demo` offline.

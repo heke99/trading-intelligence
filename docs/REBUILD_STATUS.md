@@ -4,6 +4,14 @@ Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
 
 Earlier dated implementation sections retain their original evidence and limits. The latest event slice below does not promote market datasets, models or trading capabilities.
 
+## Evidence-bound hedge search and supplied-state monitoring — 28 October 2026
+
+The additive `HedgeResearchStore` binds event opportunity, exact supplied holding allocations, frozen risk/exit controls and canonical expiry/session/binding/margin references. A bounded deterministic scenario search compares holding unchanged, pro-rata long-book reduction and integer long/short futures hedge alternatives under residual factor, downside, upside-sacrifice, gross exposure and exact-account cash constraints. Raw contract PnL and notional are recomputed using contract ticks/multipliers. Both-loss basis stress is mandatory for a feasible hedge direction. See [scope and contracts](HEDGE_RESEARCH.md).
+
+Verification: **805 local synthetic tests passed**, including 73 new hedge math/independent-review/monitor/integration tests. Compileall, whitespace and changed-document links pass. The CLI demo reproduces across a fresh process: supplied worst-case loss200 unhedged,106 for three short invented futures,102 for half-book reduction; hedge stressed cash326. These are hypothetical supplied-scenario arithmetic, not measured strategy performance. Independent review fixed cross-currency sums, holding/factor reconciliation, non-synchronous quotes, canonical identity binding, processing-time expiry, changed protected quantities and reconciliation precedence. Exact-head remote CI is recorded on the PR separately.
+
+Append-only supplied-state monitoring links a feasible alternative to filled/allocated quantities, handles partial/late fill observations, unknown/pending order state, orphan hedge alerts, cooldown/bands, expiry, pause and hard stops. All actions remain symbolic reviews: there is no actual order transport, verified reconciliation, live hedge mandate or daily settlement ledger. New hedge research is blocked for existing/pending candidate hedges; full-route entitlement is not inferred from legacy references. Supplied factor loadings/scenarios are not statistically calibrated forecasts. No automatic increase is triggered by an observed trading loss. The frozen forward pilot remains unchanged.
+
 ## Event price and exposure sensitivity — 28 October 2026
 
 `EventOpportunityStore` now binds an available source-cited card to supplied original quote/cost/terminal-price/account-state evidence. It calculates hypothetical long/short break-even and scenario PnL, reduction versus holding and optional pre-event-reference price change with decimal arithmetic. Input/output availability, source rights, immutable dependencies and restart reuse are checked. Unknown pending orders, stale inputs and expired analyses block usable comparison. Fund/futures inputs, malformed quotes and mismatched identities/currencies/scenarios are rejected. See [contracts and limitations](EVENT_OPPORTUNITY.md).
@@ -139,7 +147,7 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | New datasets approved for training | None |
 | AI analysis, predictive models and self-learning | Not implemented; evaluation queue is an offline foundation only |
 | Pre-outcome human decision journal and intervention attribution | Required by masterplan 1.4; not implemented |
-| Exposure-linked hedge policy, lifecycle and risk/result attribution | Required by masterplan 1.4; not implemented |
+| Exposure-linked hedge research policy and supplied-state monitoring | Bounded offline stress comparison/monitor implemented; real fills, settlement/roll lifecycle and complete acceptance remain pending |
 | Frozen numerical baseline and chronological experiment register | Implemented offline for synthetic target/abstention evaluation; no fills or performance |
 | LEAN own-data export/reader bridge | Synthetic bundle and parser/API mechanics implemented; real admission binding/runtime trial pending |
 | Supplied-simulation cash/position ledger | Implemented offline with fees/actions/reconciliation; no broker/LEAN event verification |
