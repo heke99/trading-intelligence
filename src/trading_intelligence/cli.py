@@ -39,6 +39,25 @@ def demo(directory: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    events_demo = commands.add_parser("event-intelligence-demo", help="Replay invented event revisions and facility context without network or orders")
+    events_demo.add_argument("--out", type=Path, required=True)
+    events_sync = commands.add_parser("event-sync", help="Capture one public USGS or GDACS feed into an explicitly configured source")
+    for option in ("database", "source-id", "import-id"):
+        events_sync.add_argument("--" + option, required=True)
+    from .event_sources import EVENT_FEEDS
+    events_sync.add_argument("--feed", choices=tuple(EVENT_FEEDS), required=True)
+    event_context = commands.add_parser("event-context", help="Inspect dated facility proximity; geographic relevance does not establish damage")
+    for option in ("database", "source-id", "event-id", "as-of"):
+        event_context.add_argument("--" + option, required=True)
+    event_context.add_argument("--radius-km", type=float, required=True)
+    events_watch = commands.add_parser("event-watch", help="Continuously collect and produce evidence context; never submits orders")
+    for option in ("database", "source-id"):
+        events_watch.add_argument("--" + option, required=True)
+    events_watch.add_argument("--feed", choices=tuple(EVENT_FEEDS), required=True)
+    events_watch.add_argument("--out", type=Path, required=True)
+    events_watch.add_argument("--radius-km", type=float, required=True)
+    events_watch.add_argument("--poll-seconds", type=float, default=60)
+    events_watch.add_argument("--iterations", type=int)
     command = commands.add_parser("demo", help="Run an invented offline evidence and identity example")
     command.add_argument("--out", type=Path, required=True)
     futures_command = commands.add_parser("futures-demo", help="Preview an invented futures opening intent offline")
@@ -78,7 +97,49 @@ def main():
     for option in ("database", "connection-id", "account-number", "expected-account-id", "source-id", "import-id"):
         sync.add_argument("--" + option, required=True)
     args = parser.parse_args()
-    if args.command == "alpaca-sync":
+    if args.command == "event-intelligence-demo":
+        from .event_demo import event_demo
+        result = event_demo(args.out)
+    elif args.command in {"event-sync", "event-context", "event-watch"}:
+        from .contracts import ContractError
+        from .event_context import EventContextStore
+        from .event_sources import UsgsEventReader
+        from .event_sync import sync_events, watch_events
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("An existing source-configured evidence database is required")
+            with EventContextStore(args.database) as store:
+                if args.command == "event-context":
+                    cutoff = datetime.fromisoformat(args.as_of.replace("Z", "+00:00"))
+                    result = store.context(args.source_id, args.event_id, as_of=cutoff,
+                                           radius_km=args.radius_km)
+                else:
+                    if args.feed == "gdacs":
+                        from .gdacs_events import GdacsEventReader
+                        reader = GdacsEventReader()
+                    else:
+                        reader = UsgsEventReader(args.feed)
+                    if args.command == "event-sync":
+                        result = sync_events(store, source_id=args.source_id, import_id=args.import_id,
+                                             feed=args.feed, reader=reader)
+                    else:
+                        args.out.mkdir(parents=True, exist_ok=True)
+                        for report in watch_events(store, source_id=args.source_id, feed=args.feed,
+                                reader=reader, radius_km=args.radius_km,
+                                poll_seconds=args.poll_seconds, iterations=args.iterations):
+                            path = args.out/f"{report['run_id']}-{report['iteration']:06d}.json"
+                            with path.open('x', encoding='utf-8') as output:
+                                output.write(json.dumps(report, sort_keys=True, indent=2)+'\n')
+                            summary = {key: report[key] for key in
+                                ('status', 'source_id', 'feed', 'iteration', 'orders_sent', 'live_trading')}
+                            summary['report_file'] = str(path)
+                            print(json.dumps(summary, sort_keys=True), flush=True)
+                        return
+        except KeyboardInterrupt:
+            parser.exit(130, "Event collection stopped; existing captures are preserved.\n")
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Event operation rejected: {error}\n")
+    elif args.command == "alpaca-sync":
         import os
         from .alpaca_reader import AlpacaReferenceReader
         from .broker_imports import BrokerImportStore

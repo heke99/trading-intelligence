@@ -1,8 +1,20 @@
 # Rebuild status
 
-Documentation updated: 2026-10-25. Masterplan: 1.4. Package: 0.5.0.
+Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
 
-The earlier implementation sections and their verification evidence retain the recorded 2026-10-20 state. Masterplan 1.4 was a documentation-only update. The subsequent 2026-10-25 market-record slice below adds offline functionality; authenticated data access remains unverified.
+Earlier dated implementation sections retain their original evidence and limits. The latest event slice below does not promote market datasets, models or trading capabilities.
+
+## Public event intake and supplied facility context — 28 October 2026
+
+The first executable event-intelligence slice adds read-only USGS GeoJSON and GDACS RSS adapters, immutable raw captures/provider revisions, durable quarantine/conflict lineage and source-scoped historical queries. Operational availability is recorded after normalization/validation, not from an old provider timestamp. Late old revisions cannot regress the latest state; same-revision contradictions and equal-time unordered revisions remain explicit ambiguities. Current usage revocations and raw/manifest integrity checks apply to reads.
+
+Supplied facility assertions reuse canonical company/listing identities and original document evidence, with explicit owner/operator, economic validity and actual registration availability. Context is geographic investigation with documented uncertainty; proximity is not damage, production loss or a return prediction. A continuous polling CLI captures updates and saves reports without issuing orders. The synthetic demo proves a corrected event, changed facility relevance and preserved historical knowledge across restarts. See [event pipeline usage and limits](EVENT_PIPELINE.md) and [Swedish design](EVENT_INTELLIGENCE_SV.md).
+
+A development read-only probe exercised both actual public adapters in memory: five USGS observations and 303 GDACS observations normalized with zero quarantines in those two specific responses. No downloaded raw data was saved/committed. This establishes one response-access/format observation only, not independently reviewed entitlements, source completeness, historical admission or continuous operation. CI uses synthetic fixtures only.
+
+Local integrated verification: **666 synthetic tests passed**, including 111 event/source/context/polling tests added to the preceding 555. The event demonstration is byte-stable across a fresh process restart; a mocked one-poll CLI proof connects archive, context and exclusive report output. Compileall, changed-document relative links and whitespace checks passed. Independent review found and resolved processing-time backdating, hidden invalid-row ambiguity, unordered equal-time revisions and repeated full-feed verification. Exact-head remote CI is reported on the delivery PR separately.
+
+Licensed financial-news/Bloomberg access, real facility/supply-chain coverage, cross-source physical-incident resolution, event-artifact/outcome dependency binding, economic-impact models, LLM integration and event-driven order submission remain unimplemented. No additional runtime dependency or order engine was installed. The frozen forward pilot, data/training admission status and live controls are unchanged. Earlier dated capability rows below retain their original scope; they are not claims that this event slice or a predictive trading system was previously complete.
 
 ## Normalized daily market records — 2026-10-25
 

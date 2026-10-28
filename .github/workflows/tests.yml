@@ -29,6 +29,10 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence demo --out "${RUNNER_TEMP}/ti-demo"
+      - name: Run synthetic event revisions and facility context
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence event-intelligence-demo --out "${RUNNER_TEMP}/ti-events-demo"
       - name: Run offline futures example
         env:
           PYTHONPATH: src

@@ -6,7 +6,7 @@ Rebuild for equities, ETFs, ordinary mutual funds and futures with source-backed
 
 Read the [Swedish masterplan](docs/MASTERPLAN_SV.md), [implemented contracts and limitations](docs/FOUNDATION.md) and [rebuild status](docs/REBUILD_STATUS.md).
 
-The proposed [global event-intelligence specification](docs/EVENT_INTELLIGENCE_SV.md) connects disaster/news evidence, dated facility and supply-chain exposure, economic scenarios and remaining tradable opportunity to the existing risk/execution boundary. It is a documentation-only design; news feeds, event models and event-driven order submission are not implemented, and the frozen forward pilot is unchanged.
+The [global event-intelligence specification](docs/EVENT_INTELLIGENCE_SV.md) now has a first [runnable event intake and facility-context slice](docs/EVENT_PIPELINE.md): public USGS/GDACS readers, immutable revisions, supplied company-facility evidence and continuous read-only context collection. Licensed financial-news feeds, predictive impact models and event-driven order submission remain unimplemented; the frozen forward pilot is unchanged.
 
 ## Run the offline example
 

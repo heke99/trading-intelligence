@@ -1,10 +1,10 @@
 # Händelseintelligens: från världsnyhet till granskningsbart handelsbeslut
 
-Datum: 28 oktober 2026. Status: föreslagen konstruktion, dokumentation utan körbar ny funktion.
+Datum: 28 oktober 2026. Status: konstruktion med en första körbar del för händelseinsamling och dokumenterad anläggningskontext; se [implementation och gränser](EVENT_PIPELINE.md). Prediktiv analys och nyhetsstyrd orderläggning är ännu inte implementerade.
 
 Detta tillägg konkretiserar [masterplanens](MASTERPLAN_SV.md) avsnitt 6–10, 13–15 och fas 1c/4. Målet är att automatiskt upptäcka verkliga förändringar, härleda möjliga ekonomiska konsekvenser och pröva om en handelsmöjlighet återstår efter kostnader och risk. Roboten ska också kunna upptäcka att en tidigare hypotes är fel och avstå eller ompröva enligt godkänd policy.
 
-Dokumentet inför inga datakopplingar, modeller, orderadaptrar, inköp eller nya handelsmandat. [Rebuild status](REBUILD_STATUS.md) är fortsatt statuskälla. Det rapporterade syntetiska LEAN-kassaboksprovet är ingen verifiering av nyhetsstrategin. Den frysta forward-piloten ändras inte.
+De senare modell-, order- och lärandeflödena nedan är fortsatt konstruktionsförslag. Den första implementationen har läsande USGS/GDACS-adaptrar och ändrar inga handelsmandat. [Rebuild status](REBUILD_STATUS.md) är fortsatt statuskälla. Det rapporterade syntetiska LEAN-kassaboksprovet är ingen verifiering av nyhetsstrategin. Den frysta forward-piloten ändras inte.
 
 ## 1 Beslutskedja och ansvar
 
