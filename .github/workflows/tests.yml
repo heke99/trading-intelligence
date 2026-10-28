@@ -69,3 +69,7 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence.lean_smoke prepare-run --out "${RUNNER_TEMP}/ti-observer-smoke" --prepare-only
+      - name: Prepare synthetic rule/fill/accounting trial without executing Docker
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence.lean_baseline_smoke prepare-run --out "${RUNNER_TEMP}/ti-baseline-smoke" --prepare-only

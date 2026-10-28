@@ -50,6 +50,19 @@ def amount(text):
     return text
 
 
+def close_above_mean(closes):
+    """Shared exact numerical rule; callers own data/time/admission checks."""
+    if not isinstance(closes,list) or not 2<=len(closes)<=252 or any(not isinstance(v,str) for v in closes):
+        raise ContractError('Explicit bounded close-price window required')
+    try:
+        values=[Decimal(v) for v in closes]
+        if any(not v.is_finite() or v<=0 for v in values):raise ContractError('Positive finite close prices required')
+        with localcontext(Context(prec=80,rounding=ROUND_HALF_EVEN,traps=[Inexact,Overflow,InvalidOperation,DivisionByZero])):
+            return '1' if values[-1]*len(values)>sum(values,Decimal(0)) else '0'
+    except DecimalException as exc:
+        raise ContractError('Baseline exact arithmetic limit exceeded') from exc
+
+
 class BaselineStore(EvidenceStore):
     def __init__(self,database,*,clock=None):
         super().__init__(database);self.db.executescript(SCHEMA)
@@ -165,9 +178,7 @@ class BaselineStore(EvidenceStore):
                 elif instant(next_session['start'])<ready:reason='missed_next_session_open'
                 elif next_session['date']>bounds['end']:reason='outside_evaluation_partition'
                 else:
-                    with localcontext(Context(prec=80,rounding=ROUND_HALF_EVEN,traps=[Inexact,Overflow,InvalidOperation,DivisionByZero])):
-                        total=sum((Decimal(x['close']) for x in window),Decimal(0))
-                        target='1' if Decimal(bar['close'])*len(window)>total else '0'
+                    target=close_above_mean([x['close'] for x in window])
                     intent=dict(type='next_session_open_target',session_date=next_session['date'],
                                 not_before=utc(ready),intended_at=next_session['start'],target_weight=target,
                                 is_fill=False,is_order_authorization=False)
