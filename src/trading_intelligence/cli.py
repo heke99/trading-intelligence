@@ -39,6 +39,8 @@ def demo(directory: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    sim_demo = commands.add_parser("hedge-simulation-demo", help="Run four-part synthetic intent/control/callback/restart proof; no broker orders")
+    sim_demo.add_argument("--out", type=Path, required=True)
     reservation_status = commands.add_parser("hedge-reservation-status", help="Fresh research-input check or historical local reservation state")
     for option in ("database", "reservation-id"):
         reservation_status.add_argument("--" + option, required=True)
@@ -130,7 +132,10 @@ def main():
     for option in ("database", "connection-id", "account-number", "expected-account-id", "source-id", "import-id"):
         sync.add_argument("--" + option, required=True)
     args = parser.parse_args()
-    if args.command in {"hedge-reserve", "hedge-release", "hedge-reservation-status"}:
+    if args.command == "hedge-simulation-demo":
+        from .hedge_simulation_demo import hedge_simulation_demo
+        result = hedge_simulation_demo(args.out)
+    elif args.command in {"hedge-reserve", "hedge-release", "hedge-reservation-status"}:
         from .hedge_reservations import HedgeReservationStore
         from .contracts import ContractError
         try:

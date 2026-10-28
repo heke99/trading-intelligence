@@ -4,6 +4,14 @@ Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
 
 Earlier dated implementation sections retain their original evidence and limits. The latest event slice below does not promote market datasets, models or trading capabilities.
 
+## Four-part synthetic hedge intent/control/callback/restart proof — 28 October 2026
+
+Four connected components now reuse research reservations and canonical broker intent contracts: frozen one-per-reservation synthetic intents; latest supplied synthetic route controls/current dependency checks; durable single dispatch claims and append-only callback events; an end-to-end CLI/restart proof. Partial and late cumulative quantities, cancellation/rejection/unknown status, hard stops, revised margin references, stale inputs and abandonment locks are exercised without broker transport. Late observations remain accepted after stops/rights revocation; the simulator does not resubmit or fail over after unknown status. See [four-part scope and usage](HEDGE_SIMULATION.md).
+
+Verification: 839 local synthetic tests passed; all 17 new lifecycle tests also pass after the final intent-field freeze. The fresh-process CLI test reproduces the report, one claim and signed filled quantity−3. Compileall, whitespace and changed-document links pass. Exact-head CI is recorded on the PR.
+
+The callback harness is not a new authoritative strategy engine, real paper execution, verified account state or realistic fill model. No strategy PnL, margin cash ledger, actual reconciliation or live approval is produced. Dispatched synthetic exposure stays reserved pending a future complete close-out lifecycle; only an abandoned unsent draft can use local research release. LEAN and the frozen forward pilot are unchanged.
+
 ## Historical reservation audit and fresh research readiness — 28 October 2026
 
 Reservation metadata now supports explicit historical cutoffs without exposing later releases, while still verifying the full journal. A separate on-demand readiness check always revalidates the current dependency hashes, source permissions and evidence/policy expiry; archived idempotent reservations cannot serve as fresh approvals. Release/expiry/revocation/corruption block readiness without silently freeing or renewing claims. The CLI distinguishes historical audit from current research-input checks. This remains local research metadata, not live account/risk/order authorization. Nine new synthetic regressions cover temporal reads, revocation, corruption, restart and stale positive results. The 821-test integrated local suite passed before the final malformed-JSON regression; all 17 affected reservation tests pass with that final regression. Compileall and whitespace checks pass. Exact-head CI verifies the final full suite on the PR.

@@ -45,6 +45,10 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence hedge-research-demo --out "${RUNNER_TEMP}/ti-hedge-demo"
+      - name: Run synthetic hedge intent/control/callback/restart proof
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence hedge-simulation-demo --out "${RUNNER_TEMP}/ti-hedge-simulation"
       - name: Run offline futures example
         env:
           PYTHONPATH: src

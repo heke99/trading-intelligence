@@ -121,3 +121,5 @@ The separate [synthetic LEAN accounting trial](docs/LEAN_BASELINE_SMOKE.md) now 
 The [event price/exposure sensitivity layer](docs/EVENT_OPPORTUNITY.md) compares source-cited cards with supplied bid/ask, costs and account snapshots. It is a hypothetical research comparison, not an expected-return model or order approval. Run `event-opportunity-demo --out data/opportunity-demo` offline.
 
 The [hedge research layer](docs/HEDGE_RESEARCH.md) compares a protected book, one new canonical futures hedge and cash reduction under supplied stress/cash/factor limits. Partial/orphan monitoring remains symbolic research. Run `hedge-research-demo --out data/hedge-demo` offline.
+
+The [four-part synthetic hedge lifecycle proof](docs/HEDGE_SIMULATION.md) freezes reservation-linked intents, checks latest supplied route controls, journals callback faults and verifies restart without duplicate claims. Run `hedge-simulation-demo --out data/hedge-simulation`. It sends no broker orders.

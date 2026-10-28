@@ -101,6 +101,11 @@ class HedgeReservationStore(HedgeResearchStore):
         if old['state']=='released':
             if old['release_reason']!=reason:raise RecordConflict('Release reason already fixed')
             return old
+        if self.db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='hedge_sim_intents'").fetchone():
+            linked=self.db.execute('SELECT intent_id FROM hedge_sim_intents WHERE reservation_id=?',(reservation_id,)).fetchone()
+            allowed=getattr(self,'_research_release_allowed',lambda _identity:False)
+            if linked and not allowed(linked['intent_id']):
+                raise ContractError('Bound synthetic intent must be abandoned before local research release; dispatched exposure remains locked')
         body={**old,'sequence':1,'state':'released','available_at':utc(self._event_clock()),
               'previous_sha256':digest(old),'release_reason':reason}
         self.db.execute('INSERT INTO hedge_research_reservations VALUES (?,?,?,?)',
