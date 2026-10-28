@@ -1,8 +1,76 @@
+# Consolidated integration status
+
+Main corporate-action capture and the event/AI/hedge research branch are combined in this working tree. Both paths preserve independent admission and execution limits. Integration verification is recorded on the PR; synthetic tests do not establish data admission, broker access or profitability.
+
 # Rebuild status
 
-Documentation updated: 2026-10-25. Masterplan: 1.4. Package: 0.5.0.
+Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
 
-The earlier implementation sections and their verification evidence retain the recorded 2026-10-20 state. Masterplan 1.4 was a documentation-only update. The subsequent 2026-10-25 market-record slice below adds offline functionality; authenticated data access remains unverified.
+Earlier dated implementation sections retain their original evidence and limits. The latest event slice below does not promote market datasets, models or trading capabilities.
+
+## Captured actions to conditional holdings accounting — 28 October 2026
+
+`CapturedActionAccountingStore` now binds exact captured action manifests to original opening account/listing/holding evidence and reviewed per-row policy fingerprints. It previews exact split quantities, dividend receivables and cash only after explicit payment time. Missing entitlement/terms/no-trade assertions, due bills and fractional reverse-split results block closing totals. Ex/payment instants are explicitly supplied and must match the provider dates in the declared market timezone. Same-time ordering defines the supplied dividend share basis; neither timing nor historical knowledge is invented. See [contracts and usage](CAPTURED_ACTION_ACCOUNTING.md).
+
+Verification: 881 synthetic tests pass, including 17 new capture-to-preview/CLI/restart/rights/precision/identity/entitlement tests. Compileall, changed-document links and whitespace checks pass. Exact-head remote CI is recorded on the PR.
+
+Results and corrections remain immutable with processing availability, source-right and raw/hash checks. Wrong account/revision/currency cannot reuse an earlier review. This does not apply actions to holdings/cash, reconcile a broker, establish coverage/rights or admit a dataset. Conditional research outputs keep accounting/data/training/live approval false. Tests and CLI proof use invented provider captures; no actual data access or trading is claimed.
+
+## Four-part synthetic hedge intent/control/callback/restart proof — 28 October 2026
+
+Four connected components now reuse research reservations and canonical broker intent contracts: frozen one-per-reservation synthetic intents; latest supplied synthetic route controls/current dependency checks; durable single dispatch claims and append-only callback events; an end-to-end CLI/restart proof. Partial and late cumulative quantities, cancellation/rejection/unknown status, hard stops, revised margin references, stale inputs and abandonment locks are exercised without broker transport. Late observations remain accepted after stops/rights revocation; the simulator does not resubmit or fail over after unknown status. See [four-part scope and usage](HEDGE_SIMULATION.md).
+
+Verification: 839 local synthetic tests passed; all 17 new lifecycle tests also pass after the final intent-field freeze. The fresh-process CLI test reproduces the report, one claim and signed filled quantity−3. Compileall, whitespace and changed-document links pass. Exact-head CI is recorded on the PR.
+
+The callback harness is not a new authoritative strategy engine, real paper execution, verified account state or realistic fill model. No strategy PnL, margin cash ledger, actual reconciliation or live approval is produced. Dispatched synthetic exposure stays reserved pending a future complete close-out lifecycle; only an abandoned unsent draft can use local research release. LEAN and the frozen forward pilot are unchanged.
+
+## Historical reservation audit and fresh research readiness — 28 October 2026
+
+Reservation metadata now supports explicit historical cutoffs without exposing later releases, while still verifying the full journal. A separate on-demand readiness check always revalidates the current dependency hashes, source permissions and evidence/policy expiry; archived idempotent reservations cannot serve as fresh approvals. Release/expiry/revocation/corruption block readiness without silently freeing or renewing claims. The CLI distinguishes historical audit from current research-input checks. This remains local research metadata, not live account/risk/order authorization. Nine new synthetic regressions cover temporal reads, revocation, corruption, restart and stale positive results. The 821-test integrated local suite passed before the final malformed-JSON regression; all 17 affected reservation tests pass with that final regression. Compileall and whitespace checks pass. Exact-head CI verifies the final full suite on the PR.
+
+## Shared local hedge draft reservations — 28 October 2026
+
+`HedgeReservationStore` serializes local research reservations on canonical protected listings/full routes and exact-account stressed cash. It revalidates current source/policy availability, rejects overlapping exposure, sums simultaneous cash claims and rejects mixed free-cash vintages. Append-only release is explicit local draft abandonment; expiry does not free an unresolved claim. No order transport, broker margin reservation, full portfolio risk aggregation or real-position release is implemented. Integrated verification: 813 synthetic tests pass; compileall, whitespace and changed-document links pass. Eight new synthetic tests cover concurrent connections, shared account cash, alias books, changed cash vintages, restart/idempotence, stops, corruption and expiry. See [local reservation scope](HEDGE_RESEARCH.md#shared-local-research-reservations).
+
+## Evidence-bound hedge search and supplied-state monitoring — 28 October 2026
+
+The additive `HedgeResearchStore` binds event opportunity, exact supplied holding allocations, frozen risk/exit controls and canonical expiry/session/binding/margin references. A bounded deterministic scenario search compares holding unchanged, pro-rata long-book reduction and integer long/short futures hedge alternatives under residual factor, downside, upside-sacrifice, gross exposure and exact-account cash constraints. Raw contract PnL and notional are recomputed using contract ticks/multipliers. Both-loss basis stress is mandatory for a feasible hedge direction. See [scope and contracts](HEDGE_RESEARCH.md).
+
+Verification: **805 local synthetic tests passed**, including 73 new hedge math/independent-review/monitor/integration tests. Compileall, whitespace and changed-document links pass. The CLI demo reproduces across a fresh process: supplied worst-case loss200 unhedged,106 for three short invented futures,102 for half-book reduction; hedge stressed cash326. These are hypothetical supplied-scenario arithmetic, not measured strategy performance. Independent review fixed cross-currency sums, holding/factor reconciliation, non-synchronous quotes, canonical identity binding, processing-time expiry, changed protected quantities and reconciliation precedence. Exact-head remote CI is recorded on the PR separately.
+
+Append-only supplied-state monitoring links a feasible alternative to filled/allocated quantities, handles partial/late fill observations, unknown/pending order state, orphan hedge alerts, cooldown/bands, expiry, pause and hard stops. All actions remain symbolic reviews: there is no actual order transport, verified reconciliation, live hedge mandate or daily settlement ledger. New hedge research is blocked for existing/pending candidate hedges; full-route entitlement is not inferred from legacy references. Supplied factor loadings/scenarios are not statistically calibrated forecasts. No automatic increase is triggered by an observed trading loss. The frozen forward pilot remains unchanged.
+
+## Event price and exposure sensitivity — 28 October 2026
+
+`EventOpportunityStore` now binds an available source-cited card to supplied original quote/cost/terminal-price/account-state evidence. It calculates hypothetical long/short break-even and scenario PnL, reduction versus holding and optional pre-event-reference price change with decimal arithmetic. Input/output availability, source rights, immutable dependencies and restart reuse are checked. Unknown pending orders, stale inputs and expired analyses block usable comparison. Fund/futures inputs, malformed quotes and mismatched identities/currencies/scenarios are rejected. See [contracts and limitations](EVENT_OPPORTUNITY.md).
+
+Verification: 732 local synthetic tests passed, with 20 new opportunity tests; the affected 20 also pass after the final reduction-cost review. Compileall, whitespace and documentation links passed. A fresh-process CLI replay reproduces the same assessment. Tests include quote/position timing, expiry, scenario identities, currency, unknown borrow/pending state, zero-price bankruptcy stress, immutable reads/revoked rights and Decimal context independence. Reduction is compared against holding marked to terminal mid and charges only the immediate closing cost.
+
+Terminal prices are supplied unvalidated sensitivity assumptions, not LLM-generated price forecasts or calibrated expectations. Position snapshots are supplied assertions, not verified broker reconciliation; resulting-position figures exclude pending orders. No aggregate risk, expected return, borrow permission, executable live quote feed, trading edge or order authority is inferred. This slice makes no API calls and leaves the frozen forward pilot unchanged. The offline CLI proof and tests use synthetic inputs only.
+
+## Source-cited event scenarios through OpenAI — 28 October 2026
+
+The next additive event slice introduces `EventAnalysisStore`, a bounded standard-library OpenAI Responses reader and the explicit `event-analyze` CLI. It freezes context, typed fact citations, schema/prompt/model/code versions, output-token limits and expiration before inference. Durable dispatch claims prevent automatic duplicate API calls after crashes or ambiguous failures. Accepted responses retain original bytes, exact response binding, completion availability and append-only input/result/attempt history.
+
+Scenario cards express conditional economic mechanisms, alternatives including no disruption, assumptions, counterarguments, invalidation conditions and next checks. Ambiguous/missing event or facility context forces abstention. Market pricing is explicitly unassessed; output validation establishes structure and lineage, not factual truth of model prose or predictive accuracy. Historical predictive evaluation remains invalid because pretrained knowledge contamination cannot be ruled out. The new offline demo exercises near-facility analysis, a later correction/abstention and preserved earlier cards across a fresh process restart. See [configuration and limitations](EVENT_ANALYSIS.md).
+
+A real authenticated Responses call with **synthetic evidence only** succeeded using `gpt-5.5-2026-04-23`: three accepted scenarios (adverse, none and mixed), 18 cited fact IDs, zero orders and no expired arrival. An authenticated models-list GET also succeeded. This verifies the configured OpenAI integration for that request; it is not a forecast-quality evaluation, real-company exposure test or entitlement certification. Secrets and live response artifacts remain outside version control.
+
+Integrated local verification: **712 synthetic tests passed** (46 added to the preceding 666). The CLI demo passes with fresh-process restart; the archived real API response verifies under the final code without another paid call. Compileall, changed-document links and whitespace checks pass. Independent review resolved exact assertion/citation matching, future attempt visibility after clock rollback, transaction/snapshot gaps and terminal failure logging after in-flight rights revocation. Exact-head remote CI is recorded on the delivery PR separately.
+
+Licensed financial-news/Bloomberg access, real facility/supply-chain coverage, semantic claim review, point-in-time market-price comparison, predictive evaluation, generic event-artifact/outcome binding, model training and event-driven order submission remain pending. No new runtime dependency or order engine was installed. The frozen forward pilot and trading mandates are unchanged. The earlier event-intake section's LLM-unimplemented statement describes its preceding slice.
+
+## Public event intake and supplied facility context — 28 October 2026
+
+The first executable event-intelligence slice adds read-only USGS GeoJSON and GDACS RSS adapters, immutable raw captures/provider revisions, durable quarantine/conflict lineage and source-scoped historical queries. Operational availability is recorded after normalization/validation, not from an old provider timestamp. Late old revisions cannot regress the latest state; same-revision contradictions and equal-time unordered revisions remain explicit ambiguities. Current usage revocations and raw/manifest integrity checks apply to reads.
+
+Supplied facility assertions reuse canonical company/listing identities and original document evidence, with explicit owner/operator, economic validity and actual registration availability. Context is geographic investigation with documented uncertainty; proximity is not damage, production loss or a return prediction. A continuous polling CLI captures updates and saves reports without issuing orders. The synthetic demo proves a corrected event, changed facility relevance and preserved historical knowledge across restarts. See [event pipeline usage and limits](EVENT_PIPELINE.md) and [Swedish design](EVENT_INTELLIGENCE_SV.md).
+
+A development read-only probe exercised both actual public adapters in memory: five USGS observations and 303 GDACS observations normalized with zero quarantines in those two specific responses. No downloaded raw data was saved/committed. This establishes one response-access/format observation only, not independently reviewed entitlements, source completeness, historical admission or continuous operation. CI uses synthetic fixtures only.
+
+Local integrated verification: **666 synthetic tests passed**, including 111 event/source/context/polling tests added to the preceding 555. The event demonstration is byte-stable across a fresh process restart; a mocked one-poll CLI proof connects archive, context and exclusive report output. Compileall, changed-document relative links and whitespace checks passed. Independent review found and resolved processing-time backdating, hidden invalid-row ambiguity, unordered equal-time revisions and repeated full-feed verification. Exact-head remote CI is reported on the delivery PR separately.
+
+Licensed financial-news/Bloomberg access, real facility/supply-chain coverage, cross-source physical-incident resolution, event-artifact/outcome dependency binding, economic-impact models, LLM integration and event-driven order submission remain unimplemented. No additional runtime dependency or order engine was installed. The frozen forward pilot, data/training admission status and live controls are unchanged. Earlier dated capability rows below retain their original scope; they are not claims that this event slice or a predictive trading system was previously complete.
 
 ## Normalized daily market records — 2026-10-25
 
@@ -99,23 +167,23 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Paper calendar GET transport and legacy capture staging | Implemented with offline transport/format tests; authenticated account access unverified |
 | Scoped rights/provenance/temporal/coverage review gate | Implemented as declared eligibility reports; no actual dataset promotion or independent certification |
 | SEC submissions and raw daily-price GET transport | Implemented with injected-response tests; genuine source access not verified |
-| News and NAV adapters | Not implemented |
+| News and NAV adapters | USGS/GDACS event adapters implemented; licensed financial news and NAV remain pending |
 | Artifact dependencies and append-only incident lineage | Implemented offline with source/hash/cutoff checks and downstream impact |
 | Locked predictions and matured outcome revisions | Implemented offline for declared evaluation labels; no training authorization |
 | Real equity/fund data entitlement | Not verified |
 | Trader-history completeness or verification | Not implemented or verified |
 | New datasets approved for training | None |
-| AI analysis, predictive models and self-learning | Not implemented; evaluation queue is an offline foundation only |
+| AI analysis, predictive models and self-learning | Source-cited OpenAI scenario analysis implemented; calibrated predictive models and self-learning remain pending |
 | Pre-outcome human decision journal and intervention attribution | Required by masterplan 1.4; not implemented |
-| Exposure-linked hedge policy, lifecycle and risk/result attribution | Required by masterplan 1.4; not implemented |
+| Exposure-linked hedge research policy and supplied-state monitoring | Bounded offline stress comparison/monitor implemented; real fills, settlement/roll lifecycle and complete acceptance remain pending |
 | Frozen numerical baseline and chronological experiment register | Implemented offline for synthetic target/abstention evaluation; no fills or performance |
 | LEAN own-data export/reader bridge | Synthetic bundle and parser/API mechanics implemented; real admission binding/runtime trial pending |
 | Supplied-simulation cash/position ledger | Implemented offline with fees/actions/reconciliation; no broker/LEAN event verification |
 | Read-only readiness diagnostic | Implemented; configuration presence is not credential/source verification |
-| Full LEAN replay and reconciled engine acceptance | Not executed |
+| Full LEAN replay and reconciled engine acceptance | Synthetic Mac accounting pass reported; admitted real-data replay remains pending |
 | Backtesting and strategy profitability | Not implemented or established |
 | UI, broker or fund order adapters | Not implemented |
-| Simulated or live orders | Not executed |
+| Simulated or live orders | Synthetic LEAN fills reported and local callback harness implemented; external broker orders not implemented |
 
 ## Four source and research foundations
 

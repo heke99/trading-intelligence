@@ -39,6 +39,60 @@ def demo(directory: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    sim_demo = commands.add_parser("hedge-simulation-demo", help="Run four-part synthetic intent/control/callback/restart proof; no broker orders")
+    sim_demo.add_argument("--out", type=Path, required=True)
+    reservation_status = commands.add_parser("hedge-reservation-status", help="Fresh research-input check or historical local reservation state")
+    for option in ("database", "reservation-id"):
+        reservation_status.add_argument("--" + option, required=True)
+    reservation_status.add_argument("--as-of", help="Historical metadata only; omitting this performs a fresh research-input check")
+    reserve_parser = commands.add_parser("hedge-reserve", help="Reserve local research cash/exposure; never submits orders")
+    for option in ("database", "reservation-id", "search-id", "alternative-id"):
+        reserve_parser.add_argument("--" + option, required=True)
+    release_parser = commands.add_parser("hedge-release", help="Abandon a local research reservation; never releases broker margin")
+    for option in ("database", "reservation-id"):
+        release_parser.add_argument("--" + option, required=True)
+    release_parser.add_argument("--reason", choices=("abandoned_research", "superseded_research"), required=True)
+    hedge_demo_parser = commands.add_parser("hedge-research-demo", help="Compare invented hedges and monitor partial/orphan exposure without orders")
+    hedge_demo_parser.add_argument("--out", type=Path, required=True)
+    for name in ("hedge-search", "hedge-monitor"):
+        command = commands.add_parser(name, help="Evidence-backed hedge research; no broker transport")
+        for option in ("database", "search-id", "evidence-id", "as-of"):
+            command.add_argument("--" + option, required=True)
+        command.add_argument("--opportunity-id" if name == "hedge-search" else "--monitor-id", required=True)
+    opportunity_demo_parser = commands.add_parser("event-opportunity-demo", help="Compare invented event price scenarios and exposure without network or orders")
+    opportunity_demo_parser.add_argument("--out", type=Path, required=True)
+    opportunity = commands.add_parser("event-opportunity", help="Assess supplied evidence-backed price/cost/account sensitivity")
+    for option in ("database", "assessment-id", "analysis-id", "evidence-id", "as-of"):
+        opportunity.add_argument("--" + option, required=True)
+    events_demo = commands.add_parser("event-intelligence-demo", help="Replay invented event revisions and facility context without network or orders")
+    events_demo.add_argument("--out", type=Path, required=True)
+    analysis_demo = commands.add_parser("event-analysis-demo", help="Run an invented scenario analysis through a mocked Responses transport; no network")
+    analysis_demo.add_argument("--out", type=Path, required=True)
+    analysis = commands.add_parser("event-analyze", help="Send a frozen event context to OpenAI for source-cited research scenarios")
+    for option in ("database", "request-id", "analysis-id", "source-id", "event-id", "as-of", "expires-at", "model"):
+        analysis.add_argument("--" + option, required=True)
+    analysis.add_argument("--radius-km", type=float, required=True)
+    analysis.add_argument("--max-output-tokens", type=int, default=4096)
+    analysis.add_argument("--env-file", type=Path)
+    analysis.add_argument("--external-processing-reviewed", action="store_true",
+                          help="Confirm the selected sources permit sending this packet to the API")
+    events_sync = commands.add_parser("event-sync", help="Capture one public USGS or GDACS feed into an explicitly configured source")
+    for option in ("database", "source-id", "import-id"):
+        events_sync.add_argument("--" + option, required=True)
+    from .event_sources import EVENT_FEEDS
+    events_sync.add_argument("--feed", choices=tuple(EVENT_FEEDS), required=True)
+    event_context = commands.add_parser("event-context", help="Inspect dated facility proximity; geographic relevance does not establish damage")
+    for option in ("database", "source-id", "event-id", "as-of"):
+        event_context.add_argument("--" + option, required=True)
+    event_context.add_argument("--radius-km", type=float, required=True)
+    events_watch = commands.add_parser("event-watch", help="Continuously collect and produce evidence context; never submits orders")
+    for option in ("database", "source-id"):
+        events_watch.add_argument("--" + option, required=True)
+    events_watch.add_argument("--feed", choices=tuple(EVENT_FEEDS), required=True)
+    events_watch.add_argument("--out", type=Path, required=True)
+    events_watch.add_argument("--radius-km", type=float, required=True)
+    events_watch.add_argument("--poll-seconds", type=float, default=60)
+    events_watch.add_argument("--iterations", type=int)
     command = commands.add_parser("demo", help="Run an invented offline evidence and identity example")
     command.add_argument("--out", type=Path, required=True)
     futures_command = commands.add_parser("futures-demo", help="Preview an invented futures opening intent offline")
@@ -78,7 +132,124 @@ def main():
     for option in ("database", "connection-id", "account-number", "expected-account-id", "source-id", "import-id"):
         sync.add_argument("--" + option, required=True)
     args = parser.parse_args()
-    if args.command == "alpaca-sync":
+    if args.command == "hedge-simulation-demo":
+        from .hedge_simulation_demo import hedge_simulation_demo
+        result = hedge_simulation_demo(args.out)
+    elif args.command in {"hedge-reserve", "hedge-release", "hedge-reservation-status"}:
+        from .hedge_reservations import HedgeReservationStore
+        from .contracts import ContractError
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("Existing research database required")
+            with HedgeReservationStore(args.database) as store:
+                if args.command == "hedge-reservation-status":
+                    result = (store.reservation_as_of(args.reservation_id,
+                        as_of=datetime.fromisoformat(args.as_of.replace("Z", "+00:00")))
+                        if args.as_of else store.reservation_readiness(args.reservation_id))
+                elif args.command == "hedge-reserve":
+                    result = store.reserve(args.reservation_id, args.search_id, args.alternative_id)
+                else:
+                    result = store.release(args.reservation_id, reason=args.reason)
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Local hedge reservation rejected: {error}\n")
+    elif args.command == "hedge-research-demo":
+        from .hedge_demo import hedge_demo
+        result = hedge_demo(args.out)
+    elif args.command in {"hedge-search", "hedge-monitor"}:
+        from .hedge_research import HedgeResearchStore
+        from .contracts import ContractError
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("Existing evidence database required")
+            with HedgeResearchStore(args.database) as store:
+                cutoff = datetime.fromisoformat(args.as_of.replace("Z", "+00:00"))
+                if args.command == "hedge-search":
+                    result = store.search(args.search_id, args.opportunity_id, args.evidence_id, as_of=cutoff)
+                else:
+                    result = store.monitor(args.monitor_id, args.search_id, args.evidence_id, as_of=cutoff)
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Hedge research rejected: {error}\n")
+    elif args.command == "event-opportunity-demo":
+        from .event_opportunity_demo import opportunity_demo
+        result = opportunity_demo(args.out)
+    elif args.command == "event-opportunity":
+        from .event_opportunity import EventOpportunityStore
+        from .contracts import ContractError
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("Existing evidence database required")
+            with EventOpportunityStore(args.database) as store:
+                result = store.assess(args.assessment_id, args.analysis_id, args.evidence_id,
+                    as_of=datetime.fromisoformat(args.as_of.replace("Z", "+00:00")))
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Event sensitivity rejected: {error}\n")
+    elif args.command == "event-intelligence-demo":
+        from .event_demo import event_demo
+        result = event_demo(args.out)
+    elif args.command == "event-analysis-demo":
+        from .event_analysis_demo import event_analysis_demo
+        result = event_analysis_demo(args.out)
+    elif args.command == "event-analyze":
+        from .contracts import ContractError
+        from .event_analysis import EventAnalysisStore
+        from .event_analysis_sync import analyze_event, analysis_code_version, openai_credential
+        from .openai_event_reader import OpenAIEventReader
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("An existing source-configured evidence database is required")
+            if not args.external_processing_reviewed:
+                raise ContractError("Review source rights for external processing before API dispatch")
+            reader = OpenAIEventReader(openai_credential(args.env_file))
+            with EventAnalysisStore(args.database) as store:
+                result = analyze_event(store, request_id=args.request_id, analysis_id=args.analysis_id,
+                    source_id=args.source_id, event_id=args.event_id,
+                    as_of=datetime.fromisoformat(args.as_of.replace("Z", "+00:00")),
+                    expires_at=datetime.fromisoformat(args.expires_at.replace("Z", "+00:00")),
+                    radius_km=args.radius_km, model=args.model, code_version=analysis_code_version(),
+                    reader=reader, max_output_tokens=args.max_output_tokens,
+                    external_processing_reviewed=args.external_processing_reviewed)
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Event analysis rejected: {error}\n")
+    elif args.command in {"event-sync", "event-context", "event-watch"}:
+        from .contracts import ContractError
+        from .event_context import EventContextStore
+        from .event_sources import UsgsEventReader
+        from .event_sync import sync_events, watch_events
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("An existing source-configured evidence database is required")
+            with EventContextStore(args.database) as store:
+                if args.command == "event-context":
+                    cutoff = datetime.fromisoformat(args.as_of.replace("Z", "+00:00"))
+                    result = store.context(args.source_id, args.event_id, as_of=cutoff,
+                                           radius_km=args.radius_km)
+                else:
+                    if args.feed == "gdacs":
+                        from .gdacs_events import GdacsEventReader
+                        reader = GdacsEventReader()
+                    else:
+                        reader = UsgsEventReader(args.feed)
+                    if args.command == "event-sync":
+                        result = sync_events(store, source_id=args.source_id, import_id=args.import_id,
+                                             feed=args.feed, reader=reader)
+                    else:
+                        args.out.mkdir(parents=True, exist_ok=True)
+                        for report in watch_events(store, source_id=args.source_id, feed=args.feed,
+                                reader=reader, radius_km=args.radius_km,
+                                poll_seconds=args.poll_seconds, iterations=args.iterations):
+                            path = args.out/f"{report['run_id']}-{report['iteration']:06d}.json"
+                            with path.open('x', encoding='utf-8') as output:
+                                output.write(json.dumps(report, sort_keys=True, indent=2)+'\n')
+                            summary = {key: report[key] for key in
+                                ('status', 'source_id', 'feed', 'iteration', 'orders_sent', 'live_trading')}
+                            summary['report_file'] = str(path)
+                            print(json.dumps(summary, sort_keys=True), flush=True)
+                        return
+        except KeyboardInterrupt:
+            parser.exit(130, "Event collection stopped; existing captures are preserved.\n")
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Event operation rejected: {error}\n")
+    elif args.command == "alpaca-sync":
         import os
         from .alpaca_reader import AlpacaReferenceReader
         from .broker_imports import BrokerImportStore

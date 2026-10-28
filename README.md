@@ -6,6 +6,10 @@ Rebuild for equities, ETFs, ordinary mutual funds and futures with source-backed
 
 Read the [Swedish masterplan](docs/MASTERPLAN_SV.md), [implemented contracts and limitations](docs/FOUNDATION.md) and [rebuild status](docs/REBUILD_STATUS.md).
 
+The [global event-intelligence specification](docs/EVENT_INTELLIGENCE_SV.md) now has a first [runnable event intake and facility-context slice](docs/EVENT_PIPELINE.md): public USGS/GDACS readers, immutable revisions, supplied company-facility evidence and continuous read-only context collection. Licensed financial-news feeds, predictive impact models and event-driven order submission remain unimplemented; the frozen forward pilot is unchanged.
+
+The next [source-cited scenario analysis layer](docs/EVENT_ANALYSIS.md) now connects that context to OpenAI Responses with immutable inputs/results, explicit alternatives and abstention. It interprets conditional economic mechanisms; market pricing, predictive validation and trade selection remain pending. Run `event-analysis-demo --out data/event-analysis-demo` offline, or configure `event-analyze` for an explicitly reviewed API dispatch.
+
 ## Run the offline example
 
 Use Python 3.11 or later from the repository root. The offline demos and tests need no runtime dependencies, API keys or network calls. The separate alpaca-sync command requires configured paper credentials and an explicitly permitted source.
@@ -114,4 +118,11 @@ The [forward observation pilot](docs/FORWARD_PILOT.md) now freezes the existing 
 
 The separate [synthetic LEAN accounting trial](docs/LEAN_BASELINE_SMOKE.md) now connects frozen rule decisions, four intended engine-simulated fills, modeled costs and independent cash/position reconciliation. It uses authored prices only; actual Mac engine acceptance is required and does not admit the real forward dataset.
 
+The [event price/exposure sensitivity layer](docs/EVENT_OPPORTUNITY.md) compares source-cited cards with supplied bid/ask, costs and account snapshots. It is a hypothetical research comparison, not an expected-return model or order approval. Run `event-opportunity-demo --out data/opportunity-demo` offline.
+
+The [hedge research layer](docs/HEDGE_RESEARCH.md) compares a protected book, one new canonical futures hedge and cash reduction under supplied stress/cash/factor limits. Partial/orphan monitoring remains symbolic research. Run `hedge-research-demo --out data/hedge-demo` offline.
+
+The [four-part synthetic hedge lifecycle proof](docs/HEDGE_SIMULATION.md) freezes reservation-linked intents, checks latest supplied route controls, journals callback faults and verifies restart without duplicate claims. Run `hedge-simulation-demo --out data/hedge-simulation`. It sends no broker orders.
 The [corporate-action capture](docs/CORPORATE_ACTION_CAPTURE.md) now fetches bounded action pages under the matched paper context and binds them to the exact forward price/calendar snapshot. Split/dividend staging preserves publication unknowns and process/ex/payment dates; an empty or terminal response does not certify effective-date coverage or enable accounting.
+
+The [captured-action accounting preview](docs/CAPTURED_ACTION_ACCOUNTING.md) binds actual capture manifests to supplied opening holdings and exact reviewed row versions. Split/dividend calculations remain conditional and do not change real positions/cash or admit data.
