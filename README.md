@@ -8,6 +8,8 @@ Read the [Swedish masterplan](docs/MASTERPLAN_SV.md), [implemented contracts and
 
 The [global event-intelligence specification](docs/EVENT_INTELLIGENCE_SV.md) now has a first [runnable event intake and facility-context slice](docs/EVENT_PIPELINE.md): public USGS/GDACS readers, immutable revisions, supplied company-facility evidence and continuous read-only context collection. Licensed financial-news feeds, predictive impact models and event-driven order submission remain unimplemented; the frozen forward pilot is unchanged.
 
+The next [source-cited scenario analysis layer](docs/EVENT_ANALYSIS.md) now connects that context to OpenAI Responses with immutable inputs/results, explicit alternatives and abstention. It interprets conditional economic mechanisms; market pricing, predictive validation and trade selection remain pending. Run `event-analysis-demo --out data/event-analysis-demo` offline, or configure `event-analyze` for an explicitly reviewed API dispatch.
+
 ## Run the offline example
 
 Use Python 3.11 or later from the repository root. The offline demos and tests need no runtime dependencies, API keys or network calls. The separate alpaca-sync command requires configured paper credentials and an explicitly permitted source.

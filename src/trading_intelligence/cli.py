@@ -41,6 +41,16 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     events_demo = commands.add_parser("event-intelligence-demo", help="Replay invented event revisions and facility context without network or orders")
     events_demo.add_argument("--out", type=Path, required=True)
+    analysis_demo = commands.add_parser("event-analysis-demo", help="Run an invented scenario analysis through a mocked Responses transport; no network")
+    analysis_demo.add_argument("--out", type=Path, required=True)
+    analysis = commands.add_parser("event-analyze", help="Send a frozen event context to OpenAI for source-cited research scenarios")
+    for option in ("database", "request-id", "analysis-id", "source-id", "event-id", "as-of", "expires-at", "model"):
+        analysis.add_argument("--" + option, required=True)
+    analysis.add_argument("--radius-km", type=float, required=True)
+    analysis.add_argument("--max-output-tokens", type=int, default=4096)
+    analysis.add_argument("--env-file", type=Path)
+    analysis.add_argument("--external-processing-reviewed", action="store_true",
+                          help="Confirm the selected sources permit sending this packet to the API")
     events_sync = commands.add_parser("event-sync", help="Capture one public USGS or GDACS feed into an explicitly configured source")
     for option in ("database", "source-id", "import-id"):
         events_sync.add_argument("--" + option, required=True)
@@ -100,6 +110,30 @@ def main():
     if args.command == "event-intelligence-demo":
         from .event_demo import event_demo
         result = event_demo(args.out)
+    elif args.command == "event-analysis-demo":
+        from .event_analysis_demo import event_analysis_demo
+        result = event_analysis_demo(args.out)
+    elif args.command == "event-analyze":
+        from .contracts import ContractError
+        from .event_analysis import EventAnalysisStore
+        from .event_analysis_sync import analyze_event, analysis_code_version, openai_credential
+        from .openai_event_reader import OpenAIEventReader
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("An existing source-configured evidence database is required")
+            if not args.external_processing_reviewed:
+                raise ContractError("Review source rights for external processing before API dispatch")
+            reader = OpenAIEventReader(openai_credential(args.env_file))
+            with EventAnalysisStore(args.database) as store:
+                result = analyze_event(store, request_id=args.request_id, analysis_id=args.analysis_id,
+                    source_id=args.source_id, event_id=args.event_id,
+                    as_of=datetime.fromisoformat(args.as_of.replace("Z", "+00:00")),
+                    expires_at=datetime.fromisoformat(args.expires_at.replace("Z", "+00:00")),
+                    radius_km=args.radius_km, model=args.model, code_version=analysis_code_version(),
+                    reader=reader, max_output_tokens=args.max_output_tokens,
+                    external_processing_reviewed=args.external_processing_reviewed)
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Event analysis rejected: {error}\n")
     elif args.command in {"event-sync", "event-context", "event-watch"}:
         from .contracts import ContractError
         from .event_context import EventContextStore

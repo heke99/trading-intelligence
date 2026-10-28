@@ -23,7 +23,7 @@ There is no hardcoded rule mapping a disaster to long or short, no fixed winner/
 | ArtifactRegistryStore / OutcomeQueueStore | Existing foundations remain available; typed event-capture dependency binding and event prediction/outcome registration are not implemented in this slice |
 | Broker/futures contracts | Canonical identities remain separate from broker symbols; there is no submit, cancel, long/short or hedge authority in this event layer |
 
-The event code uses the Python standard library. It does not install an additional trading engine or call an LLM API.
+The intake/context code uses the Python standard library. The additive [scenario analysis layer](EVENT_ANALYSIS.md) can now call OpenAI Responses from an explicitly configured `event-analyze` command; collection alone does not call an LLM. No additional trading engine is installed.
 
 ## Offline demonstration
 

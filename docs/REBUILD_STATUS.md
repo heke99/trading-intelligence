@@ -4,6 +4,18 @@ Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
 
 Earlier dated implementation sections retain their original evidence and limits. The latest event slice below does not promote market datasets, models or trading capabilities.
 
+## Source-cited event scenarios through OpenAI — 28 October 2026
+
+The next additive event slice introduces `EventAnalysisStore`, a bounded standard-library OpenAI Responses reader and the explicit `event-analyze` CLI. It freezes context, typed fact citations, schema/prompt/model/code versions, output-token limits and expiration before inference. Durable dispatch claims prevent automatic duplicate API calls after crashes or ambiguous failures. Accepted responses retain original bytes, exact response binding, completion availability and append-only input/result/attempt history.
+
+Scenario cards express conditional economic mechanisms, alternatives including no disruption, assumptions, counterarguments, invalidation conditions and next checks. Ambiguous/missing event or facility context forces abstention. Market pricing is explicitly unassessed; output validation establishes structure and lineage, not factual truth of model prose or predictive accuracy. Historical predictive evaluation remains invalid because pretrained knowledge contamination cannot be ruled out. The new offline demo exercises near-facility analysis, a later correction/abstention and preserved earlier cards across a fresh process restart. See [configuration and limitations](EVENT_ANALYSIS.md).
+
+A real authenticated Responses call with **synthetic evidence only** succeeded using `gpt-5.5-2026-04-23`: three accepted scenarios (adverse, none and mixed), 18 cited fact IDs, zero orders and no expired arrival. An authenticated models-list GET also succeeded. This verifies the configured OpenAI integration for that request; it is not a forecast-quality evaluation, real-company exposure test or entitlement certification. Secrets and live response artifacts remain outside version control.
+
+Integrated local verification: **712 synthetic tests passed** (46 added to the preceding 666). The CLI demo passes with fresh-process restart; the archived real API response verifies under the final code without another paid call. Compileall, changed-document links and whitespace checks pass. Independent review resolved exact assertion/citation matching, future attempt visibility after clock rollback, transaction/snapshot gaps and terminal failure logging after in-flight rights revocation. Exact-head remote CI is recorded on the delivery PR separately.
+
+Licensed financial-news/Bloomberg access, real facility/supply-chain coverage, semantic claim review, point-in-time market-price comparison, predictive evaluation, generic event-artifact/outcome binding, model training and event-driven order submission remain pending. No new runtime dependency or order engine was installed. The frozen forward pilot and trading mandates are unchanged. The earlier event-intake section's LLM-unimplemented statement describes its preceding slice.
+
 ## Public event intake and supplied facility context — 28 October 2026
 
 The first executable event-intelligence slice adds read-only USGS GeoJSON and GDACS RSS adapters, immutable raw captures/provider revisions, durable quarantine/conflict lineage and source-scoped historical queries. Operational availability is recorded after normalization/validation, not from an old provider timestamp. Late old revisions cannot regress the latest state; same-revision contradictions and equal-time unordered revisions remain explicit ambiguities. Current usage revocations and raw/manifest integrity checks apply to reads.
