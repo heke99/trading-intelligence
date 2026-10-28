@@ -6,6 +6,8 @@ Rebuild for equities, ETFs, ordinary mutual funds and futures with source-backed
 
 Read the [Swedish masterplan](docs/MASTERPLAN_SV.md), [implemented contracts and limitations](docs/FOUNDATION.md) and [rebuild status](docs/REBUILD_STATUS.md).
 
+The proposed [global event-intelligence specification](docs/EVENT_INTELLIGENCE_SV.md) connects disaster/news evidence, dated facility and supply-chain exposure, economic scenarios and remaining tradable opportunity to the existing risk/execution boundary. It is a documentation-only design; news feeds, event models and event-driven order submission are not implemented, and the frozen forward pilot is unchanged.
+
 ## Run the offline example
 
 Use Python 3.11 or later from the repository root. The offline demos and tests need no runtime dependencies, API keys or network calls. The separate alpaca-sync command requires configured paper credentials and an explicitly permitted source.
