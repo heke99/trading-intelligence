@@ -39,6 +39,13 @@ def demo(directory: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    reserve_parser = commands.add_parser("hedge-reserve", help="Reserve local research cash/exposure; never submits orders")
+    for option in ("database", "reservation-id", "search-id", "alternative-id"):
+        reserve_parser.add_argument("--" + option, required=True)
+    release_parser = commands.add_parser("hedge-release", help="Abandon a local research reservation; never releases broker margin")
+    for option in ("database", "reservation-id"):
+        release_parser.add_argument("--" + option, required=True)
+    release_parser.add_argument("--reason", choices=("abandoned_research", "superseded_research"), required=True)
     hedge_demo_parser = commands.add_parser("hedge-research-demo", help="Compare invented hedges and monitor partial/orphan exposure without orders")
     hedge_demo_parser.add_argument("--out", type=Path, required=True)
     for name in ("hedge-search", "hedge-monitor"):
@@ -119,7 +126,20 @@ def main():
     for option in ("database", "connection-id", "account-number", "expected-account-id", "source-id", "import-id"):
         sync.add_argument("--" + option, required=True)
     args = parser.parse_args()
-    if args.command == "hedge-research-demo":
+    if args.command in {"hedge-reserve", "hedge-release"}:
+        from .hedge_reservations import HedgeReservationStore
+        from .contracts import ContractError
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("Existing research database required")
+            with HedgeReservationStore(args.database) as store:
+                if args.command == "hedge-reserve":
+                    result = store.reserve(args.reservation_id, args.search_id, args.alternative_id)
+                else:
+                    result = store.release(args.reservation_id, reason=args.reason)
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Local hedge reservation rejected: {error}\n")
+    elif args.command == "hedge-research-demo":
         from .hedge_demo import hedge_demo
         result = hedge_demo(args.out)
     elif args.command in {"hedge-search", "hedge-monitor"}:

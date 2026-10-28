@@ -168,3 +168,29 @@ Real hedge selection/execution still requires verified positions, pending orders
 quotes, account permissions, statistically evaluated exposure models, complete
 cash/variation-margin/roll simulation and aggregate risk/lifecycle acceptance.
 The frozen forward pilot, LEAN engine boundary and live mandates are unchanged.
+
+
+## Shared local research reservations
+
+`HedgeReservationStore` adds an append-only local draft ledger. `reserve(id,
+search_id, alternative_id)` atomically revalidates a feasible futures alternative,
+locks protected canonical listings per full route, and sums stressed-cash claims
+on the exact hedge route/currency. Different book labels cannot bypass a listing
+lock. Different protected accounts can still consume the same hedge-account cash.
+All active claims must share the same declared free-cash amount and observation
+time; mixed cash vintages require explicit local draft reconciliation first.
+
+SQLite immediate write transactions serialize concurrent processes. ID reuse
+returns the original state, including released state; changed requests conflict.
+Expired data never silently frees a claim. `release(id, reason=...)` appends a
+terminal abandonment/supersession record, including after source-right revocation,
+without rereading source content. Metadata reads verify the local journal and
+clock monotonicity. This is conservative draft budgeting, not a new net/gross
+portfolio risk model or a broker cash ledger. All cooperating researchers must
+use the same database for these local locks to be shared.
+
+CLI commands are `hedge-reserve --database DB --reservation-id ID --search-id SEARCH
+--alternative-id ALTERNATIVE` and `hedge-release --database DB --reservation-id ID
+--reason abandoned_research`. They never submit/cancel orders or release actual
+margin. Do not reuse this abandonment API for dispatched or real positions;
+external fills require a separately reconciled execution/reservation lifecycle.

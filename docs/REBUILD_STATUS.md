@@ -4,6 +4,10 @@ Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
 
 Earlier dated implementation sections retain their original evidence and limits. The latest event slice below does not promote market datasets, models or trading capabilities.
 
+## Shared local hedge draft reservations — 28 October 2026
+
+`HedgeReservationStore` serializes local research reservations on canonical protected listings/full routes and exact-account stressed cash. It revalidates current source/policy availability, rejects overlapping exposure, sums simultaneous cash claims and rejects mixed free-cash vintages. Append-only release is explicit local draft abandonment; expiry does not free an unresolved claim. No order transport, broker margin reservation, full portfolio risk aggregation or real-position release is implemented. Integrated verification: 813 synthetic tests pass; compileall, whitespace and changed-document links pass. Eight new synthetic tests cover concurrent connections, shared account cash, alias books, changed cash vintages, restart/idempotence, stops, corruption and expiry. See [local reservation scope](HEDGE_RESEARCH.md#shared-local-research-reservations).
+
 ## Evidence-bound hedge search and supplied-state monitoring — 28 October 2026
 
 The additive `HedgeResearchStore` binds event opportunity, exact supplied holding allocations, frozen risk/exit controls and canonical expiry/session/binding/margin references. A bounded deterministic scenario search compares holding unchanged, pro-rata long-book reduction and integer long/short futures hedge alternatives under residual factor, downside, upside-sacrifice, gross exposure and exact-account cash constraints. Raw contract PnL and notional are recomputed using contract ticks/multipliers. Both-loss basis stress is mandatory for a feasible hedge direction. See [scope and contracts](HEDGE_RESEARCH.md).
