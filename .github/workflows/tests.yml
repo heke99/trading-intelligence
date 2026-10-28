@@ -37,6 +37,10 @@ jobs:
         env:
           PYTHONPATH: src
         run: python -m trading_intelligence event-analysis-demo --out "${RUNNER_TEMP}/ti-event-analysis-demo"
+      - name: Run synthetic event price and exposure sensitivity
+        env:
+          PYTHONPATH: src
+        run: python -m trading_intelligence event-opportunity-demo --out "${RUNNER_TEMP}/ti-opportunity-demo"
       - name: Run offline futures example
         env:
           PYTHONPATH: src

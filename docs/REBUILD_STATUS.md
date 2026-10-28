@@ -4,6 +4,14 @@ Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
 
 Earlier dated implementation sections retain their original evidence and limits. The latest event slice below does not promote market datasets, models or trading capabilities.
 
+## Event price and exposure sensitivity — 28 October 2026
+
+`EventOpportunityStore` now binds an available source-cited card to supplied original quote/cost/terminal-price/account-state evidence. It calculates hypothetical long/short break-even and scenario PnL, reduction versus holding and optional pre-event-reference price change with decimal arithmetic. Input/output availability, source rights, immutable dependencies and restart reuse are checked. Unknown pending orders, stale inputs and expired analyses block usable comparison. Fund/futures inputs, malformed quotes and mismatched identities/currencies/scenarios are rejected. See [contracts and limitations](EVENT_OPPORTUNITY.md).
+
+Verification: 732 local synthetic tests passed, with 20 new opportunity tests; the affected 20 also pass after the final reduction-cost review. Compileall, whitespace and documentation links passed. A fresh-process CLI replay reproduces the same assessment. Tests include quote/position timing, expiry, scenario identities, currency, unknown borrow/pending state, zero-price bankruptcy stress, immutable reads/revoked rights and Decimal context independence. Reduction is compared against holding marked to terminal mid and charges only the immediate closing cost.
+
+Terminal prices are supplied unvalidated sensitivity assumptions, not LLM-generated price forecasts or calibrated expectations. Position snapshots are supplied assertions, not verified broker reconciliation; resulting-position figures exclude pending orders. No aggregate risk, expected return, borrow permission, executable live quote feed, trading edge or order authority is inferred. This slice makes no API calls and leaves the frozen forward pilot unchanged. The offline CLI proof and tests use synthetic inputs only.
+
 ## Source-cited event scenarios through OpenAI — 28 October 2026
 
 The next additive event slice introduces `EventAnalysisStore`, a bounded standard-library OpenAI Responses reader and the explicit `event-analyze` CLI. It freezes context, typed fact citations, schema/prompt/model/code versions, output-token limits and expiration before inference. Durable dispatch claims prevent automatic duplicate API calls after crashes or ambiguous failures. Accepted responses retain original bytes, exact response binding, completion availability and append-only input/result/attempt history.

@@ -117,3 +117,5 @@ After the reported 17-row Mac observer pass, the [two-source captured admission 
 The [forward observation pilot](docs/FORWARD_PILOT.md) now freezes the existing numerical rule configuration and captures subsequent paper-account-matched calendar/prices with an immutable attempt/abstention journal. It collects prospective evidence while admission is unresolved; it does not execute the real-data strategy, simulate fills or place orders.
 
 The separate [synthetic LEAN accounting trial](docs/LEAN_BASELINE_SMOKE.md) now connects frozen rule decisions, four intended engine-simulated fills, modeled costs and independent cash/position reconciliation. It uses authored prices only; actual Mac engine acceptance is required and does not admit the real forward dataset.
+
+The [event price/exposure sensitivity layer](docs/EVENT_OPPORTUNITY.md) compares source-cited cards with supplied bid/ask, costs and account snapshots. It is a hypothetical research comparison, not an expected-return model or order approval. Run `event-opportunity-demo --out data/opportunity-demo` offline.

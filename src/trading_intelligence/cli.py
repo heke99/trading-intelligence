@@ -39,6 +39,11 @@ def demo(directory: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    opportunity_demo_parser = commands.add_parser("event-opportunity-demo", help="Compare invented event price scenarios and exposure without network or orders")
+    opportunity_demo_parser.add_argument("--out", type=Path, required=True)
+    opportunity = commands.add_parser("event-opportunity", help="Assess supplied evidence-backed price/cost/account sensitivity")
+    for option in ("database", "assessment-id", "analysis-id", "evidence-id", "as-of"):
+        opportunity.add_argument("--" + option, required=True)
     events_demo = commands.add_parser("event-intelligence-demo", help="Replay invented event revisions and facility context without network or orders")
     events_demo.add_argument("--out", type=Path, required=True)
     analysis_demo = commands.add_parser("event-analysis-demo", help="Run an invented scenario analysis through a mocked Responses transport; no network")
@@ -107,7 +112,21 @@ def main():
     for option in ("database", "connection-id", "account-number", "expected-account-id", "source-id", "import-id"):
         sync.add_argument("--" + option, required=True)
     args = parser.parse_args()
-    if args.command == "event-intelligence-demo":
+    if args.command == "event-opportunity-demo":
+        from .event_opportunity_demo import opportunity_demo
+        result = opportunity_demo(args.out)
+    elif args.command == "event-opportunity":
+        from .event_opportunity import EventOpportunityStore
+        from .contracts import ContractError
+        try:
+            if not Path(args.database).is_file():
+                raise ContractError("Existing evidence database required")
+            with EventOpportunityStore(args.database) as store:
+                result = store.assess(args.assessment_id, args.analysis_id, args.evidence_id,
+                    as_of=datetime.fromisoformat(args.as_of.replace("Z", "+00:00")))
+        except (ContractError, OSError, ValueError) as error:
+            parser.exit(2, f"Event sensitivity rejected: {error}\n")
+    elif args.command == "event-intelligence-demo":
         from .event_demo import event_demo
         result = event_demo(args.out)
     elif args.command == "event-analysis-demo":
