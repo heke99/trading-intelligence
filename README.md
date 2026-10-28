@@ -124,3 +124,5 @@ The [hedge research layer](docs/HEDGE_RESEARCH.md) compares a protected book, on
 
 The [four-part synthetic hedge lifecycle proof](docs/HEDGE_SIMULATION.md) freezes reservation-linked intents, checks latest supplied route controls, journals callback faults and verifies restart without duplicate claims. Run `hedge-simulation-demo --out data/hedge-simulation`. It sends no broker orders.
 The [corporate-action capture](docs/CORPORATE_ACTION_CAPTURE.md) now fetches bounded action pages under the matched paper context and binds them to the exact forward price/calendar snapshot. Split/dividend staging preserves publication unknowns and process/ex/payment dates; an empty or terminal response does not certify effective-date coverage or enable accounting.
+
+The [captured-action accounting preview](docs/CAPTURED_ACTION_ACCOUNTING.md) binds actual capture manifests to supplied opening holdings and exact reviewed row versions. Split/dividend calculations remain conditional and do not change real positions/cash or admit data.

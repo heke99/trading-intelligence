@@ -8,6 +8,14 @@ Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
 
 Earlier dated implementation sections retain their original evidence and limits. The latest event slice below does not promote market datasets, models or trading capabilities.
 
+## Captured actions to conditional holdings accounting — 28 October 2026
+
+`CapturedActionAccountingStore` now binds exact captured action manifests to original opening account/listing/holding evidence and reviewed per-row policy fingerprints. It previews exact split quantities, dividend receivables and cash only after explicit payment time. Missing entitlement/terms/no-trade assertions, due bills and fractional reverse-split results block closing totals. Ex/payment instants are explicitly supplied and must match the provider dates in the declared market timezone. Same-time ordering defines the supplied dividend share basis; neither timing nor historical knowledge is invented. See [contracts and usage](CAPTURED_ACTION_ACCOUNTING.md).
+
+Verification: 881 synthetic tests pass, including 17 new capture-to-preview/CLI/restart/rights/precision/identity/entitlement tests. Compileall, changed-document links and whitespace checks pass. Exact-head remote CI is recorded on the PR.
+
+Results and corrections remain immutable with processing availability, source-right and raw/hash checks. Wrong account/revision/currency cannot reuse an earlier review. This does not apply actions to holdings/cash, reconcile a broker, establish coverage/rights or admit a dataset. Conditional research outputs keep accounting/data/training/live approval false. Tests and CLI proof use invented provider captures; no actual data access or trading is claimed.
+
 ## Four-part synthetic hedge intent/control/callback/restart proof — 28 October 2026
 
 Four connected components now reuse research reservations and canonical broker intent contracts: frozen one-per-reservation synthetic intents; latest supplied synthetic route controls/current dependency checks; durable single dispatch claims and append-only callback events; an end-to-end CLI/restart proof. Partial and late cumulative quantities, cancellation/rejection/unknown status, hard stops, revised margin references, stale inputs and abandonment locks are exercised without broker transport. Late observations remain accepted after stops/rights revocation; the simulator does not resubmit or fail over after unknown status. See [four-part scope and usage](HEDGE_SIMULATION.md).
