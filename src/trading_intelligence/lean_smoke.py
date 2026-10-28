@@ -158,8 +158,9 @@ def verify_inputs(directory):
     return manifest
 
 
-def validate_result(directory,returncode):
-    root=Path(directory).resolve();manifest=verify_inputs(root)
+def verify_engine_completion(directory,returncode,*,expected_orders=0):
+    """Shared engine/log/final-state checks for isolated backtest harnesses."""
+    root=Path(directory).resolve()
     log=(root/'output'/'engine.log').read_text(errors='replace')
     error_line=next((line.strip()[:1000] for line in log.splitlines()
         if re.search(r'ERROR::|Runtime Error|Unhandled exception|Traceback \(most recent call last\)',line,re.I)),None)
@@ -177,9 +178,15 @@ def validate_result(directory,returncode):
     if not isinstance(state,dict):
         raise ContractError('LEAN final state must be an object')
     if (state.get('Status')!='Completed' or state.get('RuntimeError')!=''
-            or state.get('StackTrace')!='' or str(state.get('OrderCount'))!='0'
+            or state.get('StackTrace')!='' or str(state.get('OrderCount'))!=str(expected_orders)
             or not state.get('EndTime')):
         raise SmokeFailure('engine_final_state_failed','LEAN final state failed: '+str(state.get('Status'))+'; '+str(state.get('RuntimeError',''))[:1000])
+    return final
+
+
+def validate_result(directory,returncode):
+    root=Path(directory).resolve();manifest=verify_inputs(root)
+    verify_engine_completion(root,returncode)
     observer_path=root/'output'/'observer-evidence.json'
     if not observer_path.is_file():
         raise SmokeFailure('observer_evidence_missing','LEAN completed without observer-evidence.json')
@@ -221,10 +228,10 @@ def validate_result(directory,returncode):
         evidence_files={str(p.relative_to(root)):digest(p.read_bytes()) for p in sorted((root/'output').rglob('*')) if p.is_file()})
 
 
-def run_prepared(directory,*,timeout=180,runner=None,clock=None):
+def run_prepared(directory,*,timeout=180,runner=None,clock=None,input_verifier=None,result_validator=None):
     if type(timeout) is not int or not 30<=timeout<=900:
         raise ContractError('Timeout must be 30 to 900 seconds')
-    root=Path(directory).resolve();manifest=verify_inputs(root)
+    root=Path(directory).resolve();manifest=(input_verifier or verify_inputs)(root)
     if any((root/'output').iterdir()):
         raise ContractError('Smoke output must be empty; stale evidence cannot be reused')
     window=backtest_window([row['available_at'] for row in manifest['expected_observations']],
@@ -245,7 +252,7 @@ def run_prepared(directory,*,timeout=180,runner=None,clock=None):
         with (root/'output'/'engine.log').open('w') as log:
             process=(runner or subprocess.run)(command,stdout=log,stderr=subprocess.STDOUT,timeout=timeout,check=False)
         returncode=process.returncode
-        result=validate_result(root,returncode)
+        result=(result_validator or validate_result)(root,returncode)
     except (ContractError, OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
         cleanup_status='not_needed_no_timeout'
         if isinstance(error,subprocess.TimeoutExpired):
