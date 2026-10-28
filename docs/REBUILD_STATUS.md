@@ -1,3 +1,7 @@
+# Consolidated integration status
+
+Main corporate-action capture and the event/AI/hedge research branch are combined in this working tree. Both paths preserve independent admission and execution limits. Integration verification is recorded on the PR; synthetic tests do not establish data admission, broker access or profitability.
+
 # Rebuild status
 
 Documentation updated: 2026-10-28. Masterplan: 1.4. Package: 0.5.0.
@@ -155,23 +159,23 @@ Unknown fields remain unknown. Wrong account identity, malformed rows and ambigu
 | Paper calendar GET transport and legacy capture staging | Implemented with offline transport/format tests; authenticated account access unverified |
 | Scoped rights/provenance/temporal/coverage review gate | Implemented as declared eligibility reports; no actual dataset promotion or independent certification |
 | SEC submissions and raw daily-price GET transport | Implemented with injected-response tests; genuine source access not verified |
-| News and NAV adapters | Not implemented |
+| News and NAV adapters | USGS/GDACS event adapters implemented; licensed financial news and NAV remain pending |
 | Artifact dependencies and append-only incident lineage | Implemented offline with source/hash/cutoff checks and downstream impact |
 | Locked predictions and matured outcome revisions | Implemented offline for declared evaluation labels; no training authorization |
 | Real equity/fund data entitlement | Not verified |
 | Trader-history completeness or verification | Not implemented or verified |
 | New datasets approved for training | None |
-| AI analysis, predictive models and self-learning | Not implemented; evaluation queue is an offline foundation only |
+| AI analysis, predictive models and self-learning | Source-cited OpenAI scenario analysis implemented; calibrated predictive models and self-learning remain pending |
 | Pre-outcome human decision journal and intervention attribution | Required by masterplan 1.4; not implemented |
 | Exposure-linked hedge research policy and supplied-state monitoring | Bounded offline stress comparison/monitor implemented; real fills, settlement/roll lifecycle and complete acceptance remain pending |
 | Frozen numerical baseline and chronological experiment register | Implemented offline for synthetic target/abstention evaluation; no fills or performance |
 | LEAN own-data export/reader bridge | Synthetic bundle and parser/API mechanics implemented; real admission binding/runtime trial pending |
 | Supplied-simulation cash/position ledger | Implemented offline with fees/actions/reconciliation; no broker/LEAN event verification |
 | Read-only readiness diagnostic | Implemented; configuration presence is not credential/source verification |
-| Full LEAN replay and reconciled engine acceptance | Not executed |
+| Full LEAN replay and reconciled engine acceptance | Synthetic Mac accounting pass reported; admitted real-data replay remains pending |
 | Backtesting and strategy profitability | Not implemented or established |
 | UI, broker or fund order adapters | Not implemented |
-| Simulated or live orders | Not executed |
+| Simulated or live orders | Synthetic LEAN fills reported and local callback harness implemented; external broker orders not implemented |
 
 ## Four source and research foundations
 
@@ -311,3 +315,11 @@ Development validation: 555 synthetic tests pass, including 23 new fixture/callb
 After pulling `47b8764f3377443aff226d41263ce9418262700a`, the user supplied `status=passed`, `engine_execution_verified=true`, `rule_decisions_verified=true` and `cash_and_positions_reconciled=true` for the pinned ARM64 image. The trial reported four simulated orders, two round trips, final synthetic cash `979.83760`, commission `4.0`, half-spread cost `0.0812` and additional slippage cost `0.0812`. These match the authored fixture's hand-checked expectations. No broker orders were sent. This supersedes pending Mac acceptance above as user-reported engine/callback/accounting evidence; the underlying Mac files were not independently copied or hash-reverified in development.
 
 Reported SHA256: input manifest `eaf72f483074ea9a4148d3a4eb10ede82b648fb05069b4d45e21d28417b91d60`; algorithm callback evidence `645f6c0dd67437dd3f36907989a147aa24f9105e68098fa6693350e32c214810`; independent accounting evidence `e1f84fecb4cd6677b76b5c546592d5a2ba800064b2e365df5af2447d946b74f6`; engine log `9b4997db4f86fd641e500e7903ae7ec55e11f9a9d97615e41e04c32034f8b09b`. Preserve the successful run directory and its ledger. Scope remains `synthetic_engine_accounting_only`; real admission, statistical evaluation, strategy profitability, training and live trading remain false. The next real-data dependency is still source-specific review, corporate-action coverage and exact admitted export binding, followed by native equity/session/cost validation. This is a documentation-only record, not a new engine run or capability activation.
+
+## Corporate-action source capture and exact dataset binding — 28 October 2026
+
+An own-written bounded GET reader now uses Alpaca `/v1/corporate-actions` with all action types visible, US region and incomplete records included. The account is matched through a fresh paper reference GET before action access. Immutable jobs/pages preserve raw bytes, provenance, exact decimals, receipt/processing times, quarantine and native event fingerprints. Forward/reverse split and ordinary cash-dividend candidates retain distinct process/ex/record/payment/due-bill dates, unknown publication/currency and unverified identity; unsupported actions are quarantined. Separate import IDs preserve later revisions without changing earlier snapshots.
+
+`corporate_actions sync-pilot` binds this capture to the exact latest successful forward packet, frozen route and canonical listing. New action-source storage/research uses can be explicitly declared locally without granting entitlements/training or overriding revocation. API process-date filtering is not effective-date coverage; empty/terminal results cannot clear the coverage gate. The combined report preserves source-review, action-coverage, identity and accounting-policy blockers. No events are promoted into market snapshots or applied to positions/cash. See [Mac capture command and source contract](CORPORATE_ACTION_CAPTURE.md).
+
+Validation: 580 synthetic tests pass, including 25 new transport/staging/pagination/failure/revision/current-rights/binding/temporal/instrument cases, plus compileall and diff checks. Tests use invented payloads and injected readers; actual Mac corporate-action endpoint access remains pending. Source rights, complete effective-action coverage and real admitted export remain unresolved. No new LEAN run, broker order, real-data profitability, training or live readiness is claimed.
