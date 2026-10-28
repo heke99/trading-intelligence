@@ -39,6 +39,10 @@ def demo(directory: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    reservation_status = commands.add_parser("hedge-reservation-status", help="Fresh research-input check or historical local reservation state")
+    for option in ("database", "reservation-id"):
+        reservation_status.add_argument("--" + option, required=True)
+    reservation_status.add_argument("--as-of", help="Historical metadata only; omitting this performs a fresh research-input check")
     reserve_parser = commands.add_parser("hedge-reserve", help="Reserve local research cash/exposure; never submits orders")
     for option in ("database", "reservation-id", "search-id", "alternative-id"):
         reserve_parser.add_argument("--" + option, required=True)
@@ -126,14 +130,18 @@ def main():
     for option in ("database", "connection-id", "account-number", "expected-account-id", "source-id", "import-id"):
         sync.add_argument("--" + option, required=True)
     args = parser.parse_args()
-    if args.command in {"hedge-reserve", "hedge-release"}:
+    if args.command in {"hedge-reserve", "hedge-release", "hedge-reservation-status"}:
         from .hedge_reservations import HedgeReservationStore
         from .contracts import ContractError
         try:
             if not Path(args.database).is_file():
                 raise ContractError("Existing research database required")
             with HedgeReservationStore(args.database) as store:
-                if args.command == "hedge-reserve":
+                if args.command == "hedge-reservation-status":
+                    result = (store.reservation_as_of(args.reservation_id,
+                        as_of=datetime.fromisoformat(args.as_of.replace("Z", "+00:00")))
+                        if args.as_of else store.reservation_readiness(args.reservation_id))
+                elif args.command == "hedge-reserve":
                     result = store.reserve(args.reservation_id, args.search_id, args.alternative_id)
                 else:
                     result = store.release(args.reservation_id, reason=args.reason)

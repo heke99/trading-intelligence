@@ -17,9 +17,10 @@ class HedgeReservationStore(HedgeResearchStore):
         super().__init__(database,clock=clock)
         self.db.executescript(SCHEMA)
 
-    def _ledger(self):
+    def _ledger(self, cutoff=None):
         current=utc(self._event_clock())
         states={}
+        visible={}
         for row in self.db.execute('SELECT * FROM hedge_research_reservations ORDER BY reservation_id,sequence'):
             body=json.loads(row['body_json'])
             identity=row['reservation_id']
@@ -33,7 +34,9 @@ class HedgeReservationStore(HedgeResearchStore):
                         or body['available_at']<prior['available_at']))):
                 raise EvidenceIntegrityError('Local reservation journal integrity failed')
             states[identity]=body
-        return states
+            if cutoff is None or body['available_at']<=cutoff:
+                visible[identity]=body
+        return visible
 
     @_write_locked
     def reserve(self,reservation_id,search_id,alternative_id):
@@ -107,3 +110,58 @@ class HedgeReservationStore(HedgeResearchStore):
     @_read_snapshot
     def reservation(self,reservation_id):
         return self._ledger().get(reservation_id)
+
+    @_read_snapshot
+    def reservation_as_of(self,reservation_id,*,as_of):
+        """Return only knowledge available at cutoff; still verify the full journal."""
+        required(reservation_id,'reservation_id')
+        at,_=self._times(as_of)
+        return self._ledger(at).get(reservation_id)
+
+    @_read_snapshot
+    def reservation_readiness(self,reservation_id):
+        """Fresh RESEARCH-input check, never permission to dispatch an order.
+
+        Unlike idempotent reserve(), this operation always uses the current clock.
+        It does not renew evidence, release a claim or rewrite historical checks.
+        """
+        required(reservation_id,'reservation_id')
+        now=utc(self._event_clock())
+        reservation=self._ledger().get(reservation_id)
+        if reservation is None:raise ContractError('Unknown research reservation')
+        blockers=[]
+        if reservation['state']!='reserved':
+            blockers.append('reservation_released')
+        else:
+            try:
+                search=self.get_search(reservation['search_id'],as_of=self._event_clock())
+                if search is None or digest(search)!=reservation['search_sha256']:
+                    raise EvidenceIntegrityError('Reservation search dependency changed')
+                blockers.extend(self._validate(search['opportunity_id'],search['evidence_id'],
+                                               search['as_of'],now)[4])
+            except EvidenceIntegrityError:
+                blockers.append('dependency_integrity_failure')
+            except ContractError:
+                # Current revocations/missing references never revive old approval.
+                # Keep provider evidence and error bodies out of this metadata check.
+                blockers.append('dependency_unavailable_or_not_permitted')
+            except (ValueError,TypeError,KeyError):
+                blockers.append('dependency_integrity_failure')
+        completed=utc(self._event_clock())
+        if completed<now:raise ContractError('Operational clock moved backwards')
+        # Validity can elapse while dependency verification is running.
+        if reservation['state']=='reserved' and not blockers:
+            try:
+                blockers.extend(self._validate(search['opportunity_id'],search['evidence_id'],
+                                               search['as_of'],completed)[4])
+            except EvidenceIntegrityError:
+                blockers.append('dependency_integrity_failure')
+            except ContractError:
+                blockers.append('dependency_unavailable_or_not_permitted')
+            except (ValueError,TypeError,KeyError):
+                blockers.append('dependency_integrity_failure')
+        return dict(reservation_id=reservation_id,reservation_sha256=digest(reservation),
+            evaluated_at=completed,reservation_state=reservation['state'],
+            status='blocked' if blockers else 'inputs_current_for_research',
+            blockers=sorted(set(blockers)),check_is_not_a_risk_approval=True,
+            live_account_state_verified=False,execution_authorized=False,orders_sent=0)

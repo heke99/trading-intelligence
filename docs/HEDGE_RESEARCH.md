@@ -194,3 +194,24 @@ CLI commands are `hedge-reserve --database DB --reservation-id ID --search-id SE
 --reason abandoned_research`. They never submit/cancel orders or release actual
 margin. Do not reuse this abandonment API for dispatched or real positions;
 external fills require a separately reconciled execution/reservation lifecycle.
+
+
+### Historical state versus fresh readiness
+
+`reservation_as_of(id, as_of=...)` returns only local journal state available by
+the explicit cutoff. A release registered later is not visible earlier. Full
+journal integrity is still verified; an old cutoff cannot conceal corruption or
+clock rollback. This metadata audit does not reopen licensed source content.
+
+`reservation_readiness(id)` always checks the current clock, the immutable search
+binding, current source permissions and current input/policy validity. Repeated
+calls do not reuse an earlier positive result. Released, expired, unavailable or
+corrupted dependencies produce blocked status; no claim is silently released or
+renewed. The result's timestamp states when inputs were evaluated and is not a
+risk approval, verified live account state or order authorization. An idempotent
+`reserve()` response remains an archived audit record and cannot substitute for
+this fresh check or the future execution controls.
+
+Use `hedge-reservation-status --database DB --reservation-id ID` for a fresh
+research-input check. Add `--as-of TIMEZONE_AWARE_CUTOFF` for historical metadata
+instead. Readiness is computed on demand, not persisted as a reusable approval.

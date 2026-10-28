@@ -85,3 +85,68 @@ class ReservationTests(unittest.TestCase):
         self.f.f.now+=timedelta(seconds=1)
         with self.store.db:self.store.db.execute("UPDATE hedge_research_reservations SET sha256='bad'")
         with self.assertRaises(EvidenceIntegrityError):self.reserve('two')
+
+    def test_historical_read_never_exposes_later_release(self):
+        before=self.f.f.now-timedelta(microseconds=1)
+        original=self.reserve()
+        at=self.f.f.now
+        self.f.f.now+=timedelta(seconds=1)
+        released=self.store.release('one',reason='abandoned_research')
+        self.assertIsNone(self.store.reservation_as_of('one',as_of=before))
+        self.assertEqual(original,self.store.reservation_as_of('one',as_of=at))
+        self.assertEqual(released,self.store.reservation_as_of('one',as_of=self.f.f.now))
+
+    def test_historical_cutoff_cannot_be_future(self):
+        with self.assertRaises(ContractError):
+            self.store.reservation_as_of('unknown',as_of=self.f.f.now+timedelta(seconds=1))
+
+    def test_fresh_readiness_does_not_reuse_old_positive_result(self):
+        original=self.reserve()
+        x=self.store.reservation_readiness('one')
+        self.assertEqual(x['status'],'inputs_current_for_research')
+        self.assertFalse(x['execution_authorized'])
+        self.f.f.now+=timedelta(minutes=2)
+        self.assertEqual(original,self.reserve())
+        x=self.store.reservation_readiness('one')
+        self.assertEqual(x['status'],'blocked')
+        self.assertIn('expired_at_processing',x['blockers'])
+        self.assertEqual(self.store.reservation('one')['state'],'reserved')
+
+    def test_release_is_not_a_ready_reservation(self):
+        self.reserve();self.store.release('one',reason='abandoned_research')
+        self.assertEqual(self.store.reservation_readiness('one')['blockers'],['reservation_released'])
+
+    def test_revocation_blocks_readiness_but_preserves_metadata_history(self):
+        from trading_intelligence.contracts import Use
+        original=self.reserve();at=self.f.f.now
+        self.f.f.now+=timedelta(seconds=1)
+        self.store.set_permissions('hedge-refs',known_at=self.f.f.now,uses={Use.STORAGE})
+        x=self.store.reservation_readiness('one')
+        self.assertEqual(x['blockers'],['dependency_unavailable_or_not_permitted'])
+        self.assertEqual(original,self.store.reservation_as_of('one',as_of=at))
+
+    def test_dependency_corruption_is_a_blocked_check(self):
+        self.reserve()
+        with self.store.db:
+            self.store.db.execute("UPDATE futures_snapshots SET body='{}' WHERE kind='margin'")
+        x=self.store.reservation_readiness('one')
+        self.assertEqual(x['blockers'],['dependency_integrity_failure'])
+
+    def test_new_check_after_restart_uses_current_clock(self):
+        self.reserve();self.f.f.now+=timedelta(hours=1)
+        with HedgeReservationStore(self.f.f.path,clock=lambda:self.f.f.now) as other:
+            self.assertEqual(other.reservation_readiness('one')['status'],'blocked')
+
+    def test_later_corruption_is_not_hidden_by_historical_cutoff(self):
+        self.reserve();at=self.f.f.now
+        self.f.f.now+=timedelta(seconds=1)
+        self.store.release('one',reason='abandoned_research')
+        with self.store.db:
+            self.store.db.execute("UPDATE hedge_research_reservations SET sha256='bad' WHERE sequence=1")
+        with self.assertRaises(EvidenceIntegrityError):self.store.reservation_as_of('one',as_of=at)
+
+    def test_malformed_dependency_json_returns_blocked_metadata(self):
+        self.reserve()
+        with self.store.db:
+            self.store.db.execute("UPDATE hedge_research SET body_json='{' WHERE search_id='search'")
+        self.assertEqual(self.store.reservation_readiness('one')['blockers'],['dependency_integrity_failure'])
